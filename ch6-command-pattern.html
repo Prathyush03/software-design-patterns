@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 6 — The Command Pattern</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;0,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fb;
+  --bg-tertiary: #f0f1f4;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f7ed;
+  --bg-warning: #fff7e0;
+  --bg-purple: #f3ecff;
+
+  --text-primary: #1a1d23;
+  --text-secondary: #4b5060;
+  --text-tertiary: #7c8294;
+  --text-info: #1a56db;
+  --text-danger: #c0392b;
+  --text-success: #1e7e45;
+  --text-warning: #b87900;
+  --text-purple: #6c3fc5;
+
+  --border-primary: #d5d8e0;
+  --border-secondary: #e5e7ec;
+  --border-tertiary: #eef0f4;
+
+  --purple-50: #f3ecff; --purple-100: #e4d5ff; --purple-200: #c9adff;
+  --purple-400: #8b5cf6; --purple-600: #6c3fc5; --purple-800: #4a2882;
+  --teal-50: #e6faf6; --teal-100: #c3f2e8; --teal-400: #14b8a6;
+  --teal-600: #0d9488; --teal-800: #115e59;
+  --coral-50: #fff1f0; --coral-100: #ffe0de; --coral-400: #f87171;
+  --coral-600: #dc2626; --coral-800: #991b1b;
+
+  --progress-bg: #e5e7ec;
+  --progress-fill: var(--purple-400);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1e2028;
+  --bg-secondary: #262830;
+  --bg-tertiary: #15161c;
+  --bg-info: #1c2640;
+  --bg-danger: #3a1c1c;
+  --bg-success: #1a3028;
+  --bg-warning: #362a10;
+  --bg-purple: #2a1f40;
+
+  --text-primary: #e8eaef;
+  --text-secondary: #a0a6b6;
+  --text-tertiary: #6b7185;
+  --text-info: #7dabf8;
+  --text-danger: #f87171;
+  --text-success: #6ee7a0;
+  --text-warning: #fbbf24;
+  --text-purple: #c4a3ff;
+
+  --border-primary: #3a3d48;
+  --border-secondary: #2e3038;
+  --border-tertiary: #262830;
+
+  --purple-50: #2a1f40; --purple-100: #3a2860; --purple-200: #5b3daa;
+  --purple-400: #a78bfa; --purple-600: #c4a3ff; --purple-800: #e0d0ff;
+  --teal-50: #142826; --teal-100: #1a3a35; --teal-400: #2dd4bf;
+  --teal-600: #5eead4; --teal-800: #c3fae8;
+  --coral-50: #2d1a1a; --coral-100: #3d2020; --coral-400: #f87171;
+  --coral-600: #fca5a5; --coral-800: #fecaca;
+
+  --progress-bg: #2e3038;
+  --progress-fill: var(--purple-400);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.outer {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Theme toggle */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.top-bar h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-purple);
+  letter-spacing: -0.02em;
+}
+.theme-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  width: 38px; height: 38px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+  color: var(--text-secondary);
+}
+.theme-btn:hover { background: var(--bg-tertiary); }
+
+/* Progress */
+.progress-bar {
+  height: 3px;
+  background: var(--progress-bg);
+  border-radius: 3px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--progress-fill);
+  border-radius: 3px;
+  transition: width 0.35s ease;
+}
+
+/* Card */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* Step header */
+.step-header {
+  padding: 22px 28px 0;
+}
+.step-phase {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-bottom: 8px;
+}
+.pill-try { background: var(--bg-tertiary); color: var(--text-tertiary); }
+.pill-problem { background: var(--bg-danger); color: var(--text-danger); }
+.pill-principle { background: var(--bg-info); color: var(--text-info); }
+.pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+.pill-reveal { background: var(--bg-purple); color: var(--text-purple); }
+.pill-build { background: var(--bg-success); color: var(--text-success); }
+.pill-tradeoff { background: var(--bg-warning); color: var(--text-warning); }
+.pill-summary { background: var(--bg-purple); color: var(--text-purple); }
+
+.step-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.step-desc {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+
+/* Principle box */
+.principle-box {
+  margin: 0 28px 18px;
+  padding: 14px 18px;
+  background: var(--bg-info);
+  border: 1.5px solid var(--text-info);
+  border-radius: 10px;
+}
+.principle-box .principle-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-info);
+  margin-bottom: 4px;
+}
+.principle-box .principle-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-info);
+}
+
+/* Panels */
+.panels {
+  display: flex;
+  gap: 0;
+  padding: 0 28px 12px;
+}
+.panels.stacked { flex-direction: column; gap: 16px; }
+.panel {
+  flex: 1;
+  min-width: 0;
+}
+.panel + .panel { margin-left: 16px; }
+.stacked .panel + .panel { margin-left: 0; }
+.panel-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.panel-label.before-label { color: var(--text-danger); }
+.panel-label.after-label { color: var(--text-success); }
+
+/* Code block */
+.code-block {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.77rem;
+  line-height: 1.65;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+.hi-r { background: var(--bg-danger); border-radius: 3px; padding: 1px 3px; }
+.hi-g { background: var(--bg-success); border-radius: 3px; padding: 1px 3px; }
+.hi-y { background: var(--bg-warning); border-radius: 3px; padding: 1px 3px; }
+.hi-b { background: var(--bg-info); border-radius: 3px; padding: 1px 3px; }
+.cm { color: var(--text-tertiary); }
+
+/* Class diagram */
+.cd-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.cd-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.cd-box {
+  border: 1.5px solid var(--border-primary);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  min-width: 130px;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+.cd-box.bad { border-color: var(--coral-400); background: var(--coral-50); }
+.cd-box.dup { border-color: var(--text-warning); background: var(--bg-warning); }
+.cd-box.iface { border-style: dashed; border-color: var(--purple-400); background: var(--purple-50); }
+.cd-box.ctx { border-color: var(--teal-400); background: var(--teal-50); }
+.cd-box.obs { border-color: var(--coral-400); background: var(--coral-50); }
+.cd-box.good { border-color: var(--text-success); background: var(--bg-success); }
+.cd-h {
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 0.74rem;
+  text-align: center;
+  border-bottom: 1px solid inherit;
+}
+.cd-box.iface .cd-h { color: var(--text-purple); }
+.cd-box.ctx .cd-h { color: var(--teal-600); }
+.cd-b, .cd-m {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+.cd-b { border-bottom: 1px solid var(--border-tertiary); }
+.cd-arr {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 2px 0;
+}
+
+/* Callout */
+.callout {
+  margin: 12px 28px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--border-primary);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.callout.info { border-color: var(--text-info); background: var(--bg-info); }
+.callout.danger { border-color: var(--text-danger); background: var(--bg-danger); }
+.callout.success { border-color: var(--text-success); background: var(--bg-success); }
+.callout.warning { border-color: var(--text-warning); background: var(--bg-warning); }
+.callout.purple { border-color: var(--text-purple); background: var(--bg-purple); }
+
+/* Navigation */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px 20px;
+}
+.nav-btn {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow-hover);
+}
+.nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.nav-btn.primary {
+  background: var(--purple-400);
+  color: #fff;
+  border-color: var(--purple-400);
+}
+.nav-btn.primary:hover:not(:disabled) {
+  background: var(--purple-600);
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 60%;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  padding: 0;
+}
+.dot:hover { background: var(--text-tertiary); transform: scale(1.3); }
+.dot.active { background: var(--purple-400); transform: scale(1.3); }
+
+/* Fade animation */
+.step-content {
+  animation: fadeSlide 0.35s ease;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Full-width panel */
+.full-width {
+  padding: 0 28px 12px;
+}
+
+/* Two-col diagram wrapper */
+.diagram-compare {
+  display: flex;
+  gap: 16px;
+  padding: 0 28px 12px;
+}
+.diagram-compare > div { flex: 1; min-width: 0; }
+
+/* Analogy card */
+.analogy-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 0 28px 12px;
+}
+.analogy-grid .analogy-arrow {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  color: var(--text-tertiary);
+  padding-top: 30px;
+}
+
+/* Toolbox grid */
+.toolbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 28px 16px;
+}
+.toolbox-col h4 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+.toolbox-item {
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+}
+.toolbox-item.new {
+  background: var(--bg-purple);
+  border: 1px solid var(--purple-200);
+}
+.toolbox-item .star { color: var(--text-purple); font-weight: 700; }
+
+@media (max-width: 640px) {
+  .panels { flex-direction: column; gap: 14px; }
+  .panel + .panel { margin-left: 0; }
+  .diagram-compare { flex-direction: column; }
+  .analogy-grid { grid-template-columns: 1fr; }
+  .analogy-grid .analogy-arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+    padding: 0;
+  }
+  .toolbox-grid { grid-template-columns: 1fr; }
+  .step-header { padding: 18px 18px 0; }
+  .panels, .full-width { padding: 0 18px 12px; }
+  .nav-bar { padding: 14px 18px 18px; }
+  .callout { margin: 10px 18px 0; }
+  .principle-box { margin: 0 18px 14px; }
+  .diagram-compare { padding: 0 18px 12px; }
+  .toolbox-grid { padding: 0 18px 14px; }
+  .dots { max-width: 80%; }
+}
+</style>
+</head>
+<body>
+
+<div class="outer">
+  <div class="top-bar">
+    <h1>Ch 6 · The Command Pattern</h1>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme" id="themeBtn">🌙</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card">
+    <div id="stepContent"></div>
+    <div class="nav-bar">
+      <button class="nav-btn" id="prevBtn" onclick="go(-1)">← Back</button>
+      <div class="dots" id="dotsContainer"></div>
+      <button class="nav-btn primary" id="nextBtn" onclick="go(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+// ──────────────── PHASE 1: TRY AND FAIL ────────────────
+{
+  pill: 'pill-try', phase: 'The Brief',
+  title: 'Home Automation Remote Control',
+  desc: 'Home Automation or Bust, Inc. wants you to design the API for their new remote control. It has 7 programmable slots, each with On/Off buttons, plus a global Undo button. They also give you a CD-R full of vendor classes from different manufacturers — and every class has a different interface.',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">The Remote (7 Slots)</div>
+    <div class="code-block"><span class="cm">// The hardware prototype</span>
+┌─────────────────────────┐
+│  <span class="hi-y">SLOT 1</span>   [ON]  [OFF]  │
+│  <span class="hi-y">SLOT 2</span>   [ON]  [OFF]  │
+│  <span class="hi-y">SLOT 3</span>   [ON]  [OFF]  │
+│  <span class="hi-y">SLOT 4</span>   [ON]  [OFF]  │
+│  <span class="hi-y">SLOT 5</span>   [ON]  [OFF]  │
+│  <span class="hi-y">SLOT 6</span>   [ON]  [OFF]  │
+│  <span class="hi-y">SLOT 7</span>   [ON]  [OFF]  │
+│                         │
+│       <span class="hi-b">[ UNDO ]</span>        │
+└─────────────────────────┘</div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Vendor Classes (CD-R)</div>
+    <div class="cd-container">
+      <div class="cd-row">
+        <div class="cd-box"><div class="cd-h">Light</div><div class="cd-m">on() off()</div></div>
+        <div class="cd-box"><div class="cd-h">Stereo</div><div class="cd-m">on() off() setCd()<br>setVolume()</div></div>
+      </div>
+      <div class="cd-row">
+        <div class="cd-box"><div class="cd-h">CeilingFan</div><div class="cd-m">high() medium()<br>low() off()</div></div>
+        <div class="cd-box"><div class="cd-h">GarageDoor</div><div class="cd-m">up() down()<br>stop() lightOn()</div></div>
+      </div>
+      <div class="cd-row">
+        <div class="cd-box"><div class="cd-h">Hottub</div><div class="cd-m">circulate() jetsOn()<br>setTemperature()</div></div>
+        <div class="cd-box"><div class="cd-h">TV</div><div class="cd-m">on() off()<br>setInputChannel()</div></div>
+      </div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'info', text: 'Notice: every vendor class has a completely different interface. There\'s no common on()/off() convention. The remote needs to control all of them — and future devices we haven\'t seen yet.' }
+},
+
+{
+  pill: 'pill-try', phase: 'First Attempt',
+  title: 'The Naive Approach: if/else Everything',
+  desc: 'Your first instinct: just check what type of device is in each slot and call the right method. It compiles, it runs… feels pretty good, right?',
+  body: `
+<div class="full-width">
+  <div class="code-block">public class RemoteControl {
+  <span class="cm">// Store device type per slot</span>
+  String[] slotDeviceType = new String[7];
+  Object[] slotDevice = new Object[7];
+
+  public void onButtonPushed(int slot) {
+    <span class="hi-r">if (slotDeviceType[slot].equals("Light")) {</span>
+      <span class="hi-r">((Light) slotDevice[slot]).on();</span>
+    <span class="hi-r">} else if (slotDeviceType[slot].equals("Hottub")) {</span>
+      <span class="hi-r">((Hottub) slotDevice[slot]).jetsOn();</span>
+      <span class="hi-r">((Hottub) slotDevice[slot]).setTemperature(104);</span>
+    <span class="hi-r">} else if (slotDeviceType[slot].equals("CeilingFan")) {</span>
+      <span class="hi-r">((CeilingFan) slotDevice[slot]).high();</span>
+    <span class="hi-r">} else if (slotDeviceType[slot].equals("GarageDoor")) {</span>
+      <span class="hi-r">((GarageDoor) slotDevice[slot]).up();</span>
+    <span class="hi-r">}</span>
+    <span class="cm">// ... more else-if for every vendor class</span>
+  }
+
+  public void offButtonPushed(int slot) {
+    <span class="hi-r">if (slotDeviceType[slot].equals("Light")) {</span>
+      <span class="hi-r">((Light) slotDevice[slot]).off();</span>
+    <span class="hi-r">} else if ...</span>
+    <span class="cm">// SAME giant if/else chain AGAIN!</span>
+  }
+}</div>
+</div>`,
+  callout: { type: 'warning', text: 'Looks reasonable at first glance. But what happens when a new vendor (SecurityControl, Sprinkler, Thermostat…) ships a class? You have to crack open RemoteControl and add more branches. Every. Single. Time.' }
+},
+
+{
+  pill: 'pill-problem', phase: 'Oh No!',
+  title: 'Diagnose: Which Principles Are Violated?',
+  desc: 'Let\'s use the OO principles we already know as a diagnostic checklist. Every single one fails:',
+  body: `
+<div class="full-width">
+  <div class="code-block">public void onButtonPushed(int slot) {
+  <span class="hi-r">if (slotDeviceType[slot].equals("Light")) {        </span> <span class="cm">// ❌ ENCAPSULATE WHAT VARIES</span>
+    <span class="hi-r">((Light) slotDevice[slot]).on();                   </span> <span class="cm">// The varying part (vendor actions)</span>
+  <span class="hi-r">} else if (slotDeviceType[slot].equals("Hottub")) {  </span> <span class="cm">//    is tangled INTO the remote</span>
+    <span class="hi-r">((Hottub) slotDevice[slot]).jetsOn();              </span>
+    <span class="hi-r">((Hottub) slotDevice[slot]).setTemperature(104);   </span> <span class="cm">// ❌ PROGRAM TO INTERFACES</span>
+  <span class="hi-r">} else if (slotDeviceType[slot].equals("CeilingFan"))</span> <span class="cm">// The remote knows CONCRETE types:</span>
+    <span class="hi-r">((CeilingFan) slotDevice[slot]).high();            </span> <span class="cm">//    Light, Hottub, CeilingFan...</span>
+  <span class="hi-r">} else if ...</span>
+                                                         <span class="cm">// ❌ FAVOR COMPOSITION</span>
+  <span class="cm">// Remote IS the logic. No delegation.</span>              <span class="cm">//    No "HAS-A" relationship to</span>
+  <span class="cm">// Can't swap behavior at runtime.</span>                  <span class="cm">//    swap behavior at runtime.</span>
+}</div>
+</div>`,
+  callout: { type: 'danger', text: 'Three principles violated = a design that\'s rigid (can\'t extend), fragile (changes break things), and immobile (can\'t reuse). Time to fix this — one principle at a time.' }
+},
+
+// ──────────────── PHASE 2: APPLY PRINCIPLES ────────────────
+{
+  pill: 'pill-principle', phase: 'Design Principle #1',
+  title: 'Encapsulate What Varies',
+  desc: '"Identify the aspects of your application that vary and separate them from what stays the same." What varies here? The vendor-specific actions. What stays the same? The remote just pushes buttons.',
+  principleBox: { text: 'Encapsulate what varies — pull the changing parts out so the rest doesn\'t have to change.' },
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before-label">Before — Actions embedded in remote</div>
+    <div class="code-block"><span class="hi-r">if ("Light") light.on();</span>
+<span class="hi-r">if ("Hottub") hottub.jetsOn();</span>
+<span class="hi-r">if ("Fan")   fan.high();</span>
+<span class="cm">// Varying actions TANGLED
+// inside RemoteControl</span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-label after-label">After — Actions extracted into objects</div>
+    <div class="code-block"><span class="hi-g">// Each action becomes its own object</span>
+<span class="hi-g">lightOnCmd   → light.on()</span>
+<span class="hi-g">hottubOnCmd  → hottub.jetsOn()</span>
+<span class="hi-g">fanHighCmd   → fan.high()</span>
+
+<span class="cm">// Remote just stores these objects
+// in its slots: List&lt;???&gt;</span></div>
+  </div>
+</div>`,
+  callout: { type: 'info', text: 'We\'ve pulled the varying actions out into separate objects. But the remote now holds a List of… what type? Light isn\'t the same type as Hottub or CeilingFan. We need a common type — that\'s where the next principle comes in.' }
+},
+
+{
+  pill: 'pill-principle', phase: 'Design Principle #2',
+  title: 'Program to Interfaces, Not Implementations',
+  desc: '"Depend on abstractions, not concrete classes." All our command objects need a common interface so the remote can treat them uniformly.',
+  principleBox: { text: 'Program to interfaces — the remote should depend on an abstraction, not on Light, Hottub, or CeilingFan.' },
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before-label">Before — Remote knows concrete types</div>
+    <div class="cd-container">
+      <div class="cd-box bad" style="width:200px">
+        <div class="cd-h">RemoteControl</div>
+        <div class="cd-m"><span class="hi-r">slots: Object[]</span><br>onButtonPushed(slot)</div>
+      </div>
+      <div class="cd-arr">↓ knows about ↓</div>
+      <div class="cd-row">
+        <div class="cd-box bad"><div class="cd-h">Light</div><div class="cd-m">on() off()</div></div>
+        <div class="cd-box bad"><div class="cd-h">Hottub</div><div class="cd-m">jetsOn()</div></div>
+        <div class="cd-box bad"><div class="cd-h">Fan</div><div class="cd-m">high()</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label after-label">After — Remote knows only Command</div>
+    <div class="cd-container">
+      <div class="cd-box ctx" style="width:200px">
+        <div class="cd-h">RemoteControl</div>
+        <div class="cd-m"><span class="hi-g">slots: Command[]</span><br>onButtonPushed(slot)</div>
+      </div>
+      <div class="cd-arr">↓ depends on ↓</div>
+      <div class="cd-box iface" style="width:200px">
+        <div class="cd-h">«interface» Command</div>
+        <div class="cd-m"><span class="hi-b">execute()</span></div>
+      </div>
+      <div class="cd-arr">△ implements △</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">LightOnCmd</div><div class="cd-m">execute()</div></div>
+        <div class="cd-box good"><div class="cd-h">HottubOnCmd</div><div class="cd-m">execute()</div></div>
+        <div class="cd-box good"><div class="cd-h">FanHighCmd</div><div class="cd-m">execute()</div></div>
+      </div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'info', text: 'Now the remote depends on the Command interface — it just calls execute(). But who manages these command objects? How do we assign and swap them at runtime? That\'s composition.' }
+},
+
+{
+  pill: 'pill-principle', phase: 'Design Principle #3',
+  title: 'Favor Composition Over Inheritance',
+  desc: '"HAS-A can be better than IS-A." The remote shouldn\'t inherit behavior — it should hold command objects and delegate to them. Commands can be loaded, swapped, and changed at runtime.',
+  principleBox: { text: 'Favor composition — the remote HAS-A set of Command objects. It delegates actions to them.' },
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before-label">Before — Static, compiled-in logic</div>
+    <div class="code-block"><span class="cm">// Remote IS the logic</span>
+<span class="hi-r">if ("Light") light.on();</span>
+<span class="hi-r">if ("Hottub") hottub.jetsOn();</span>
+
+<span class="cm">// Can't change at runtime
+// Can't reuse remote with
+// different devices</span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-label after-label">After — Dynamic, runtime-loaded</div>
+    <div class="code-block"><span class="cm">// Remote HAS-A commands</span>
+<span class="hi-g">Command[] onCommands;</span>
+<span class="hi-g">Command[] offCommands;</span>
+
+<span class="hi-g">void setCommand(int slot,</span>
+<span class="hi-g">    Command on, Command off) {</span>
+<span class="hi-g">  onCommands[slot] = on;</span>
+<span class="hi-g">  offCommands[slot] = off;</span>
+<span class="hi-g">}</span>
+
+void onButtonPushed(int slot) {
+  <span class="hi-g">onCommands[slot].execute();</span>
+  <span class="cm">// Done! No if/else needed.</span>
+}</div>
+  </div>
+</div>`,
+  callout: { type: 'success', text: 'The remote is now decoupled from ALL vendor classes. It just calls execute() on whatever Command object is in the slot. New device? Write a new Command class. The remote never changes. Sound familiar? This design has a name…' }
+},
+
+// ──────────────── PHASE 3: REVELATION ────────────────
+{
+  pill: 'pill-reveal', phase: 'The Revelation',
+  title: 'What We Built Has a Name: The Command Pattern!',
+  desc: 'By applying three OO principles, we\'ve independently arrived at a well-known pattern. The book uses a diner analogy to make it click:',
+  body: `
+<div class="analogy-grid">
+  <div>
+    <div class="panel-label">The Diner Analogy</div>
+    <div class="cd-container">
+      <div class="cd-box" style="background:var(--bg-warning)"><div class="cd-h">Customer</div><div class="cd-m">creates an Order</div></div>
+      <div class="cd-arr">↓ gives to ↓</div>
+      <div class="cd-box" style="background:var(--bg-warning)"><div class="cd-h">Waitress</div><div class="cd-m">takeOrder()<br>calls orderUp()</div></div>
+      <div class="cd-arr">↓ order slip ↓</div>
+      <div class="cd-box" style="background:var(--bg-warning)"><div class="cd-h">Short-Order Cook</div><div class="cd-m">makeBurger()<br>makeShake()</div></div>
+    </div>
+  </div>
+  <div class="analogy-arrow">→</div>
+  <div>
+    <div class="panel-label">Command Pattern Roles</div>
+    <div class="cd-container">
+      <div class="cd-box ctx"><div class="cd-h">Client</div><div class="cd-m">creates Commands</div></div>
+      <div class="cd-arr">↓ loads into ↓</div>
+      <div class="cd-box ctx"><div class="cd-h">Invoker</div><div class="cd-m">setCommand()<br>calls execute()</div></div>
+      <div class="cd-arr">↓ command obj ↓</div>
+      <div class="cd-box good"><div class="cd-h">Receiver</div><div class="cd-m">action1()<br>action2()</div></div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'purple', text: '<strong>The Command Pattern</strong> encapsulates a request as an object, thereby letting you parameterize other objects with different requests, queue or log requests, and support undoable operations.' }
+},
+
+{
+  pill: 'pill-reveal', phase: 'New Principle Emerges',
+  title: 'Loose Coupling: The Consequence of Getting It Right',
+  desc: 'When encapsulation + interfaces + composition all work together, we get something new: the remote and vendor classes are completely decoupled. Neither knows about the other.',
+  principleBox: { text: 'Strive for loosely coupled designs between objects that interact.' },
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">How it flows</div>
+    <div class="code-block"><span class="cm">// Client creates command + binds receiver</span>
+Light light = new Light("Living Room");
+<span class="hi-g">LightOnCommand cmd = new LightOnCommand(light);</span>
+
+<span class="cm">// Client loads invoker</span>
+<span class="hi-g">remote.setCommand(0, cmd, offCmd);</span>
+
+<span class="cm">// Later, invoker fires command</span>
+remote.onButtonPushed(0);
+<span class="cm">// → cmd.execute() → light.on()</span>
+
+<span class="cm">// Remote never imports Light!</span>
+<span class="cm">// Light never knows about Remote!</span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Complete pattern diagram</div>
+    <div class="cd-container">
+      <div class="cd-box ctx"><div class="cd-h">Client (RemoteLoader)</div><div class="cd-m">creates commands<br>binds receivers</div></div>
+      <div class="cd-arr">↓ setCommand() ↓</div>
+      <div class="cd-box ctx"><div class="cd-h">Invoker (RemoteControl)</div><div class="cd-b">onCommands: Command[]<br>offCommands: Command[]</div><div class="cd-m">onButtonPushed()<br>offButtonPushed()</div></div>
+      <div class="cd-arr">↓ execute() ↓</div>
+      <div class="cd-box iface"><div class="cd-h">«interface» Command</div><div class="cd-m">execute()</div></div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">ConcreteCommand</div><div class="cd-b">receiver</div><div class="cd-m">execute() {<br>  receiver.action()<br>}</div></div>
+        <div class="cd-box good"><div class="cd-h">Receiver</div><div class="cd-m">action1()<br>action2()</div></div>
+      </div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'purple', text: 'Loose coupling is what we get when encapsulation + interfaces + composition all work together. The invoker makes requests through the command interface, without knowing what the receiver does or even what type it is.' }
+},
+
+// ──────────────── PHASE 4: FULL IMPLEMENTATION ────────────────
+{
+  pill: 'pill-build', phase: 'Building It',
+  title: 'The Command Interface & Concrete Commands',
+  desc: 'Let\'s build it for real. The Command interface is dead simple — one method. Each concrete command binds a receiver to an action.',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">Command interface</div>
+    <div class="code-block"><span class="hi-b">public interface Command {</span>
+<span class="hi-b">  public void execute();</span>
+<span class="hi-b">}</span></div>
+    <div style="margin-top:14px">
+    <div class="panel-label">LightOnCommand</div>
+    <div class="code-block">public class LightOnCommand
+    <span class="hi-g">implements Command</span> {
+  Light light; <span class="cm">// the Receiver</span>
+
+  public LightOnCommand(Light light) {
+    this.light = light;
+  }
+
+  public void <span class="hi-g">execute()</span> {
+    light.on(); <span class="cm">// delegate!</span>
+  }
+}</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">StereoOnWithCDCommand</div>
+    <div class="code-block">public class StereoOnWithCDCommand
+    <span class="hi-g">implements Command</span> {
+  Stereo stereo;
+
+  public StereoOnWithCDCommand(
+      Stereo stereo) {
+    this.stereo = stereo;
+  }
+
+  public void <span class="hi-g">execute()</span> {
+    <span class="hi-y">stereo.on();</span>
+    <span class="hi-y">stereo.setCD();</span>
+    <span class="hi-y">stereo.setVolume(11);</span>
+    <span class="cm">// 3 calls → 1 execute()</span>
+    <span class="cm">// the remote doesn't care!</span>
+  }
+}</div>
+    <div style="margin-top:14px">
+    <div class="panel-label">Key insight</div>
+    <div class="code-block"><span class="cm">// The Stereo command bundles
+// THREE vendor calls into one.
+// The remote just calls execute().
+// That's encapsulation in action!</span></div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'success', text: 'Each concrete command wraps a receiver and an action. The receiver does the real work — the command just delegates. The remote is blissfully ignorant.' }
+},
+
+{
+  pill: 'pill-build', phase: 'Building It',
+  title: 'The Full Remote Control + NoCommand',
+  desc: 'The remote stores 7 on/off command pairs. A clever trick: initialize all slots with a NoCommand (Null Object Pattern) to avoid null checks.',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">RemoteControl.java</div>
+    <div class="code-block">public class RemoteControl {
+  Command[] onCommands;
+  Command[] offCommands;
+
+  public RemoteControl() {
+    onCommands = new Command[7];
+    offCommands = new Command[7];
+    <span class="hi-g">Command noCommand = new NoCommand();</span>
+    <span class="hi-g">for (int i = 0; i < 7; i++) {</span>
+    <span class="hi-g">  onCommands[i] = noCommand;</span>
+    <span class="hi-g">  offCommands[i] = noCommand;</span>
+    <span class="hi-g">}</span>
+  }
+
+  public void setCommand(int slot,
+      Command on, Command off) {
+    onCommands[slot] = on;
+    offCommands[slot] = off;
+  }
+
+  public void onButtonPushed(int s) {
+    <span class="hi-b">onCommands[s].execute();</span>
+  }
+  public void offButtonPushed(int s) {
+    <span class="hi-b">offCommands[s].execute();</span>
+  }
+}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">The Null Object trick</div>
+    <div class="code-block"><span class="hi-g">public class NoCommand</span>
+<span class="hi-g">    implements Command {</span>
+<span class="hi-g">  public void execute() { }</span>
+<span class="hi-g">}</span>
+
+<span class="cm">// Without NoCommand, we'd need:</span>
+<span class="hi-r">if (onCommands[slot] != null) {</span>
+<span class="hi-r">  onCommands[slot].execute();</span>
+<span class="hi-r">}</span>
+
+<span class="cm">// With NoCommand, just call it!
+// Empty slots do nothing safely.</span></div>
+    <div style="margin-top:14px">
+    <div class="panel-label">Test output</div>
+    <div class="code-block" style="background:var(--bg-tertiary)"><span class="cm">% java RemoteLoader</span>
+Living Room light is on
+Living Room light is off
+Kitchen light is on
+Kitchen light is off
+Living Room ceiling fan is on high
+Living Room ceiling fan is off
+Living Room stereo is on
+Living Room Stereo volume set to 11
+Living Room stereo is off</div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'success', text: 'The remote is done — and it\'s tiny! No if/else chains, no vendor imports. Adding a new device? Just write a new Command class and load it into a slot. The remote never changes.' }
+},
+
+// ──────────────── UNDO ────────────────
+{
+  pill: 'pill-build', phase: 'Extending the Pattern',
+  title: 'Adding Undo — Just One More Method',
+  desc: 'The customer wants an Undo button. We add an undo() method to the Command interface. The remote tracks the last command executed and calls undo() on it.',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">Updated interface + LightOnCommand</div>
+    <div class="code-block">public interface Command {
+  public void execute();
+  <span class="hi-g">public void undo();</span>
+}
+
+public class LightOnCommand
+    implements Command {
+  Light light;
+
+  public void execute() {
+    light.on();
+  }
+  <span class="hi-g">public void undo() {</span>
+    <span class="hi-g">light.off();</span> <span class="cm">// reverse!</span>
+  <span class="hi-g">}</span>
+}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Remote tracks last command</div>
+    <div class="code-block">public class RemoteControl {
+  <span class="hi-g">Command undoCommand;</span>
+  <span class="cm">// ... arrays as before</span>
+
+  public void onButtonPushed(int s) {
+    onCommands[s].execute();
+    <span class="hi-g">undoCommand = onCommands[s];</span>
+  }
+
+  <span class="hi-g">public void undoButtonPushed() {</span>
+    <span class="hi-g">undoCommand.undo();</span>
+  <span class="hi-g">}</span>
+}
+
+<span class="cm">// Light on → press undo → light off
+// Light off → press undo → light on</span></div>
+  </div>
+</div>`,
+  callout: { type: 'info', text: 'Simple undo works great for on/off. But what about devices with multiple states — like a ceiling fan with HIGH, MEDIUM, LOW, and OFF? We need to store previous state…' }
+},
+
+{
+  pill: 'pill-build', phase: 'State-Based Undo',
+  title: 'Undo with State: The Ceiling Fan',
+  desc: 'The CeilingFan has 4 speed levels. To undo, we need to remember the previous speed before we changed it.',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">CeilingFanHighCommand</div>
+    <div class="code-block">public class CeilingFanHighCommand
+    implements Command {
+  CeilingFan ceilingFan;
+  <span class="hi-y">int prevSpeed;</span> <span class="cm">// state!</span>
+
+  public void execute() {
+    <span class="hi-y">prevSpeed = ceilingFan.getSpeed();</span>
+    ceilingFan.high();
+  }
+
+  public void undo() {
+    <span class="hi-g">if (prevSpeed == CeilingFan.HIGH)</span>
+      <span class="hi-g">ceilingFan.high();</span>
+    <span class="hi-g">else if (prevSpeed == CeilingFan.MEDIUM)</span>
+      <span class="hi-g">ceilingFan.medium();</span>
+    <span class="hi-g">else if (prevSpeed == CeilingFan.LOW)</span>
+      <span class="hi-g">ceilingFan.low();</span>
+    <span class="hi-g">else ceilingFan.off();</span>
+  }
+}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Test run</div>
+    <div class="code-block" style="background:var(--bg-tertiary)"><span class="cm">% java RemoteLoader</span>
+
+<span class="hi-y">Fan on medium</span>
+Fan is off
+
+<span class="cm">[undo] → CeilingFanOffCommand</span>
+<span class="hi-g">Fan is on medium</span> <span class="cm">← restored!</span>
+
+<span class="hi-y">Fan is on high</span>
+
+<span class="cm">[undo] → CeilingFanHighCommand</span>
+<span class="hi-g">Fan is on medium</span> <span class="cm">← restored!</span></div>
+    <div style="margin-top:12px">
+    <div class="panel-label">Class Diagram</div>
+    <div class="cd-container">
+      <div class="cd-box good">
+        <div class="cd-h">CeilingFanHighCommand</div>
+        <div class="cd-b"><span class="hi-y">prevSpeed: int</span></div>
+        <div class="cd-m">execute()<br>undo()</div>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'success', text: 'The command stores whatever state it needs to reverse itself. The remote still doesn\'t know or care — it just calls undo(). That\'s the power of encapsulation!' }
+},
+
+// ──────────────── MACRO COMMAND ────────────────
+{
+  pill: 'pill-build', phase: 'Party Mode!',
+  title: 'MacroCommand: Execute Multiple Commands at Once',
+  desc: 'Every remote needs a "Party Mode" button. The MacroCommand takes an array of commands and executes them all with one button press — no changes to the remote needed!',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">MacroCommand.java</div>
+    <div class="code-block">public class MacroCommand
+    implements Command {
+  <span class="hi-g">Command[] commands;</span>
+
+  public MacroCommand(Command[] cmds) {
+    this.commands = cmds;
+  }
+
+  public void <span class="hi-g">execute()</span> {
+    for (int i = 0; i &lt; commands.length; i++)
+      <span class="hi-g">commands[i].execute();</span>
+  }
+
+  public void <span class="hi-g">undo()</span> {
+    for (int i = 0; i &lt; commands.length; i++)
+      <span class="hi-g">commands[i].undo();</span>
+  }
+}</div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Using it</div>
+    <div class="code-block"><span class="cm">// Create individual commands</span>
+Command[] partyOn = {
+  lightOn, stereoOn,
+  tvOn, hottubOn
+};
+Command[] partyOff = {
+  lightOff, stereoOff,
+  tvOff, hottubOff
+};
+
+<span class="hi-g">MacroCommand partyOnMacro =</span>
+<span class="hi-g">  new MacroCommand(partyOn);</span>
+
+<span class="cm">// Load into slot like any command</span>
+remote.setCommand(0,
+  partyOnMacro, partyOffMacro);
+
+<span class="cm">// One button press does it all!</span>
+remote.onButtonPushed(0);</div>
+    <div style="margin-top:10px">
+    <div class="code-block" style="background:var(--bg-tertiary);font-size:0.7rem">Light is on
+Stereo is on
+TV is on, DVD mode
+Hottub is bubbling!</div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'success', text: 'Because MacroCommand implements Command, the remote treats it like any other command. This is composition at its finest — commands composed of commands, all behind the same interface.' }
+},
+
+// ──────────────── PHASE 5: TRADE-OFFS ────────────────
+{
+  pill: 'pill-tradeoff', phase: 'More Uses',
+  title: 'Beyond the Remote: Queuing & Logging',
+  desc: 'The Command Pattern isn\'t just for remotes. Because requests are objects, you can store them, pass them around, queue them up, and even log them for crash recovery.',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">Queuing Requests</div>
+    <div class="code-block"><span class="cm">// Job Queue / Thread Pool</span>
+<span class="cm">// Commands sit in a queue.</span>
+<span class="cm">// Worker threads pull them off</span>
+<span class="cm">// and call execute().</span>
+
+Queue&lt;Command&gt; jobQueue;
+
+<span class="cm">// Thread picks up work:</span>
+Command cmd = jobQueue.poll();
+<span class="hi-g">cmd.execute();</span>
+
+<span class="cm">// The thread doesn't know if it's
+// computing a price, downloading a
+// file, or sending an email.
+// Total decoupling!</span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Logging & Crash Recovery</div>
+    <div class="code-block"><span class="cm">// Transactional logging</span>
+<span class="cm">// As each command executes,</span>
+<span class="cm">// serialize it to disk.</span>
+
+<span class="hi-b">interface Command {</span>
+<span class="hi-b">  execute();</span>
+<span class="hi-b">  undo();</span>
+  <span class="hi-g">store();</span> <span class="cm">// serialize to disk</span>
+  <span class="hi-g">load();</span>  <span class="cm">// restore from disk</span>
+<span class="hi-b">}</span>
+
+<span class="cm">// After a crash:
+// 1. Load commands from log
+// 2. Execute them in order
+// 3. System restored!</span>
+
+<span class="cm">// Spreadsheet example:
+// Log cell changes as commands
+// instead of saving entire file
+// on every edit.</span></div>
+  </div>
+</div>`,
+  callout: { type: 'warning', text: 'Trade-off: "Smart" commands (that implement logic themselves) are simpler but tightly coupled to the action. "Dumb" commands (that just delegate to a receiver) are more flexible and keep decoupling intact. The book recommends keeping commands dumb when possible.' }
+},
+
+{
+  pill: 'pill-tradeoff', phase: 'Smart vs Dumb Commands',
+  title: 'Trade-off: How Much Logic Goes in the Command?',
+  desc: 'There\'s a spectrum: "dumb" commands that purely delegate to a receiver, and "smart" commands that implement the logic themselves. Both are valid — but they trade off different things.',
+  body: `
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">"Dumb" Command (delegates)</div>
+    <div class="code-block"><span class="hi-g">// Maximum decoupling</span>
+public class LightOnCommand
+    implements Command {
+  Light light; <span class="cm">// receiver</span>
+
+  public void execute() {
+    <span class="hi-g">light.on();</span> <span class="cm">// just delegates</span>
+  }
+}
+
+<span class="cm">// ✅ Can parameterize with
+//    different receivers
+// ✅ Receiver is reusable
+// ✅ Invoker fully decoupled</span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">"Smart" Command (does the work)</div>
+    <div class="code-block"><span class="hi-y">// Less decoupled but simpler</span>
+public class DBBackupCommand
+    implements Command {
+  <span class="cm">// no receiver needed</span>
+
+  public void execute() {
+    <span class="hi-y">// does the work itself</span>
+    <span class="hi-y">Connection c = getConnection();</span>
+    <span class="hi-y">dumpTables(c);</span>
+    <span class="hi-y">compressArchive();</span>
+  }
+}
+
+<span class="cm">// ✅ Simpler for one-off tasks
+// ❌ Can't swap receiver
+// ❌ Harder to reuse logic</span></div>
+  </div>
+</div>`,
+  callout: { type: 'info', text: 'Most real-world uses lean toward "dumb" commands for maximum flexibility. But "smart" commands are fine when you don\'t need to parameterize with different receivers.' }
+},
+
+// ──────────────── PHASE 6: SUMMARY ────────────────
+{
+  pill: 'pill-summary', phase: 'The Complete Pattern',
+  title: 'Full Class Diagram: All Pieces Connected',
+  desc: 'Here\'s the complete Command Pattern as we\'ve built it — from interface to concrete commands to invoker to receiver, with undo support and macro commands.',
+  body: `
+<div class="full-width">
+  <div class="cd-container">
+    <div class="cd-box ctx" style="width:280px">
+      <div class="cd-h">Client (RemoteLoader)</div>
+      <div class="cd-m">Creates concrete commands<br>Binds each to a receiver<br>Loads commands into invoker</div>
+    </div>
+    <div class="cd-arr">↓ setCommand(slot, on, off) ↓</div>
+    <div class="cd-box ctx" style="width:300px">
+      <div class="cd-h">Invoker (RemoteControl)</div>
+      <div class="cd-b">onCommands: Command[7]<br>offCommands: Command[7]<br>undoCommand: Command</div>
+      <div class="cd-m">onButtonPushed(slot)<br>offButtonPushed(slot)<br>undoButtonPushed()</div>
+    </div>
+    <div class="cd-arr">↓ calls execute() / undo() ↓</div>
+    <div class="cd-box iface" style="width:220px">
+      <div class="cd-h">«interface» Command</div>
+      <div class="cd-m">execute()<br>undo()</div>
+    </div>
+    <div class="cd-arr">△ implements</div>
+    <div class="cd-row">
+      <div class="cd-box good"><div class="cd-h">LightOnCmd</div><div class="cd-b">light: Light</div><div class="cd-m">execute()<br>undo()</div></div>
+      <div class="cd-box good"><div class="cd-h">StereoOnCD</div><div class="cd-b">stereo: Stereo</div><div class="cd-m">execute()<br>undo()</div></div>
+      <div class="cd-box good"><div class="cd-h">FanHighCmd</div><div class="cd-b">fan: CeilingFan<br><span style="color:var(--text-warning)">prevSpeed: int</span></div><div class="cd-m">execute()<br>undo()</div></div>
+      <div class="cd-box good"><div class="cd-h">MacroCommand</div><div class="cd-b">commands: Command[]</div><div class="cd-m">execute()<br>undo()</div></div>
+      <div class="cd-box" style="border-style:dotted"><div class="cd-h">NoCommand</div><div class="cd-m">execute() {}<br>undo() {}</div></div>
+    </div>
+    <div class="cd-arr">↓ delegates to receivers ↓</div>
+    <div class="cd-row">
+      <div class="cd-box"><div class="cd-h">Light</div><div class="cd-m">on() off()</div></div>
+      <div class="cd-box"><div class="cd-h">Stereo</div><div class="cd-m">on() setCd()<br>setVolume()</div></div>
+      <div class="cd-box"><div class="cd-h">CeilingFan</div><div class="cd-m">high() medium()<br>low() off()</div></div>
+      <div class="cd-box"><div class="cd-h">Hottub</div><div class="cd-m">jetsOn()<br>setTemp()</div></div>
+    </div>
+  </div>
+</div>`,
+  callout: { type: 'purple', text: 'The Command Pattern decouples the requester (remote) from the performer (vendor classes). Commands are first-class objects — you can store them, queue them, undo them, log them, compose them.' }
+},
+
+{
+  pill: 'pill-summary', phase: 'Toolbox Update',
+  title: 'Your OO Toolbox After Chapter 6',
+  desc: 'Let\'s update our toolbox with the journey we took and the new pattern + principles we\'ve accumulated.',
+  body: `
+<div class="toolbox-grid">
+  <div class="toolbox-col">
+    <h4>The Journey (This Chapter)</h4>
+    <div class="toolbox-item" style="border-left:3px solid var(--text-tertiary)">1. Got a remote control + messy vendor classes</div>
+    <div class="toolbox-item" style="border-left:3px solid var(--text-danger)">2. Tried naive if/else — violated 3 principles</div>
+    <div class="toolbox-item" style="border-left:3px solid var(--text-info)">3. Applied "Encapsulate what varies" → extracted command objects</div>
+    <div class="toolbox-item" style="border-left:3px solid var(--text-info)">4. Applied "Program to interfaces" → created Command interface</div>
+    <div class="toolbox-item" style="border-left:3px solid var(--text-info)">5. Applied "Favor composition" → remote HAS-A commands</div>
+    <div class="toolbox-item" style="border-left:3px solid var(--text-purple)">6. Discovered: this is the Command Pattern!</div>
+    <div class="toolbox-item" style="border-left:3px solid var(--text-success)">7. Added undo(), state, MacroCommand</div>
+  </div>
+  <div class="toolbox-col">
+    <h4>OO Principles</h4>
+    <div class="toolbox-item">Encapsulate what varies</div>
+    <div class="toolbox-item">Favor composition over inheritance</div>
+    <div class="toolbox-item">Program to interfaces, not implementations</div>
+    <div class="toolbox-item">Strive for loosely coupled designs</div>
+    <div class="toolbox-item">Open/Closed Principle</div>
+    <div class="toolbox-item">Dependency Inversion Principle</div>
+    <h4 style="margin-top:14px">OO Patterns</h4>
+    <div class="toolbox-item">Strategy</div>
+    <div class="toolbox-item">Observer</div>
+    <div class="toolbox-item">Decorator</div>
+    <div class="toolbox-item">Abstract Factory</div>
+    <div class="toolbox-item">Factory Method</div>
+    <div class="toolbox-item">Singleton</div>
+    <div class="toolbox-item new"><span class="star">★</span> Command — encapsulates a request as an object</div>
+  </div>
+</div>`,
+  callout: { type: 'purple', text: 'The Command Pattern joins the toolbox! Remember: patterns aren\'t memorized — they emerge from applying design principles to real problems. Every principle violation is a diagnostic clue pointing you toward the right pattern.' }
+}
+];
+
+let currentStep = 0;
+
+function renderStep(idx) {
+  const s = STEPS[idx];
+  let html = '<div class="step-content">';
+  html += '<div class="step-header">';
+  html += `<span class="step-phase ${s.pill}">${s.phase}</span>`;
+  html += `<div class="step-title">${s.title}</div>`;
+  html += `<p class="step-desc">${s.desc}</p>`;
+  html += '</div>';
+  if (s.principleBox) {
+    html += '<div class="principle-box">';
+    html += '<div class="principle-label">Design Principle</div>';
+    html += `<div class="principle-text">${s.principleBox.text}</div>`;
+    html += '</div>';
+  }
+  html += s.body;
+  if (s.callout) {
+    html += `<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  }
+  html += '</div>';
+  document.getElementById('stepContent').innerHTML = html;
+
+  // Progress
+  const pct = ((idx + 1) / STEPS.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Nav buttons
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === STEPS.length - 1;
+  document.getElementById('nextBtn').textContent = idx === STEPS.length - 1 ? 'Done ✓' : 'Next →';
+
+  // Dots
+  const dotsHTML = STEPS.map((_, i) =>
+    `<button class="dot ${i === idx ? 'active' : ''}" onclick="goTo(${i})" aria-label="Step ${i+1}"></button>`
+  ).join('');
+  document.getElementById('dotsContainer').innerHTML = dotsHTML;
+}
+
+function go(dir) {
+  const next = currentStep + dir;
+  if (next >= 0 && next < STEPS.length) {
+    currentStep = next;
+    renderStep(currentStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function goTo(idx) {
+  currentStep = idx;
+  renderStep(currentStep);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') go(1);
+  if (e.key === 'ArrowLeft') go(-1);
+});
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+
+renderStep(0);
+</script>
+</body>
+</html>
