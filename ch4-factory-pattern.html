@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 4 · The Factory Pattern — Baking OO Goodness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f1eb;
+  --bg-tertiary: #ede8df;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f5ec;
+  --bg-warning: #fef6e0;
+  --bg-purple: #f3eefa;
+  --bg-teal: #e6f5f3;
+  --bg-coral: #fdf0ed;
+  --text-primary: #1a1612;
+  --text-secondary: #5a5248;
+  --text-tertiary: #8a8278;
+  --text-info: #1a56c4;
+  --text-danger: #b42318;
+  --text-success: #0d7a3e;
+  --text-warning: #a66b07;
+  --border-primary: #d4cfc6;
+  --border-secondary: #e4dfd6;
+  --border-tertiary: #ede8df;
+  --purple-100: #ece4f8;
+  --purple-200: #d9c9f1;
+  --purple-400: #9b6dd7;
+  --purple-500: #7c4dbd;
+  --purple-600: #6237a0;
+  --purple-700: #4a2980;
+  --teal-100: #d5f0ec;
+  --teal-200: #a8e0d7;
+  --teal-400: #2fa88e;
+  --teal-500: #1e8c73;
+  --teal-600: #167260;
+  --teal-700: #0f5a4c;
+  --coral-100: #fbe0d9;
+  --coral-200: #f7c1b3;
+  --coral-400: #e8734f;
+  --coral-500: #d95a34;
+  --coral-600: #b74828;
+  --coral-700: #943a20;
+  --progress-bg: #e4dfd6;
+  --progress-fill: var(--teal-500);
+  --pill-gray-bg: #e4e0d8;
+  --pill-gray-text: #5a5248;
+  --pill-red-bg: #fcd5d0;
+  --pill-red-text: #b42318;
+  --pill-yellow-bg: #feeaad;
+  --pill-yellow-text: #a66b07;
+  --pill-blue-bg: #cde0fc;
+  --pill-blue-text: #1a56c4;
+  --pill-green-bg: #b8eacc;
+  --pill-green-text: #0d7a3e;
+  --pill-purple-bg: #dcc8f3;
+  --pill-purple-text: #6237a0;
+  --card-shadow: 0 1px 3px rgba(26,22,18,0.06), 0 4px 12px rgba(26,22,18,0.04);
+}
+[data-theme="dark"] {
+  --bg-primary: #1e1b16;
+  --bg-secondary: #282420;
+  --bg-tertiary: #141210;
+  --bg-info: #14243c;
+  --bg-danger: #321815;
+  --bg-success: #132b1e;
+  --bg-warning: #302610;
+  --bg-purple: #241a30;
+  --bg-teal: #132b26;
+  --bg-coral: #301c16;
+  --text-primary: #ede8df;
+  --text-secondary: #a8a098;
+  --text-tertiary: #6e6860;
+  --text-info: #6ea8f7;
+  --text-danger: #f09090;
+  --text-success: #5dc98a;
+  --text-warning: #e6c040;
+  --border-primary: #3e3830;
+  --border-secondary: #302c24;
+  --border-tertiary: #282420;
+  --purple-100: #2e2240;
+  --purple-200: #3c2d54;
+  --purple-400: #a07ae0;
+  --purple-500: #b994ea;
+  --purple-600: #c9abf0;
+  --purple-700: #dac4f5;
+  --teal-100: #1a3632;
+  --teal-200: #22453e;
+  --teal-400: #3cc4a5;
+  --teal-500: #50d4b4;
+  --teal-600: #70dcc2;
+  --teal-700: #90e4d0;
+  --coral-100: #3a2218;
+  --coral-200: #4c2e20;
+  --coral-400: #f08a66;
+  --coral-500: #f4a080;
+  --coral-600: #f6b49a;
+  --coral-700: #f8c8b4;
+  --progress-bg: #302c24;
+  --progress-fill: var(--teal-500);
+  --pill-gray-bg: #3a3630;
+  --pill-gray-text: #a8a098;
+  --pill-red-bg: #3c1e1a;
+  --pill-red-text: #f09090;
+  --pill-yellow-bg: #38301a;
+  --pill-yellow-text: #e6c040;
+  --pill-blue-bg: #1a2c4a;
+  --pill-blue-text: #6ea8f7;
+  --pill-green-bg: #1a3322;
+  --pill-green-text: #5dc98a;
+  --pill-purple-bg: #2e2240;
+  --pill-purple-text: #c9abf0;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+code, pre, .mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+}
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 12px;
+}
+.header h1 {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+.header h1 span { color: var(--coral-500); }
+.theme-toggle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.theme-toggle:hover { background: var(--bg-primary); }
+/* Progress bar */
+.progress-bar {
+  height: 3px;
+  background: var(--progress-bg);
+  border-radius: 2px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--progress-fill);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+/* Main card */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+/* Step header */
+.step-header {
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  margin-top: 3px;
+}
+.step-title {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+/* Phase pill */
+.pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.pill-gray { background: var(--pill-gray-bg); color: var(--pill-gray-text); }
+.pill-red { background: var(--pill-red-bg); color: var(--pill-red-text); }
+.pill-yellow { background: var(--pill-yellow-bg); color: var(--pill-yellow-text); }
+.pill-blue { background: var(--pill-blue-bg); color: var(--pill-blue-text); }
+.pill-green { background: var(--pill-green-bg); color: var(--pill-green-text); }
+.pill-purple { background: var(--pill-purple-bg); color: var(--pill-purple-text); }
+/* Content area */
+.step-body {
+  padding: 16px 24px 20px;
+}
+.step-body p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  margin-bottom: 12px;
+}
+.step-body p:last-child { margin-bottom: 0; }
+/* Panels */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-tertiary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.panel-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 12px 4px;
+  color: var(--text-tertiary);
+}
+.panel-label.before { color: var(--text-danger); }
+.panel-label.after { color: var(--text-success); }
+.full-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-tertiary);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 14px 0;
+}
+/* Code blocks */
+pre.code {
+  font-size: 0.76rem;
+  line-height: 1.65;
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-primary);
+  tab-size: 2;
+}
+.hi-r { background: var(--bg-danger); border-radius: 3px; padding: 1px 2px; }
+.hi-g { background: var(--bg-success); border-radius: 3px; padding: 1px 2px; }
+.hi-y { background: var(--bg-warning); border-radius: 3px; padding: 1px 2px; }
+.hi-b { background: var(--bg-info); border-radius: 3px; padding: 1px 2px; }
+.cm { color: var(--text-tertiary); }
+/* Class diagrams */
+.cd-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+.cd-arr {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  padding: 4px 0;
+  letter-spacing: 0.04em;
+}
+.cd-box {
+  border: 1.5px solid var(--border-primary);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  min-width: 120px;
+  max-width: 200px;
+  overflow: hidden;
+}
+.cd-box .cd-h {
+  font-weight: 600;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-tertiary);
+  font-size: 0.74rem;
+  text-align: center;
+}
+.cd-box .cd-b, .cd-box .cd-m {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+.cd-box .cd-b { border-bottom: 1px solid var(--border-tertiary); }
+.cd-box.bad { background: var(--bg-danger); border-color: var(--text-danger); }
+.cd-box.bad .cd-h { color: var(--text-danger); }
+.cd-box.dup { background: var(--bg-warning); border-color: var(--text-warning); }
+.cd-box.dup .cd-h { color: var(--text-warning); }
+.cd-box.iface { background: var(--bg-purple); border: 1.5px dashed var(--purple-400); }
+.cd-box.iface .cd-h { color: var(--purple-600); }
+.cd-box.ctx { background: var(--bg-teal); border-color: var(--teal-400); }
+.cd-box.ctx .cd-h { color: var(--teal-600); }
+.cd-box.obs { background: var(--bg-coral); border-color: var(--coral-400); }
+.cd-box.obs .cd-h { color: var(--coral-600); }
+.cd-box.good { background: var(--bg-success); border-color: var(--text-success); }
+.cd-box.good .cd-h { color: var(--text-success); }
+/* Principle box */
+.principle-box {
+  background: var(--bg-info);
+  border: 1.5px solid var(--text-info);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+.principle-box .label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-info);
+  margin-bottom: 4px;
+}
+.principle-box .text {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-style: italic;
+}
+/* Callout bar */
+.callout {
+  border-left: 3px solid var(--border-primary);
+  background: var(--bg-secondary);
+  padding: 10px 14px;
+  margin: 0 24px 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.callout.info { border-left-color: var(--text-info); background: var(--bg-info); }
+.callout.danger { border-left-color: var(--text-danger); background: var(--bg-danger); }
+.callout.success { border-left-color: var(--text-success); background: var(--bg-success); }
+.callout.warning { border-left-color: var(--text-warning); background: var(--bg-warning); }
+.callout.purple { border-left-color: var(--purple-500); background: var(--bg-purple); }
+.callout strong { color: var(--text-primary); }
+/* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px 18px;
+  gap: 8px;
+}
+.nav-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.nav-btn:hover { background: var(--bg-secondary); }
+.nav-btn:disabled { opacity: 0.35; cursor: default; }
+.nav-btn.primary {
+  background: var(--teal-500);
+  color: #fff;
+  border-color: var(--teal-600);
+}
+.nav-btn.primary:hover { background: var(--teal-600); }
+.nav-btn.primary:disabled { background: var(--teal-500); opacity:0.4; }
+.dots {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 55%;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border-primary);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+.dot:hover { background: var(--text-tertiary); }
+.dot.active {
+  background: var(--teal-500);
+  width: 20px;
+  border-radius: 4px;
+}
+/* Animation */
+.step-content {
+  animation: fadeSlide 0.35s ease;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Toolbox grid */
+.toolbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+.toolbox-col h4 {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+.toolbox-item {
+  font-size: 0.8rem;
+  padding: 5px 0;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-tertiary);
+}
+.toolbox-item.new { color: var(--text-success); font-weight: 600; }
+.toolbox-item .star { color: var(--coral-500); }
+/* Responsive */
+@media (max-width: 640px) {
+  .panels { grid-template-columns: 1fr; }
+  .toolbox-grid { grid-template-columns: 1fr; }
+  .container { padding: 10px; }
+  .step-body { padding: 12px 16px 16px; }
+  .step-header { padding: 16px 16px 0; }
+  .nav { padding: 12px 16px 16px; }
+  .callout { margin: 0 16px; }
+  .dots { max-width: 45%; }
+  pre.code { font-size: 0.7rem; }
+}
+/* Comparison table */
+.cmp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin: 10px 0;
+}
+.cmp-table th {
+  text-align: left;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--border-primary);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+.cmp-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-tertiary);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Ch 4 · <span>The Factory Pattern</span></h1>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">◐ Theme</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <div class="card">
+    <div id="step-container"></div>
+
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn" onclick="go(-1)">← Back</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn primary" id="nextBtn" onclick="go(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+// ============================================================
+// STEP 0 — THE BRIEF
+// ============================================================
+{
+pill: { text: 'The Brief', cls: 'pill-gray' },
+num: '01',
+title: 'Welcome to Objectville Pizza',
+body: `<p>You own a pizza store. Your <code>orderPizza()</code> method creates a pizza, prepares it, bakes it, cuts it, and boxes it. Life is simple — for now.</p>
+<div class="full-panel">
+<div class="panel-label">Starting Code</div>
+<pre class="code">Pizza orderPizza() {
+  Pizza pizza = <span class="hi-g">new CheesePizza()</span>;
+
+  pizza.prepare();
+  pizza.bake();
+  pizza.cut();
+  pizza.box();
+  return pizza;
+}</pre>
+</div>
+<p>But customers want choices — cheese, pepperoni, clam, veggie... so you need to parameterize the method. Let's see how that plays out.</p>
+<div class="full-panel">
+<div class="panel-label">System Overview</div>
+<div style="padding:12px">
+<div class="cd-row">
+  <div class="cd-box ctx" style="min-width:160px">
+    <div class="cd-h">PizzaStore</div>
+    <div class="cd-m">orderPizza(type)</div>
+  </div>
+</div>
+<div class="cd-arr">creates ▼</div>
+<div class="cd-row">
+  <div class="cd-box"><div class="cd-h">CheesePizza</div></div>
+  <div class="cd-box"><div class="cd-h">GreekPizza</div></div>
+  <div class="cd-box"><div class="cd-h">PepperoniPizza</div></div>
+</div>
+</div>
+</div>`,
+callout: { text: '<strong>The setup:</strong> A single store, a handful of pizza types, and a method that picks the right one with <code>new</code>.', cls: '' }
+},
+
+// ============================================================
+// STEP 1 — FIRST ATTEMPT
+// ============================================================
+{
+pill: { text: 'First Attempt', cls: 'pill-gray' },
+num: '02',
+title: 'The Naive Implementation',
+body: `<p>You add a <code>type</code> parameter to <code>orderPizza()</code> and use an <code>if/else</code> chain to instantiate the right concrete class. Simple, direct, and it works!</p>
+<div class="full-panel">
+<div class="panel-label">orderPizza v1</div>
+<pre class="code">Pizza orderPizza(String type) {
+  Pizza pizza;
+
+  <span class="hi-y">if (type.equals("cheese")) {
+    pizza = new CheesePizza();
+  } else if (type.equals("greek")) {
+    pizza = new GreekPizza();
+  } else if (type.equals("pepperoni")) {
+    pizza = new PepperoniPizza();
+  }</span>
+
+  pizza.prepare();
+  pizza.bake();
+  pizza.cut();
+  pizza.box();
+  return pizza;
+}</pre>
+</div>
+<p>Customers are happy, pizzas are rolling out. But then the boss says: "Add Clam and Veggie. And drop Greek — nobody orders it." Uh-oh...</p>`,
+callout: { text: '<strong>Feels good!</strong> We\'ve got working code. But every menu change means opening up this method and surgery on the <code>if/else</code> chain.', cls: '' }
+},
+
+// ============================================================
+// STEP 2 — OH NO! DIAGNOSIS
+// ============================================================
+{
+pill: { text: 'Oh No!', cls: 'pill-red' },
+num: '03',
+title: 'The Code That Won\'t Stop Changing',
+body: `<p>Every time you add or remove a pizza type, you have to <em>modify</em> <code>orderPizza()</code>. But the rest of the method — prepare, bake, cut, box — never changes! Let's diagnose this with principles we already know.</p>
+<div class="full-panel">
+<div class="panel-label">Violations Annotated</div>
+<pre class="code">Pizza orderPizza(String type) {
+  Pizza pizza;
+  <span class="hi-r">// THIS PART CHANGES with every menu update</span>
+  <span class="hi-r">if (type.equals("cheese")) {
+    pizza = new CheesePizza();
+  } else if (type.equals("clam")) {       // NEW!
+    pizza = new ClamPizza();               // NEW!
+  } else if (type.equals("veggie")) {      // NEW!
+    pizza = new VeggiePizza();             // NEW!
+  } else if (type.equals("pepperoni")) {
+    pizza = new PepperoniPizza();
+  }</span>
+  <span class="hi-g">// THIS PART is stable — same for every pizza</span>
+  <span class="hi-g">pizza.prepare();
+  pizza.bake();
+  pizza.cut();
+  pizza.box();</span>
+  return pizza;
+}</pre>
+</div>
+<p><strong>Principle check:</strong></p>
+<p>❌ <strong>Encapsulate what varies</strong> — The creation code varies but is tangled with stable code.</p>
+<p>❌ <strong>Open-Closed Principle</strong> — We can't add pizzas without modifying <code>orderPizza()</code>.</p>
+<p>❌ <strong>Program to interfaces</strong> — We're coding directly to concrete pizza classes via <code>new</code>.</p>`,
+callout: { text: '<strong>Diagnosis:</strong> Three principles violated in one method. The root cause? Object creation is mixed in with business logic. Time to separate them.', cls: 'danger' }
+},
+
+// ============================================================
+// STEP 3 — APPLY PRINCIPLE: ENCAPSULATE WHAT VARIES
+// ============================================================
+{
+pill: { text: 'Design Principle', cls: 'pill-blue' },
+num: '04',
+title: 'Apply: Encapsulate What Varies',
+body: `
+<div class="principle-box">
+  <div class="label">OO Principle</div>
+  <div class="text">"Identify the aspects of your application that vary and separate them from what stays the same."</div>
+</div>
+<p>The creation code varies. The order process is stable. Let's pull the creation code into its own class — a <strong>Simple Factory</strong>.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before">Before — Mixed Concerns</div>
+    <pre class="code"><span class="hi-r">// Creation + ordering in one class</span>
+Pizza orderPizza(String type) {
+  Pizza pizza;
+  <span class="hi-r">if (type.equals("cheese"))
+    pizza = new CheesePizza();
+  else if (type.equals("clam"))
+    pizza = new ClamPizza();
+  // ... more types ...</span>
+  pizza.prepare();
+  pizza.bake();
+  pizza.cut();
+  pizza.box();
+  return pizza;
+}</pre>
+  </div>
+  <div class="panel">
+    <div class="panel-label after">After — Extracted Factory</div>
+    <pre class="code"><span class="hi-g">class SimplePizzaFactory {
+ Pizza createPizza(String type) {
+  if (type.equals("cheese"))
+    return new CheesePizza();
+  else if (type.equals("clam"))
+    return new ClamPizza();
+  // ... types ...
+ }
+}</span>
+
+<span class="cm">// PizzaStore is now clean:</span>
+pizza = <span class="hi-g">factory.createPizza(type)</span>;
+pizza.prepare();
+pizza.bake();
+pizza.cut();
+pizza.box();</pre>
+  </div>
+</div>
+<div class="full-panel">
+<div class="panel-label">Class Diagram — Simple Factory</div>
+<div style="padding:12px">
+<div class="cd-row">
+  <div class="cd-box ctx">
+    <div class="cd-h">PizzaStore</div>
+    <div class="cd-b">factory</div>
+    <div class="cd-m">orderPizza(type)</div>
+  </div>
+  <div class="cd-box good">
+    <div class="cd-h">SimplePizzaFactory</div>
+    <div class="cd-m">createPizza(type)</div>
+  </div>
+</div>
+<div class="cd-arr">creates ▼</div>
+<div class="cd-row">
+  <div class="cd-box iface" style="min-width:160px"><div class="cd-h">«abstract» Pizza</div><div class="cd-m">prepare() bake() cut() box()</div></div>
+</div>
+<div class="cd-arr">△ extends</div>
+<div class="cd-row">
+  <div class="cd-box"><div class="cd-h">CheesePizza</div></div>
+  <div class="cd-box"><div class="cd-h">ClamPizza</div></div>
+  <div class="cd-box"><div class="cd-h">VeggiePizza</div></div>
+  <div class="cd-box"><div class="cd-h">PepperoniPizza</div></div>
+</div>
+</div>
+</div>`,
+callout: { text: '<strong>Progress:</strong> We encapsulated what varies into a factory. But this is just a warm-up — the Simple Factory isn\'t even a real design pattern. What happens when we need <em>regional</em> pizza styles?', cls: 'info' }
+},
+
+// ============================================================
+// STEP 4 — THE FRANCHISE PROBLEM
+// ============================================================
+{
+pill: { text: 'Oh No!', cls: 'pill-red' },
+num: '05',
+title: 'The Franchise Problem',
+body: `<p>Your pizza empire is expanding! New York wants thin crust with marinara. Chicago wants deep-dish with plum tomato sauce. You could make regional factories...</p>
+<div class="full-panel">
+<div class="panel-label">Multiple Factories?</div>
+<pre class="code">NYPizzaFactory nyFactory = new NYPizzaFactory();
+PizzaStore nyStore = new PizzaStore(nyFactory);
+
+ChicagoPizzaFactory chiFactory = new ChicagoPizzaFactory();
+PizzaStore chiStore = new PizzaStore(chiFactory);
+
+<span class="hi-r">// Problem: Nothing stops a franchise from using</span>
+<span class="hi-r">// the factory BUT skipping prepare(), using their</span>
+<span class="hi-r">// own bake process, or boxing differently!</span>
+<span class="hi-r">// We've lost control of the ORDER PROCESS.</span></pre>
+</div>
+<p>With Simple Factory, the franchisees get a factory but can do <em>whatever they want</em> with it. The quality process (<code>prepare → bake → cut → box</code>) is no longer guaranteed. We want to give them freedom to choose <strong>what</strong> kind of pizza to make, but lock in <strong>how</strong> the order is processed.</p>
+<p>We need a <em>framework</em> that ties creation and processing together, while still letting each region customize its pizzas.</p>`,
+callout: { text: '<strong>The tension:</strong> We need regional flexibility for pizza creation, but a locked-in order process. Simple Factory decouples creation but can\'t enforce the framework.', cls: 'danger' }
+},
+
+// ============================================================
+// STEP 5 — APPLY: PROGRAM TO INTERFACES
+// ============================================================
+{
+pill: { text: 'Design Principle', cls: 'pill-blue' },
+num: '06',
+title: 'Apply: Program to Interfaces, Not Implementations',
+body: `
+<div class="principle-box">
+  <div class="label">OO Principle</div>
+  <div class="text">"Program to an interface, not an implementation."</div>
+</div>
+<p>Instead of composing PizzaStore with a separate factory object, make <code>PizzaStore</code> abstract and define an <em>abstract method</em> <code>createPizza()</code>. Subclasses decide what to create, but the superclass controls the process.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before">Before — Separate Factory</div>
+    <pre class="code">class PizzaStore {
+  <span class="hi-r">SimplePizzaFactory factory;</span>
+
+  Pizza orderPizza(String type) {
+    pizza = <span class="hi-r">factory.createPizza(type)</span>;
+    pizza.prepare();
+    pizza.bake();
+    pizza.cut();
+    pizza.box();
+    return pizza;
+  }
+}
+
+<span class="cm">// Franchise can bypass orderPizza
+// and use factory directly!</span></pre>
+  </div>
+  <div class="panel">
+    <div class="panel-label after">After — Abstract Creator</div>
+    <pre class="code"><span class="hi-g">abstract</span> class PizzaStore {
+
+  Pizza orderPizza(String type) {
+    pizza = <span class="hi-g">createPizza(type)</span>;
+    pizza.prepare();
+    pizza.bake();
+    pizza.cut();
+    pizza.box();
+    return pizza;
+  }
+
+  <span class="hi-g">abstract Pizza createPizza(String type);</span>
+}
+
+<span class="cm">// Subclasses MUST implement createPizza
+// but CANNOT change orderPizza!</span></pre>
+  </div>
+</div>
+<p>Now <code>orderPizza()</code> calls <code>createPizza()</code> — but it has no idea which concrete class gets instantiated. That decision is deferred to the subclass.</p>`,
+callout: { text: '<strong>Key move:</strong> By making the creator abstract, we tie creation into the framework. The superclass controls the process; the subclass controls which product gets made.', cls: 'info' }
+},
+
+// ============================================================
+// STEP 6 — FACTORY METHOD PATTERN EMERGES
+// ============================================================
+{
+pill: { text: 'Revelation', cls: 'pill-purple' },
+num: '07',
+title: 'Wait... This Has a Name!',
+body: `<p>By applying "encapsulate what varies" and "program to interfaces," we've independently arrived at the <strong>Factory Method Pattern</strong>.</p>
+<div class="principle-box" style="border-color:var(--purple-500); background:var(--bg-purple);">
+  <div class="label" style="color:var(--purple-600)">Pattern Definition</div>
+  <div class="text">The Factory Method Pattern defines an interface for creating an object, but lets subclasses decide which class to instantiate. Factory Method lets a class defer instantiation to subclasses.</div>
+</div>
+<div class="full-panel">
+<div class="panel-label">The Analogy</div>
+<pre class="code" style="font-family:'DM Sans',sans-serif; font-size:0.85rem; line-height:1.6; white-space:pre-wrap;">Think of a franchise agreement:
+
+🏢 HQ (PizzaStore)  → defines the ORDER PROCESS
+                       (prepare → bake → cut → box)
+
+🗽 NY Franchise      → decides: thin crust, marinara, reggiano
+🌆 Chicago Franchise → decides: deep dish, plum tomato, mozzarella
+
+HQ says WHAT steps to follow. Franchises say WHICH pizza to make.</pre>
+</div>
+<div class="full-panel">
+<div class="panel-label">Class Diagram — Factory Method</div>
+<div style="padding:12px">
+<div class="cd-row">
+  <div class="cd-box iface" style="min-width:200px"><div class="cd-h">«abstract» PizzaStore</div><div class="cd-m">orderPizza(type)<br><em>abstract</em> createPizza(type)</div></div>
+  <div class="cd-box iface" style="min-width:140px"><div class="cd-h">«abstract» Pizza</div><div class="cd-m">prepare() bake()<br>cut() box()</div></div>
+</div>
+<div class="cd-arr">△ extends &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ extends</div>
+<div class="cd-row">
+  <div class="cd-box ctx"><div class="cd-h">NYPizzaStore</div><div class="cd-m">createPizza(type)</div></div>
+  <div class="cd-box ctx"><div class="cd-h">ChicagoPizzaStore</div><div class="cd-m">createPizza(type)</div></div>
+  <div class="cd-box obs"><div class="cd-h">NYStyleCheese</div></div>
+  <div class="cd-box obs"><div class="cd-h">ChicagoStyleCheese</div></div>
+</div>
+</div>
+</div>`,
+callout: { text: '<strong>Aha!</strong> We didn\'t memorize this pattern — we <em>discovered</em> it by applying principles we already knew. The factory method is the abstract <code>createPizza()</code> that subclasses implement.', cls: 'purple' }
+},
+
+// ============================================================
+// STEP 7 — CONCRETE IMPLEMENTATIONS
+// ============================================================
+{
+pill: { text: 'Implementation', cls: 'pill-green' },
+num: '08',
+title: 'Building the Franchise Stores',
+body: `<p>Each regional store extends <code>PizzaStore</code> and implements <code>createPizza()</code> with its local style. The <code>orderPizza()</code> framework stays untouched.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">NY Pizza Store</div>
+    <pre class="code">class <span class="hi-g">NYPizzaStore</span>
+    extends PizzaStore {
+
+  Pizza createPizza(String item) {
+    if (item.equals("cheese"))
+      return new <span class="hi-b">NYStyleCheesePizza</span>();
+    else if (item.equals("clam"))
+      return new <span class="hi-b">NYStyleClamPizza</span>();
+    else if (item.equals("veggie"))
+      return new <span class="hi-b">NYStyleVeggiePizza</span>();
+    else return null;
+  }
+}</pre>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Chicago Pizza Store</div>
+    <pre class="code">class <span class="hi-g">ChicagoPizzaStore</span>
+    extends PizzaStore {
+
+  Pizza createPizza(String item) {
+    if (item.equals("cheese"))
+      return new <span class="hi-y">ChicagoStyleCheesePizza</span>();
+    else if (item.equals("clam"))
+      return new <span class="hi-y">ChicagoStyleClamPizza</span>();
+    else if (item.equals("veggie"))
+      return new <span class="hi-y">ChicagoStyleVeggiePizza</span>();
+    else return null;
+  }
+}</pre>
+  </div>
+</div>
+<div class="full-panel">
+<div class="panel-label">Runtime Walkthrough — Ethan orders NY Cheese</div>
+<pre class="code"><span class="cm">// 1. Create a NY store</span>
+PizzaStore nyStore = new NYPizzaStore();
+
+<span class="cm">// 2. Place an order — calls orderPizza() in PizzaStore</span>
+nyStore.orderPizza("cheese");
+
+<span class="cm">// 3. orderPizza() calls createPizza("cheese")</span>
+<span class="cm">//    → NYPizzaStore returns new NYStyleCheesePizza()</span>
+
+<span class="cm">// 4. orderPizza() then runs: prepare → bake → cut → box</span>
+<span class="cm">//    It never knows the concrete type — just "Pizza"!</span>
+
+<span class="hi-g">Output:</span>
+  Preparing NY Style Sauce and Cheese Pizza
+  Tossing dough... Adding sauce... Adding toppings:
+    Grated Reggiano Cheese
+  Bake for 25 minutes at 350
+  Cutting the pizza into diagonal slices
+  Place pizza in official PizzaStore box</pre>
+</div>`,
+callout: { text: '<strong>It works!</strong> NY gets thin crust, Chicago gets deep dish — and the order process is identical and enforced by the superclass.', cls: 'success' }
+},
+
+// ============================================================
+// STEP 8 — DEPENDENCY PROBLEM
+// ============================================================
+{
+pill: { text: 'Oh No!', cls: 'pill-red' },
+num: '09',
+title: 'A Very Dependent PizzaStore',
+body: `<p>What if we hadn't used Factory Method? Imagine a single PizzaStore that handles all regions directly. Look at all the concrete classes it depends on:</p>
+<div class="full-panel">
+<div class="panel-label">DependentPizzaStore — 8 dependencies!</div>
+<pre class="code">class DependentPizzaStore {
+  Pizza createPizza(String style, String type) {
+    if (style.equals("NY")) {
+      if (type.equals("cheese"))
+        pizza = <span class="hi-r">new NYStyleCheesePizza()</span>;
+      else if (type.equals("veggie"))
+        pizza = <span class="hi-r">new NYStyleVeggiePizza()</span>;
+      else if (type.equals("clam"))
+        pizza = <span class="hi-r">new NYStyleClamPizza()</span>;
+      else if (type.equals("pepperoni"))
+        pizza = <span class="hi-r">new NYStylePepperoniPizza()</span>;
+    } else if (style.equals("Chicago")) {
+      if (type.equals("cheese"))
+        pizza = <span class="hi-r">new ChicagoStyleCheesePizza()</span>;
+      <span class="cm">// ... 4 more Chicago classes ...</span>
+    }
+    <span class="cm">// Add California? That's 4 MORE classes!</span>
+  }
+}</pre>
+</div>
+<div class="full-panel">
+<div class="panel-label">Dependency Diagram</div>
+<div style="padding:12px">
+<div class="cd-row"><div class="cd-box bad" style="min-width:200px"><div class="cd-h">DependentPizzaStore</div><div class="cd-m">depends on EVERYTHING ↓</div></div></div>
+<div class="cd-arr">depends on ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼</div>
+<div class="cd-row">
+  <div class="cd-box dup"><div class="cd-h">NYCheese</div></div>
+  <div class="cd-box dup"><div class="cd-h">NYClam</div></div>
+  <div class="cd-box dup"><div class="cd-h">NYVeggie</div></div>
+  <div class="cd-box dup"><div class="cd-h">NYPepperoni</div></div>
+</div>
+<div class="cd-row" style="margin-top:6px">
+  <div class="cd-box dup"><div class="cd-h">ChiCheese</div></div>
+  <div class="cd-box dup"><div class="cd-h">ChiClam</div></div>
+  <div class="cd-box dup"><div class="cd-h">ChiVeggie</div></div>
+  <div class="cd-box dup"><div class="cd-h">ChiPepperoni</div></div>
+</div>
+</div>
+</div>
+<p>If <em>any</em> of these concrete classes change, the store might have to change too. High-level depends on low-level. This is the opposite of good design.</p>`,
+callout: { text: '<strong>This is fragile.</strong> 8 concrete dependencies, and adding California would make it 12. Every new region multiplies the coupling. We need a principle for this.', cls: 'danger' }
+},
+
+// ============================================================
+// STEP 9 — NEW PRINCIPLE: DEPENDENCY INVERSION
+// ============================================================
+{
+pill: { text: 'New Principle', cls: 'pill-blue' },
+num: '10',
+title: 'The Dependency Inversion Principle',
+body: `
+<div class="principle-box">
+  <div class="label">New OO Principle ★</div>
+  <div class="text">"Depend upon abstractions. Do not depend upon concrete classes."</div>
+</div>
+<p>This is stronger than "program to interfaces." It says both high-level AND low-level components should depend on abstractions. Neither should depend on the other.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before">Before — Top-Down Dependencies</div>
+    <div style="padding:12px">
+      <div class="cd-row"><div class="cd-box bad"><div class="cd-h">PizzaStore</div></div></div>
+      <div class="cd-arr">depends on ▼</div>
+      <div class="cd-row">
+        <div class="cd-box dup"><div class="cd-h">NYCheese</div></div>
+        <div class="cd-box dup"><div class="cd-h">ChiCheese</div></div>
+        <div class="cd-box dup"><div class="cd-h">... 6 more</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label after">After — Inverted!</div>
+    <div style="padding:12px">
+      <div class="cd-row"><div class="cd-box good"><div class="cd-h">PizzaStore</div></div></div>
+      <div class="cd-arr">depends on ▼</div>
+      <div class="cd-row"><div class="cd-box iface"><div class="cd-h">«abstract» Pizza</div></div></div>
+      <div class="cd-arr">△ depends on</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">NYCheese</div></div>
+        <div class="cd-box good"><div class="cd-h">ChiCheese</div></div>
+        <div class="cd-box good"><div class="cd-h">...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<p>After Factory Method, both PizzaStore (high-level) and the concrete pizzas (low-level) depend on the <code>Pizza</code> abstraction. The dependency has been <strong>inverted</strong> — no more top-down coupling.</p>
+<p><strong>Guidelines:</strong> No variable should hold a reference to a concrete class. No class should derive from a concrete class. No method should override an implemented method of a base class. (Strive for these — not absolute rules!)</p>`,
+callout: { text: '<strong>DIP is a consequence of Factory Method.</strong> We didn\'t apply it first — it emerged because encapsulation + interfaces naturally invert dependencies.', cls: 'info' }
+},
+
+// ============================================================
+// STEP 10 — THE INGREDIENT PROBLEM
+// ============================================================
+{
+pill: { text: 'Oh No!', cls: 'pill-red' },
+num: '11',
+title: 'Franchises Are Skimping on Ingredients!',
+body: `<p>Your Factory Method framework is solid. But some franchisees are substituting cheap ingredients — bargain-bin cheese, frozen sauce — to cut costs. The <em>pizza types</em> are controlled, but the <em>ingredients</em> are not.</p>
+<p>The problem: NY and Chicago use completely different <strong>families</strong> of ingredients:</p>
+<div class="full-panel">
+<div class="panel-label">Ingredient Families by Region</div>
+<div style="padding:12px">
+<table class="cmp-table">
+<tr><th>Ingredient</th><th>New York</th><th>Chicago</th></tr>
+<tr><td>Dough</td><td>Thin Crust</td><td>Thick Crust</td></tr>
+<tr><td>Sauce</td><td>Marinara</td><td>Plum Tomato</td></tr>
+<tr><td>Cheese</td><td>Reggiano</td><td>Mozzarella</td></tr>
+<tr><td>Clams</td><td>Fresh Clams</td><td>Frozen Clams</td></tr>
+</table>
+</div>
+</div>
+<p>We can't just supply individual ingredients — they need to come as a <em>consistent family</em>. You wouldn't put marinara on a thick crust! We need a way to create <strong>families of related objects</strong> without hardcoding concrete classes.</p>`,
+callout: { text: '<strong>New challenge:</strong> Factory Method handles one product (Pizza). But we now need to create coordinated <em>families</em> of products (dough + sauce + cheese + ...). Time for a bigger gun.', cls: 'warning' }
+},
+
+// ============================================================
+// STEP 11 — ABSTRACT FACTORY INTRO
+// ============================================================
+{
+pill: { text: 'Design Principle', cls: 'pill-blue' },
+num: '12',
+title: 'Apply: Favor Composition Over Inheritance',
+body: `
+<div class="principle-box">
+  <div class="label">OO Principle</div>
+  <div class="text">"Favor composition over inheritance."</div>
+</div>
+<p>Instead of using inheritance (subclass per region per pizza), we <strong>compose</strong> each Pizza with an ingredient factory. The pizza doesn't know where its ingredients come from — it just asks the factory.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before">Before — Subclass Explosion</div>
+    <pre class="code"><span class="hi-r">// A separate class for EVERY combo:</span>
+class NYStyleCheesePizza {
+  dough = "Thin Crust";
+  sauce = "Marinara";
+  cheese = "Reggiano";
+}
+class ChicagoStyleCheesePizza {
+  dough = "Thick Crust";
+  sauce = "Plum Tomato";
+  cheese = "Mozzarella";
+}
+<span class="cm">// × 4 types × N regions = explosion!</span></pre>
+  </div>
+  <div class="panel">
+    <div class="panel-label after">After — Composed with Factory</div>
+    <pre class="code"><span class="hi-g">// ONE CheesePizza class for all regions!</span>
+class CheesePizza extends Pizza {
+  <span class="hi-g">PizzaIngredientFactory factory;</span>
+
+  CheesePizza(<span class="hi-g">PizzaIngredientFactory f</span>) {
+    this.factory = f;
+  }
+
+  void prepare() {
+    dough = <span class="hi-g">factory.createDough()</span>;
+    sauce = <span class="hi-g">factory.createSauce()</span>;
+    cheese = <span class="hi-g">factory.createCheese()</span>;
+  }
+}</pre>
+  </div>
+</div>
+<p>The Pizza is decoupled from the specifics. Pass in a NY factory → get NY ingredients. Pass in a Chicago factory → get Chicago ingredients. Same Pizza class!</p>`,
+callout: { text: '<strong>Composition wins:</strong> Instead of 8+ pizza subclasses (2 regions × 4 types), we have 4 pizza types composed with regional factories. The ingredients vary; the pizzas don\'t.', cls: 'success' }
+},
+
+// ============================================================
+// STEP 12 — ABSTRACT FACTORY INTERFACE
+// ============================================================
+{
+pill: { text: 'Interfaces', cls: 'pill-green' },
+num: '13',
+title: 'The Ingredient Factory Interface',
+body: `<p>We define a single interface that every regional factory must implement — one method per ingredient type. This is the <strong>Abstract Factory</strong>.</p>
+<div class="full-panel">
+<div class="panel-label">PizzaIngredientFactory Interface</div>
+<pre class="code"><span class="hi-b">interface PizzaIngredientFactory {</span>
+  <span class="hi-b">Dough      createDough();</span>
+  <span class="hi-b">Sauce      createSauce();</span>
+  <span class="hi-b">Cheese     createCheese();</span>
+  <span class="hi-b">Veggies[]  createVeggies();</span>
+  <span class="hi-b">Pepperoni  createPepperoni();</span>
+  <span class="hi-b">Clams      createClam();</span>
+<span class="hi-b">}</span></pre>
+</div>
+<div class="full-panel">
+<div class="panel-label">Class Diagram — Abstract Factory</div>
+<div style="padding:12px">
+<div class="cd-row">
+  <div class="cd-box iface" style="min-width:220px">
+    <div class="cd-h">«interface» PizzaIngredientFactory</div>
+    <div class="cd-m">createDough()<br>createSauce()<br>createCheese()<br>createClam()</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements</div>
+<div class="cd-row">
+  <div class="cd-box ctx">
+    <div class="cd-h">NYPizzaIngredientFactory</div>
+    <div class="cd-m">→ ThinCrust, Marinara,<br>Reggiano, FreshClams</div>
+  </div>
+  <div class="cd-box obs">
+    <div class="cd-h">ChicagoPizzaIngredientFactory</div>
+    <div class="cd-m">→ ThickCrust, PlumTomato,<br>Mozzarella, FrozenClams</div>
+  </div>
+</div>
+</div>
+</div>
+<p>Each concrete factory produces the entire family of ingredients for its region. The pizza never knows which concrete ingredients it's getting — it just calls the factory.</p>`,
+callout: { text: '<strong>Each method in the Abstract Factory looks like a Factory Method!</strong> Factory methods are a natural way to implement the product-creation methods inside an abstract factory.', cls: 'info' }
+},
+
+// ============================================================
+// STEP 13 — CONCRETE FACTORIES
+// ============================================================
+{
+pill: { text: 'Implementation', cls: 'pill-green' },
+num: '14',
+title: 'Regional Ingredient Factories',
+body: `<p>Each region implements the interface with its own local ingredients:</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">NY Ingredient Factory</div>
+    <pre class="code">class NYPizzaIngredientFactory
+  implements PizzaIngredientFactory {
+
+  Dough createDough() {
+    return new <span class="hi-b">ThinCrustDough</span>();
+  }
+  Sauce createSauce() {
+    return new <span class="hi-b">MarinaraSauce</span>();
+  }
+  Cheese createCheese() {
+    return new <span class="hi-b">ReggianoCheese</span>();
+  }
+  Clams createClam() {
+    return new <span class="hi-b">FreshClams</span>();
+  }
+}</pre>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Chicago Ingredient Factory</div>
+    <pre class="code">class ChicagoPizzaIngredientFactory
+  implements PizzaIngredientFactory {
+
+  Dough createDough() {
+    return new <span class="hi-y">ThickCrustDough</span>();
+  }
+  Sauce createSauce() {
+    return new <span class="hi-y">PlumTomatoSauce</span>();
+  }
+  Cheese createCheese() {
+    return new <span class="hi-y">MozzarellaCheese</span>();
+  }
+  Clams createClam() {
+    return new <span class="hi-y">FrozenClams</span>();
+  }
+}</pre>
+  </div>
+</div>
+<p>Notice: each factory guarantees a <em>consistent</em> family of ingredients. You can't accidentally mix Reggiano with ThickCrust — the factory produces the whole set.</p>`,
+callout: { text: '<strong>Families are atomic.</strong> The NY factory always produces NY-consistent ingredients. Adding a new region (California?) means creating one new factory class — no existing code changes.', cls: 'success' }
+},
+
+// ============================================================
+// STEP 14 — INTEGRATION / WIRING
+// ============================================================
+{
+pill: { text: 'Integration', cls: 'pill-green' },
+num: '15',
+title: 'Wiring It All Together',
+body: `<p>The NYPizzaStore creates a NY ingredient factory and passes it to each pizza:</p>
+<div class="full-panel">
+<div class="panel-label">NYPizzaStore — Revised</div>
+<pre class="code">class NYPizzaStore extends PizzaStore {
+  Pizza createPizza(String item) {
+    Pizza pizza = null;
+    <span class="hi-g">PizzaIngredientFactory ingredientFactory =
+        new NYPizzaIngredientFactory();</span>
+
+    if (item.equals("cheese")) {
+      pizza = new CheesePizza(<span class="hi-g">ingredientFactory</span>);
+      pizza.setName("New York Style Cheese Pizza");
+    } else if (item.equals("clam")) {
+      pizza = new ClamPizza(<span class="hi-g">ingredientFactory</span>);
+      pizza.setName("New York Style Clam Pizza");
+    }
+    return pizza;
+  }
+}</pre>
+</div>
+<div class="full-panel">
+<div class="panel-label">Runtime — Ethan's NY Cheese Pizza</div>
+<pre class="code"><span class="cm">1. nyPizzaStore.orderPizza("cheese")</span>
+<span class="cm">2. → createPizza("cheese") called</span>
+<span class="cm">3. → new CheesePizza(nyIngredientFactory)</span>
+<span class="cm">4. → prepare() called on pizza:</span>
+     dough  = factory.createDough()  → <span class="hi-b">ThinCrustDough</span>
+     sauce  = factory.createSauce()  → <span class="hi-b">MarinaraSauce</span>
+     cheese = factory.createCheese() → <span class="hi-b">ReggianoCheese</span>
+<span class="cm">5. → bake(), cut(), box() proceed as usual</span>
+
+<span class="hi-g">The pizza never knows it got NY ingredients.</span>
+<span class="hi-g">Swap in ChicagoIngredientFactory → different family, same code.</span></pre>
+</div>`,
+callout: { text: '<strong>Both patterns working together:</strong> Factory Method (PizzaStore subclasses) handles which pizza to create. Abstract Factory (ingredient factories) handles which ingredients to use.', cls: 'success' }
+},
+
+// ============================================================
+// STEP 15 — ABSTRACT FACTORY DEFINED
+// ============================================================
+{
+pill: { text: 'Revelation', cls: 'pill-purple' },
+num: '16',
+title: 'The Abstract Factory Pattern',
+body: `
+<div class="principle-box" style="border-color:var(--purple-500); background:var(--bg-purple);">
+  <div class="label" style="color:var(--purple-600)">Pattern Definition</div>
+  <div class="text">The Abstract Factory Pattern provides an interface for creating families of related or dependent objects without specifying their concrete classes.</div>
+</div>
+<div class="full-panel">
+<div class="panel-label">Full Class Diagram</div>
+<div style="padding:12px">
+<div class="cd-row">
+  <div class="cd-box iface"><div class="cd-h">«interface»<br>AbstractFactory</div><div class="cd-m">createProductA()<br>createProductB()</div></div>
+  <div class="cd-box iface"><div class="cd-h">«interface»<br>AbstractProductA</div></div>
+  <div class="cd-box iface"><div class="cd-h">«interface»<br>AbstractProductB</div></div>
+</div>
+<div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ implements &nbsp;&nbsp; △ implements</div>
+<div class="cd-row">
+  <div class="cd-box ctx"><div class="cd-h">ConcreteFactory1</div><div class="cd-m">→ ProductA1, B1</div></div>
+  <div class="cd-box obs"><div class="cd-h">ConcreteFactory2</div><div class="cd-m">→ ProductA2, B2</div></div>
+  <div class="cd-box"><div class="cd-h">ProductA1 / A2</div></div>
+  <div class="cd-box"><div class="cd-h">ProductB1 / B2</div></div>
+</div>
+</div>
+</div>
+<p>The Client (Pizza) is written against the abstract factory interface and composed at runtime with an actual factory. It never instantiates a product object — the factory does that.</p>`,
+callout: { text: '<strong>Two factories, two purposes.</strong> Factory Method: one product, subclass decides. Abstract Factory: family of products, composed at runtime. They often work together!', cls: 'purple' }
+},
+
+// ============================================================
+// STEP 16 — COMPARISON / TRADE-OFFS
+// ============================================================
+{
+pill: { text: 'Trade-offs', cls: 'pill-yellow' },
+num: '17',
+title: 'Factory Method vs Abstract Factory',
+body: `<p>These two patterns are often confused. Here's how they differ:</p>
+<div class="full-panel">
+<div style="padding:12px">
+<table class="cmp-table">
+<tr><th></th><th>Factory Method</th><th>Abstract Factory</th></tr>
+<tr><td><strong>Creates</strong></td><td>One product</td><td>Family of products</td></tr>
+<tr><td><strong>Mechanism</strong></td><td>Inheritance — subclass overrides factory method</td><td>Composition — factory object passed in</td></tr>
+<tr><td><strong>Intent</strong></td><td>Let subclasses decide which class to instantiate</td><td>Create families of related objects without specifying concrete classes</td></tr>
+<tr><td><strong>Adding products</strong></td><td>New subclass per product variation</td><td>New factory per product family</td></tr>
+<tr><td><strong>Risk</strong></td><td>Subclass proliferation</td><td>Adding a new product type means changing the interface + all factories</td></tr>
+</table>
+</div>
+</div>
+<p>In our pizza example, they work <em>together</em>:</p>
+<p><strong>Factory Method</strong> (<code>PizzaStore.createPizza()</code>) — lets each region create its own style of pizza.</p>
+<p><strong>Abstract Factory</strong> (<code>PizzaIngredientFactory</code>) — lets each region supply its own family of ingredients.</p>
+<p>And notice: each method inside the Abstract Factory (<code>createDough()</code>, <code>createSauce()</code>) is itself a Factory Method!</p>`,
+callout: { text: '<strong>They\'re complementary, not competing.</strong> Factory Method uses inheritance to delegate creation of one product. Abstract Factory uses composition to create families. Use both when you need both.', cls: 'warning' }
+},
+
+// ============================================================
+// STEP 17 — DIP GUIDELINES
+// ============================================================
+{
+pill: { text: 'Guidelines', cls: 'pill-yellow' },
+num: '18',
+title: 'Living with the Dependency Inversion Principle',
+body: `<p>The DIP gives us three guidelines to follow. These are ideals, not absolutes — but keeping them in mind helps you spot bad coupling early:</p>
+<div class="full-panel">
+<div style="padding:14px">
+<p style="margin-bottom:10px"><span class="hi-r" style="padding:2px 6px">1</span> &nbsp;<strong>No variable should hold a reference to a concrete class.</strong><br><span style="color:var(--text-tertiary); font-size:0.85rem">If you use <code>new</code>, you're holding a concrete reference. Use a factory instead.</span></p>
+<p style="margin-bottom:10px"><span class="hi-r" style="padding:2px 6px">2</span> &nbsp;<strong>No class should derive from a concrete class.</strong><br><span style="color:var(--text-tertiary); font-size:0.85rem">Derive from an abstraction — an interface or abstract class.</span></p>
+<p style="margin-bottom:0"><span class="hi-r" style="padding:2px 6px">3</span> &nbsp;<strong>No method should override an implemented method of a base class.</strong><br><span style="color:var(--text-tertiary); font-size:0.85rem">If you override, the base wasn't truly an abstraction.</span></p>
+</div>
+</div>
+<p>These sound impossible to follow perfectly, and they are! Every Java program violates them. But like speed limits, they're there to keep you thinking. If you instantiate <code>String</code> — fine, it'll never change. If you instantiate <code>NYStyleCheesePizza</code> directly in your business logic — that's where the factory should step in.</p>`,
+callout: { text: '<strong>DIP is a compass, not a rulebook.</strong> It tells you which direction "better design" lies — toward abstractions and away from concrete classes.', cls: 'info' }
+},
+
+// ============================================================
+// STEP 18 — TOOLBOX UPDATE
+// ============================================================
+{
+pill: { text: 'Summary', cls: 'pill-purple' },
+num: '19',
+title: 'Design Toolbox Update',
+body: `
+<div class="toolbox-grid">
+  <div class="toolbox-col">
+    <h4>OO Principles</h4>
+    <div class="toolbox-item">Encapsulate what varies</div>
+    <div class="toolbox-item">Favor composition over inheritance</div>
+    <div class="toolbox-item">Program to interfaces, not implementations</div>
+    <div class="toolbox-item">Strive for loosely coupled designs</div>
+    <div class="toolbox-item">Open for extension, closed for modification</div>
+    <div class="toolbox-item new"><span class="star">★</span> Depend on abstractions. Do not depend on concrete classes. (DIP)</div>
+  </div>
+  <div class="toolbox-col">
+    <h4>OO Patterns</h4>
+    <div class="toolbox-item">Strategy — family of algorithms, encapsulated, interchangeable</div>
+    <div class="toolbox-item">Observer — one-to-many dependency, notify on state change</div>
+    <div class="toolbox-item">Decorator — attach responsibilities dynamically</div>
+    <div class="toolbox-item new"><span class="star">★</span> Factory Method — interface for creating one product; subclasses decide</div>
+    <div class="toolbox-item new"><span class="star">★</span> Abstract Factory — interface for creating families of related products</div>
+    <div class="toolbox-item" style="margin-top:10px; border-bottom:none; color:var(--text-tertiary); font-size:0.75rem;">+ Simple Factory (not an official pattern, but useful idiom)</div>
+  </div>
+</div>
+<div class="full-panel">
+<div class="panel-label">Key Bullet Points</div>
+<div style="padding:12px; font-size:0.85rem; color: var(--text-secondary); line-height:1.65;">
+All factories encapsulate object creation. Simple Factory is a useful idiom, not a true pattern. Factory Method relies on <strong>inheritance</strong> — subclasses implement the factory method. Abstract Factory relies on <strong>composition</strong> — an object implements the creation methods. Both promote loose coupling by reducing dependency on concrete classes. The DIP guides us to avoid dependencies on concrete types and strive for abstractions. Factories are a powerful technique for coding to abstractions, not concrete classes.
+</div>
+</div>`,
+callout: { text: '<strong>Chapter 4 complete!</strong> Two new patterns (Factory Method + Abstract Factory), one new principle (DIP), and one warm-up idiom (Simple Factory). All driven by the same core instinct: when you see <code>new</code>, think about where that dependency is pointing.', cls: 'purple' }
+}
+];
+
+// ============================================================
+// ENGINE
+// ============================================================
+let current = 0;
+
+function render() {
+  const s = STEPS[current];
+  const ct = document.getElementById('step-container');
+  ct.innerHTML = `
+    <div class="step-content" key="${current}">
+      <div class="step-header">
+        <span class="step-num">${s.num}</span>
+        <div>
+          <span class="pill ${s.pill.cls}">${s.pill.text}</span>
+          <div class="step-title">${s.title}</div>
+        </div>
+      </div>
+      <div class="step-body">${s.body}</div>
+      ${s.callout ? `<div class="callout ${s.callout.cls}">${s.callout.text}</div>` : ''}
+    </div>
+  `;
+  // progress
+  document.getElementById('progress').style.width = ((current + 1) / STEPS.length * 100) + '%';
+  // dots
+  const dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = STEPS.map((_, i) =>
+    `<button class="dot${i === current ? ' active' : ''}" onclick="goTo(${i})" aria-label="Step ${i+1}"></button>`
+  ).join('');
+  // buttons
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === STEPS.length - 1;
+  document.getElementById('nextBtn').textContent = current === STEPS.length - 1 ? 'Done ✓' : 'Next →';
+}
+
+function go(dir) {
+  const next = current + dir;
+  if (next >= 0 && next < STEPS.length) { current = next; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+}
+function goTo(i) {
+  current = i; render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') go(1);
+  if (e.key === 'ArrowLeft') go(-1);
+});
+
+render();
+</script>
+</body>
+</html>

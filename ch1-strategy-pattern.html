@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 1 — The Strategy Pattern | Head First Design Patterns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .header-left h1 {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+  .header-left p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .theme-toggle {
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    transition: background 0.2s;
+  }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .step-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    min-width: 85px;
+    font-weight: 500;
+  }
+  .prog-track {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .prog-fill {
+    height: 100%;
+    background: var(--text-info);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* Main card */
+  .card {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: var(--radius);
+    padding: 28px 28px 20px;
+    margin-bottom: 16px;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box {
+    border: 0.5px solid var(--border-info);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    background: var(--bg-info);
+  }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h {
+    padding: 7px 14px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-bottom: 0.5px solid var(--border-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .panel-b {
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--text-primary);
+  }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-box.flyi { background: var(--purple-50); border-color: var(--purple-600); border-style: dashed; }
+  .cd-box.flyi .cd-h { color: var(--purple-800); }
+  .cd-box.qki { background: var(--coral-50); border-color: var(--coral-600); border-style: dashed; }
+  .cd-box.qki .cd-h { color: var(--coral-800); }
+  .cd-box.qk { background: var(--coral-50); border-color: var(--coral-600); }
+  .cd-box.qk .cd-h { color: var(--coral-800); }
+  .cd-box.qk .cd-m { color: var(--coral-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-tertiary);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+  }
+  .bot-nav button {
+    background: transparent;
+    border: 0.5px solid var(--border-secondary);
+    border-radius: var(--radius-sm);
+    padding: 9px 22px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-weight: 500;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border-tertiary);
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 1 — The Strategy Pattern</h1>
+      <p>Head First Design Patterns — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start simple — inheritance',desc:'Joe builds SimUDuck with textbook OO: shared behavior in a superclass, subclasses override what differs.',
+code:{h:'Duck.java — the starting design',b:`abstract class Duck {
+    quack() { <span class="cm">/* all ducks quack */</span> }
+    swim()  { <span class="cm">/* all ducks swim */</span> }
+    <span class="hi-b">abstract display();</span>  <span class="cm">// each duck looks different</span>
+}
+
+class MallardDuck extends Duck {
+    display() { <span class="cm">/* mallard look */</span> }
+}
+class RedheadDuck extends Duck {
+    display() { <span class="cm">/* redhead look */</span> }
+}
+class RubberDuck extends Duck {
+    display() { <span class="cm">/* rubber duck look */</span> }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:155px"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-m">+ quack()<br>+ swim()<br>+ display() <i>{abstract}</i></div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row">
+  <div class="cd-box"><div class="cd-h">MallardDuck</div><div class="cd-m">+ display()</div></div>
+  <div class="cd-box"><div class="cd-h">RedheadDuck</div><div class="cd-m">+ display()</div></div>
+  <div class="cd-box"><div class="cd-h">RubberDuck</div><div class="cd-m">+ display()</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Clean and simple. Shared behavior inherited, only display() overridden. No duplication. Life is good.'}
+},
+{phase:'pill-try',phaseTxt:'New requirement',title:'"Make the ducks fly!"',desc:'Executives want flying ducks. Joe adds <code>fly()</code> to the superclass — every duck inherits it for free.',
+code:{h:'Duck.java — just add fly()',b:`abstract class Duck {
+    quack() { ... }
+    swim()  { ... }
+    abstract display();
+    <span class="hi-g">fly() { /* default flying */ }</span>  <span class="cm">// NEW!</span>
+}
+
+<span class="cm">// All ducks now inherit fly()</span>
+class MallardDuck extends Duck {
+    display() { ... }  <span class="cm">// fly() ✓ great</span>
+}
+class RubberDuck extends Duck {
+    display() { ... }  <span class="cm">// fly() ✗ uh oh...</span>
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:160px"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-m">+ quack()<br>+ swim()<br>+ display()<br><span style="color:var(--text-success)">+ fly()</span> <b style="font-size:10px;color:var(--text-success)">NEW</b></div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>ALL inherit fly()</div></div>
+<div class="cd-row">
+  <div class="cd-box"><div class="cd-h">Mallard</div><div class="cd-m">fly() ✓</div></div>
+  <div class="cd-box"><div class="cd-h">Redhead</div><div class="cd-m">fly() ✓</div></div>
+  <div class="cd-box bad"><div class="cd-h">Rubber</div><div class="cd-m">fly() ✗</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Joe ships it. Looks good in dev...'}
+},
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'Rubber ducks are flying at the demo',desc:'At the shareholder meeting, rubber duckies fly across the screen. Inheritance gave <code>fly()</code> to ALL ducks — including ones that should never fly.',
+code:{h:'The bug — rubber ducks fly',b:`<span class="cm">// At the shareholder demo...</span>
+Duck rubber = new RubberDuck();
+rubber.fly();  <span class="cm">// "I'm flying!!" — WRONG!</span>
+
+<span class="cm">// RubberDuck inherited fly() from Duck.
+// A LOCALIZED change caused a NON-LOCAL side effect.
+// Joe's boss is calling from Maui. Not happy.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:140px"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-m">+ quack()<br>+ swim()<br>+ fly()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div style="color:var(--text-danger)">ALL inherit fly()</div></div>
+<div class="cd-row">
+  <div class="cd-box"><div class="cd-h">Mallard</div><div class="cd-m">fly() ✓</div></div>
+  <div class="cd-box bad"><div class="cd-h">Rubber</div><div class="cd-m">fly() ✗ BUG</div></div>
+  <div class="cd-box bad"><div class="cd-h">Decoy</div><div class="cd-m">fly() ✗ BUG<br>quack() ✗ BUG</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'Inheritance distributes behavior to ALL subclasses. No way to be selective about who gets what.'}
+},
+{phase:'pill-fix',phaseTxt:'Fix attempt #1',title:'Override fly() to do nothing',desc:'Joe\'s quick fix: override <code>fly()</code> in every non-flying duck to disable it.',
+code:{h:'The whack-a-mole approach',b:`class RubberDuck extends Duck {
+    quack() { <span class="cm">/* squeak */</span> }
+    display() { ... }
+    <span class="hi-r">fly() { /* do nothing */ }</span>  <span class="cm">// override</span>
+}
+
+class DecoyDuck extends Duck {
+    <span class="hi-r">quack() { /* do nothing */ }</span>  <span class="cm">// override</span>
+    display() { ... }
+    <span class="hi-r">fly() { /* do nothing */ }</span>    <span class="cm">// override</span>
+}
+
+<span class="cm">// 48 duck types × methods to check = nightmare</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:140px"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-m">+ quack()<br>+ swim()<br>+ display()<br>+ fly()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row">
+  <div class="cd-box"><div class="cd-h">Mallard</div><div class="cd-m">display()</div></div>
+  <div class="cd-box bad"><div class="cd-h">Rubber</div><div class="cd-m"><span style="color:var(--text-danger)">fly() {nothing}</span><br><span style="color:var(--text-danger)">quack() {squeak}</span></div></div>
+  <div class="cd-box bad"><div class="cd-h">Decoy</div><div class="cd-m"><span style="color:var(--text-danger)">fly() {nothing}</span><br><span style="color:var(--text-danger)">quack() {nothing}</span></div></div>
+</div>`,
+callout:{type:'callout-warn',text:'Every new duck must check every method. Forget one override? Bug. Spec changes every 6 months? Touch every subclass.'}
+},
+{phase:'pill-fix',phaseTxt:'Fix attempt #2',title:'Use Flyable / Quackable interfaces',desc:'Only ducks that should fly implement <code>Flyable</code>. Selective behavior — problem solved?',
+code:{h:'Interface approach',b:`<span class="hi-y">interface Flyable    { fly(); }</span>
+<span class="hi-y">interface Quackable  { quack(); }</span>
+
+abstract class Duck {
+    swim() { ... }
+    abstract display();
+}
+
+class MallardDuck extends Duck
+        <span class="hi-y">implements Flyable, Quackable</span> {
+    fly()     { <span class="cm">/* fly code HERE */</span> }
+    quack()   { <span class="cm">/* quack code HERE */</span> }
+    display() { ... }
+}
+class RedheadDuck extends Duck
+        <span class="hi-y">implements Flyable, Quackable</span> {
+    fly()     { <span class="cm">/* SAME fly code AGAIN! */</span> }
+    quack()   { <span class="cm">/* SAME quack code AGAIN! */</span> }
+}`},
+dia:()=>`<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface"><div class="cd-h"><span class="st">interface</span>Flyable</div><div class="cd-m">fly()</div></div>
+  <div class="cd-box abstract"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-m">swim()<br>display()</div></div>
+  <div class="cd-box iface"><div class="cd-h"><span class="st">interface</span>Quackable</div><div class="cd-m">quack()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>extends + implements</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box dup"><div class="cd-h">Mallard</div><div class="cd-m"><span style="color:var(--text-warning)">fly() {code}</span><br><span style="color:var(--text-warning)">quack() {code}</span></div></div>
+  <div class="cd-box dup"><div class="cd-h">Redhead</div><div class="cd-m"><span style="color:var(--text-warning)">fly() {same!}</span><br><span style="color:var(--text-warning)">quack() {same!}</span></div></div>
+  <div class="cd-box"><div class="cd-h">Rubber</div><div class="cd-m">quack()</div></div>
+</div>`,
+callout:{type:'callout-warn',text:'Interfaces have NO implementation. Identical fly() code copy-pasted into 48 flying ducks. Code reuse destroyed.'}
+},
+{phase:'pill-ohno',phaseTxt:'We\'re stuck!',title:'Neither approach works alone',desc:'Inheritance gives wrong ducks behavior. Interfaces destroy code reuse. We need BOTH selective behavior AND reuse AND runtime flexibility.',
+code:{h:'The dilemma',b:`<span class="cm">// INHERITANCE:</span>
+<span class="hi-r">✗ Wrong ducks get behavior</span>
+<span class="hi-g">✓ Code is reused</span>
+
+<span class="cm">// INTERFACES:</span>
+<span class="hi-g">✓ Only correct ducks get behavior</span>
+<span class="hi-r">✗ Code is duplicated everywhere</span>
+
+<span class="cm">// We need ALL THREE:
+//   ✓ Selective — right ducks, right behavior
+//   ✓ Reusable — behavior code written once
+//   ✓ Flexible — swap behavior at runtime
+//
+// Time for design principles...</span>`},
+dia:null,
+callout:{type:'callout-bad',text:'Neither inheritance nor interfaces alone can solve this. We need a fundamentally new approach — guided by design principles.'}
+},
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies',desc:'What keeps causing trouble? <code>fly()</code> and <code>quack()</code> vary across ducks. Everything else is stable. Pull the varying parts OUT into their own class hierarchies.',
+code:{h:'Identifying what varies vs. what stays',b:`abstract class Duck {
+    <span class="cm">// STAYS THE SAME (stable)</span>
+    swim()  { ... }
+    abstract display();
+
+    <span class="cm">// VARIES (the troublemakers) → PULL OUT</span>
+    <span class="hi-y">fly()   { ... }</span>  <span class="cm">← extract this</span>
+    <span class="hi-y">quack() { ... }</span>  <span class="cm">← extract this</span>
+}
+
+<span class="cm">// fly and quack become their OWN class
+// hierarchies, separate from Duck.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:160px"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-m">+ swim()<br>+ display()<br><s style="opacity:0.4">+ fly()</s> <span style="color:var(--text-warning);font-size:10px">extracted</span><br><s style="opacity:0.4">+ quack()</s> <span style="color:var(--text-warning);font-size:10px">extracted</span></div></div>
+</div>
+<div style="display:flex;justify-content:center;gap:50px;padding:6px 0"><div style="text-align:center"><div style="width:0.5px;height:14px;background:var(--border-warning);margin:0 auto"></div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--border-warning);margin:0 auto"></div></div><div style="text-align:center"><div style="width:0.5px;height:14px;background:var(--border-warning);margin:0 auto"></div><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--border-warning);margin:0 auto"></div></div></div>
+<div class="cd-row">
+  <div class="dia-wrap" style="border-color:var(--border-warning)"><div style="font-size:11px;font-weight:500;color:var(--text-warning)">Fly behaviors</div><div style="font-size:10px;color:var(--text-secondary)">Own class hierarchy</div></div>
+  <div class="dia-wrap" style="border-color:var(--border-warning)"><div style="font-size:11px;font-weight:500;color:var(--text-warning)">Quack behaviors</div><div style="font-size:10px;color:var(--text-secondary)">Own class hierarchy</div></div>
+</div>`,
+callout:{type:'callout-info',text:'Principle: "Identify what varies and separate it from what stays the same." We know WHAT to extract. But how to structure the new classes? →'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. Encapsulate what varies so it won\'t affect the rest of your code.'}
+},
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface, not an implementation',desc:'Design behavior classes using interfaces. Duck will reference <code>FlyBehavior</code> (the type), not <code>FlyWithWings</code> (the concrete class).',
+code:{h:'Behavior interfaces + concrete implementations',b:`<span class="cm">// THE INTERFACE (the contract)</span>
+<span class="hi-b">interface FlyBehavior { fly(); }</span>
+
+<span class="cm">// CONCRETE IMPLEMENTATIONS (the algorithms)</span>
+class FlyWithWings implements FlyBehavior {
+    fly() { print("I'm flying!!"); }
+}
+class FlyNoWay implements FlyBehavior {
+    fly() { print("I can't fly"); }
+}
+class FlyRocketPowered implements FlyBehavior {
+    fly() { print("Rocket power!"); }
+}
+
+<span class="cm">// Same pattern for quacking:</span>
+<span class="hi-b">interface QuackBehavior { quack(); }</span>
+class Quack     implements QuackBehavior { ... }
+class Squeak    implements QuackBehavior { ... }
+class MuteQuack implements QuackBehavior { ... }`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box flyi" style="min-width:130px"><div class="cd-h"><span class="st">interface</span>FlyBehavior</div><div class="cd-m">+ fly()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>implements</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">FlyWithWings</div><div class="cd-m">fly()</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">FlyNoWay</div><div class="cd-m">fly()</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">FlyRocket</div><div class="cd-m">fly()</div></div>
+  </div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box qki" style="min-width:140px"><div class="cd-h"><span class="st">interface</span>QuackBehavior</div><div class="cd-m">+ quack()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>implements</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box qk"><div class="cd-h" style="font-size:10.5px">Quack</div><div class="cd-m">quack()</div></div>
+    <div class="cd-box qk"><div class="cd-h" style="font-size:10.5px">Squeak</div><div class="cd-m">quack()</div></div>
+    <div class="cd-box qk"><div class="cd-h" style="font-size:10.5px">MuteQuack</div><div class="cd-m">quack()</div></div>
+  </div>
+</div></div>`,
+callout:{type:'callout-info',text:'Each behavior is written ONCE, reusable by any class. New behaviors added without touching existing code. But how do we connect these to Duck? →'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The declared type should be a supertype so the actual runtime object isn\'t locked into the code.'}
+},
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Favor composition over inheritance',desc:'Instead of a duck BEING a flyer (IS-A), a duck now HAS a fly behavior (HAS-A). Duck holds behavior objects, delegates to them, and setter methods allow runtime swapping.',
+code:{h:'Duck.java — composition via HAS-A',b:`abstract class Duck {
+    <span class="hi-g">FlyBehavior flyBehavior;</span>       <span class="cm">// HAS-A</span>
+    <span class="hi-g">QuackBehavior quackBehavior;</span>   <span class="cm">// HAS-A</span>
+
+    performFly() {
+        <span class="hi-g">flyBehavior.fly();</span>        <span class="cm">// DELEGATE</span>
+    }
+    performQuack() {
+        <span class="hi-g">quackBehavior.quack();</span>    <span class="cm">// DELEGATE</span>
+    }
+    swim() { ... }
+    abstract display();
+
+    <span class="cm">// Swap behavior at RUNTIME</span>
+    <span class="hi-g">setFlyBehavior(FlyBehavior fb)</span> {
+        flyBehavior = fb;
+    }
+    <span class="hi-g">setQuackBehavior(QuackBehavior qb)</span> {
+        quackBehavior = qb;
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box ctx" style="min-width:200px"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-b">FlyBehavior flyBehavior<br>QuackBehavior quackBehavior</div><div class="cd-m">performFly() <i style="font-size:9px">delegates</i><br>performQuack() <i style="font-size:9px">delegates</i><br>swim(), display()<br>setFlyBehavior(fb)<br>setQuackBehavior(qb)</div></div>
+</div>
+<div style="display:flex;justify-content:center;gap:50px;padding:4px 0">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+  <div class="cd-row"><div class="cd-box flyi" style="min-width:120px"><div class="cd-h"><span class="st">interface</span>FlyBehavior</div><div class="cd-m">fly()</div></div></div>
+  <div class="cd-row"><div class="cd-box qki" style="min-width:130px"><div class="cd-h"><span class="st">interface</span>QuackBehavior</div><div class="cd-m">quack()</div></div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Composition gives us ALL THREE: selective behavior, code reuse, AND runtime flexibility. The trifecta!'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance. HAS-A can be better than IS-A. It lets you change behavior at runtime and reuse behavior across unrelated classes.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire it all together — runtime demo',desc:'Each duck sets its behaviors in the constructor. <code>ModelDuck</code> starts grounded, then gets rocket power at runtime with a single method call.',
+code:{h:'Concrete ducks + runtime behavior swap',b:`class MallardDuck extends Duck {
+    MallardDuck() {
+        flyBehavior   = <span class="hi-g">new FlyWithWings()</span>;
+        quackBehavior = <span class="hi-g">new Quack()</span>;
+    }
+    display() { print("I'm a Mallard"); }
+}
+
+class ModelDuck extends Duck {
+    ModelDuck() {
+        flyBehavior   = <span class="hi-y">new FlyNoWay()</span>;  <span class="cm">// grounded</span>
+        quackBehavior = new Quack();
+    }
+}
+
+<span class="cm">// --- RUNTIME ---</span>
+Duck model = new ModelDuck();
+model.performFly();  <span class="cm">// → "I can't fly"</span>
+
+<span class="hi-g">model.setFlyBehavior(new FlyRocketPowered());</span>
+
+model.performFly();  <span class="cm">// → "I'm flying with a rocket!"</span>
+<span class="cm">// Behavior swapped at runtime!</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box ctx" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Duck</div><div class="cd-b">flyBehavior<br>quackBehavior</div><div class="cd-m">performFly()<br>performQuack()<br>setFlyBehavior(fb)<br>setQuackBehavior(qb)</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box" style="min-width:95px"><div class="cd-h">Mallard</div><div class="cd-m" style="font-size:10px"><span style="color:var(--text-success)">FlyWithWings</span><br><span style="color:var(--text-success)">Quack</span></div></div>
+  <div class="cd-box" style="min-width:115px"><div class="cd-h">ModelDuck</div><div class="cd-m" style="font-size:10px"><span style="color:var(--text-warning)">FlyNoWay</span> → <span style="color:var(--text-success)">FlyRocket</span><br>Quack</div></div>
+  <div class="cd-box" style="min-width:95px"><div class="cd-h">Rubber</div><div class="cd-m" style="font-size:10px">FlyNoWay<br>Squeak</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'ModelDuck dynamically changes from FlyNoWay → FlyRocketPowered at runtime. No other class is touched. Impossible with inheritance alone!'}
+},
+{phase:'pill-pattern',phaseTxt:'The Strategy Pattern',title:'The complete picture',desc:'You just built the <strong>Strategy Pattern</strong>. Three principles drove three structural changes, arriving at one elegant pattern.',
+code:{h:'Strategy Pattern — three parts',b:`<span class="cm">// 1. STRATEGY INTERFACES</span>
+interface FlyBehavior   { fly(); }
+interface QuackBehavior { quack(); }
+
+<span class="cm">// 2. CONCRETE STRATEGIES (interchangeable)</span>
+class FlyWithWings  implements FlyBehavior  { ... }
+class FlyNoWay      implements FlyBehavior  { ... }
+class FlyRocket     implements FlyBehavior  { ... }
+class Quack         implements QuackBehavior { ... }
+class Squeak        implements QuackBehavior { ... }
+class MuteQuack     implements QuackBehavior { ... }
+
+<span class="cm">// 3. CONTEXT (uses strategies via HAS-A)</span>
+abstract class Duck {
+    <span class="hi-b">FlyBehavior flyBehavior;</span>
+    <span class="hi-b">QuackBehavior quackBehavior;</span>
+    performFly()   { flyBehavior.fly(); }
+    performQuack() { quackBehavior.quack(); }
+    setFlyBehavior(fb)   { ... }
+    setQuackBehavior(qb) { ... }
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:start">
+  <div>
+    <div class="cd-row"><div class="cd-box flyi" style="min-width:120px"><div class="cd-h"><span class="st">interface</span>FlyBehavior</div><div class="cd-m">fly()</div></div></div>
+    <div class="cd-arr"><div class="tri"></div></div>
+    <div class="cd-row" style="gap:4px">
+      <div class="cd-box fly"><div class="cd-h" style="font-size:10px">FlyWings</div></div>
+      <div class="cd-box fly"><div class="cd-h" style="font-size:10px">FlyNoWay</div></div>
+      <div class="cd-box fly"><div class="cd-h" style="font-size:10px">FlyRocket</div></div>
+    </div>
+  </div>
+  <div>
+    <div class="cd-row"><div class="cd-box ctx" style="min-width:130px"><div class="cd-h"><span class="st">context</span>Duck</div><div class="cd-b" style="font-size:10px">flyBehavior<br>quackBehavior</div><div class="cd-m" style="font-size:10px">performFly()<br>performQuack()<br>setFlyBehavior()<br>setQuackBehavior()</div></div></div>
+    <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+    <div class="cd-row" style="gap:4px">
+      <div class="cd-box"><div class="cd-h" style="font-size:10px">Mallard</div></div>
+      <div class="cd-box"><div class="cd-h" style="font-size:10px">Model</div></div>
+      <div class="cd-box"><div class="cd-h" style="font-size:10px">Rubber</div></div>
+    </div>
+  </div>
+  <div>
+    <div class="cd-row"><div class="cd-box qki" style="min-width:130px"><div class="cd-h"><span class="st">interface</span>QuackBehavior</div><div class="cd-m">quack()</div></div></div>
+    <div class="cd-arr"><div class="tri"></div></div>
+    <div class="cd-row" style="gap:4px">
+      <div class="cd-box qk"><div class="cd-h" style="font-size:10px">Quack</div></div>
+      <div class="cd-box qk"><div class="cd-h" style="font-size:10px">Squeak</div></div>
+      <div class="cd-box qk"><div class="cd-h" style="font-size:10px">MuteQuack</div></div>
+    </div>
+  </div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Context</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Strategy interface</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Fly strategies</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--coral-50);border:0.5px solid var(--coral-600)"></div>Quack strategies</div>
+</div>`,
+callout:{type:'callout-purple',text:'Three principles, one pattern: (1) Encapsulate what varies → extract fly/quack. (2) Program to an interface → FlyBehavior/QuackBehavior contracts. (3) Favor composition → Duck HAS-A behaviors, delegates and swaps at runtime. The Strategy Pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next \u2192';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  }
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

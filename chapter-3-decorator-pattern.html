@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 3: The Decorator Pattern — A Problem-Solving Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   CSS CUSTOM PROPERTIES
+   ═══════════════════════════════════════════ */
+:root {
+  --font-body: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f7f9;
+  --bg-tertiary: #eceef2;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f9ed;
+  --bg-warning: #fff8e1;
+  --bg-purple: #f3eefe;
+  --bg-teal: #e6faf5;
+  --bg-coral: #fff0ed;
+
+  --text-primary: #1a1d23;
+  --text-secondary: #4a5060;
+  --text-tertiary: #8590a6;
+  --text-info: #1a56db;
+  --text-danger: #c8280a;
+  --text-success: #0d7a3a;
+  --text-warning: #b45309;
+  --text-purple: #6b21a8;
+  --text-teal: #0d7377;
+  --text-coral: #c4320a;
+
+  --border-primary: #d1d5db;
+  --border-secondary: #e5e7eb;
+  --border-tertiary: #f0f1f3;
+  --border-info: #93b4f4;
+  --border-danger: #f5a3a3;
+  --border-success: #6ee7a0;
+  --border-warning: #fcd34d;
+  --border-purple: #c084fc;
+  --border-teal: #5eead4;
+  --border-coral: #fdba74;
+
+  --purple-50: #faf5ff; --purple-100: #f3e8ff; --purple-200: #e9d5ff;
+  --purple-400: #c084fc; --purple-600: #9333ea; --purple-800: #6b21a8;
+  --teal-50: #f0fdfa; --teal-100: #ccfbf1; --teal-200: #99f6e4;
+  --teal-400: #2dd4bf; --teal-600: #0d9488; --teal-800: #115e59;
+  --coral-50: #fff7ed; --coral-100: #ffedd5; --coral-200: #fed7aa;
+  --coral-400: #fb923c; --coral-600: #ea580c; --coral-800: #9a3412;
+
+  --progress-bg: #e5e7eb;
+  --progress-fill: #6366f1;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.08);
+  --code-bg: #f8f9fb;
+  --code-line-hi: rgba(0,0,0,0.02);
+  --dot-active: #6366f1;
+  --dot-inactive: #d1d5db;
+  --toggle-bg: #e5e7eb;
+  --toggle-knob: #ffffff;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1e2028;
+  --bg-secondary: #262830;
+  --bg-tertiary: #15161b;
+  --bg-info: #1a2744;
+  --bg-danger: #3b1515;
+  --bg-success: #0f2e1a;
+  --bg-warning: #362a0a;
+  --bg-purple: #2a1748;
+  --bg-teal: #0f2d2d;
+  --bg-coral: #3b1b0f;
+
+  --text-primary: #e8eaf0;
+  --text-secondary: #a0a8ba;
+  --text-tertiary: #636c82;
+  --text-info: #7cacf8;
+  --text-danger: #f8a0a0;
+  --text-success: #6ee7a0;
+  --text-warning: #fcd34d;
+  --text-purple: #d8b4fe;
+  --text-teal: #5eead4;
+  --text-coral: #fdba74;
+
+  --border-primary: #3a3d48;
+  --border-secondary: #2e3038;
+  --border-tertiary: #252730;
+  --border-info: #2e4a80;
+  --border-danger: #7f1d1d;
+  --border-success: #166534;
+  --border-warning: #854d0e;
+  --border-purple: #581c87;
+  --border-teal: #134e4a;
+  --border-coral: #9a3412;
+
+  --purple-50: #2a1748; --purple-100: #3b1f6e; --purple-200: #581c87;
+  --purple-400: #a855f7; --purple-600: #c084fc; --purple-800: #e9d5ff;
+  --teal-50: #0f2d2d; --teal-100: #134e4a; --teal-200: #115e59;
+  --teal-400: #2dd4bf; --teal-600: #5eead4; --teal-800: #ccfbf1;
+  --coral-50: #3b1b0f; --coral-100: #7c2d12; --coral-200: #9a3412;
+  --coral-400: #fb923c; --coral-600: #fdba74; --coral-800: #ffedd5;
+
+  --progress-bg: #2e3038;
+  --progress-fill: #818cf8;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.4);
+  --code-bg: #262830;
+  --code-line-hi: rgba(255,255,255,0.02);
+  --dot-active: #818cf8;
+  --dot-inactive: #3a3d48;
+  --toggle-bg: #3a3d48;
+  --toggle-knob: #e8eaf0;
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.65;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════ */
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  margin-bottom: 4px;
+}
+.header-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.progress-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--progress-bg);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--progress-fill);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.step-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-tertiary);
+  gap: 10px;
+  flex-shrink: 0;
+}
+.nav-btn {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 80px;
+}
+.nav-btn:hover { background: var(--bg-tertiary); }
+.nav-btn:disabled { opacity: 0.35; cursor: default; }
+.nav-btn.primary { background: var(--progress-fill); color: #fff; border-color: transparent; }
+.nav-btn.primary:hover { filter: brightness(1.1); }
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--dot-inactive);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  padding: 0;
+}
+.dot.active {
+  background: var(--dot-active);
+  transform: scale(1.3);
+}
+.dot:hover { background: var(--dot-active); opacity: 0.7; }
+
+/* ═══════════════════════════════════════════
+   THEME TOGGLE
+   ═══════════════════════════════════════════ */
+.theme-toggle {
+  width: 44px; height: 24px;
+  background: var(--toggle-bg);
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  background: var(--toggle-knob);
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+[data-theme="dark"] .theme-toggle::after { transform: translateX(20px); }
+.theme-toggle-label {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  margin-right: 6px;
+}
+
+/* ═══════════════════════════════════════════
+   STEP ANIMATIONS
+   ═══════════════════════════════════════════ */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step { animation: fadeSlide 0.35s ease; }
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY
+   ═══════════════════════════════════════════ */
+.step-phase {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+.pill-gray { background: var(--bg-tertiary); color: var(--text-secondary); }
+.pill-red { background: var(--bg-danger); color: var(--text-danger); }
+.pill-yellow { background: var(--bg-warning); color: var(--text-warning); }
+.pill-blue { background: var(--bg-info); color: var(--text-info); }
+.pill-green { background: var(--bg-success); color: var(--text-success); }
+.pill-purple { background: var(--bg-purple); color: var(--text-purple); }
+.pill-teal { background: var(--bg-teal); color: var(--text-teal); }
+
+.step-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+}
+.step-desc {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.7;
+}
+.step-desc strong { color: var(--text-primary); font-weight: 600; }
+
+/* ═══════════════════════════════════════════
+   PANELS — side by side
+   ═══════════════════════════════════════════ */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 16px 0;
+}
+.panel {
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.panel-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 7px 14px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-tertiary);
+  color: var(--text-tertiary);
+}
+.panel-label.before { color: var(--text-danger); }
+.panel-label.after { color: var(--text-success); }
+.panel-body { padding: 14px; }
+.full-panel {
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+/* ═══════════════════════════════════════════
+   CODE BLOCKS
+   ═══════════════════════════════════════════ */
+.code-block {
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  margin: 10px 0;
+  border: 1px solid var(--border-tertiary);
+}
+.code-block code { font-family: inherit; }
+.hi-r { background: rgba(239,68,68,0.13); border-radius: 3px; padding: 1px 3px; }
+.hi-g { background: rgba(34,197,94,0.13); border-radius: 3px; padding: 1px 3px; }
+.hi-y { background: rgba(234,179,8,0.13); border-radius: 3px; padding: 1px 3px; }
+.hi-b { background: rgba(99,102,241,0.13); border-radius: 3px; padding: 1px 3px; }
+.cm { color: var(--text-tertiary); font-style: italic; }
+[data-theme="dark"] .hi-r { background: rgba(239,68,68,0.2); }
+[data-theme="dark"] .hi-g { background: rgba(34,197,94,0.2); }
+[data-theme="dark"] .hi-y { background: rgba(234,179,8,0.15); }
+[data-theme="dark"] .hi-b { background: rgba(129,140,248,0.18); }
+
+/* ═══════════════════════════════════════════
+   CLASS DIAGRAM BOXES
+   ═══════════════════════════════════════════ */
+.cd-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin: 10px 0;
+}
+.cd-box {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  border: 2px solid var(--border-primary);
+  border-radius: 8px;
+  min-width: 130px;
+  max-width: 210px;
+  background: var(--bg-primary);
+  overflow: hidden;
+  text-align: left;
+}
+.cd-h {
+  font-weight: 700;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-secondary);
+  font-size: 0.74rem;
+  text-align: center;
+}
+.cd-b, .cd-m {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border-tertiary);
+}
+.cd-m { border-bottom: none; }
+.cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+.cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+.cd-box.iface { border-style: dashed; background: var(--bg-purple); border-color: var(--border-purple); }
+.cd-box.ctx { background: var(--bg-teal); border-color: var(--border-teal); }
+.cd-box.obs { background: var(--bg-coral); border-color: var(--border-coral); }
+.cd-box.good { background: var(--bg-success); border-color: var(--border-success); }
+.cd-arr {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  padding: 4px 0;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
+   PRINCIPLE BOX
+   ═══════════════════════════════════════════ */
+.principle-box {
+  border: 2px solid var(--border-info);
+  background: var(--bg-info);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 16px 0;
+}
+.principle-box .label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-info);
+  margin-bottom: 4px;
+}
+.principle-box .text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-info);
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════
+   CALLOUT BAR
+   ═══════════════════════════════════════════ */
+.callout {
+  border-left: 3px solid var(--border-primary);
+  background: var(--bg-secondary);
+  padding: 12px 16px;
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.callout strong { color: var(--text-primary); }
+.callout.info { border-color: var(--border-info); background: var(--bg-info); color: var(--text-info); }
+.callout.danger { border-color: var(--border-danger); background: var(--bg-danger); color: var(--text-danger); }
+.callout.success { border-color: var(--border-success); background: var(--bg-success); color: var(--text-success); }
+.callout.warning { border-color: var(--border-warning); background: var(--bg-warning); color: var(--text-warning); }
+.callout.purple { border-color: var(--border-purple); background: var(--bg-purple); color: var(--text-purple); }
+
+/* ═══════════════════════════════════════════
+   TOOLBOX
+   ═══════════════════════════════════════════ */
+.toolbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 14px 0;
+}
+.toolbox-col h4 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+  color: var(--text-tertiary);
+}
+.toolbox-item {
+  font-size: 0.82rem;
+  padding: 5px 0;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.toolbox-item .badge {
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.badge-new { background: var(--bg-success); color: var(--text-success); }
+.badge-prev { background: var(--bg-tertiary); color: var(--text-tertiary); }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 680px) {
+  .panels { grid-template-columns: 1fr; }
+  .step-container { padding: 20px 16px; }
+  .step-title { font-size: 1.2rem; }
+  .toolbox-grid { grid-template-columns: 1fr; }
+  .cd-box { min-width: 100px; max-width: 160px; }
+  .dots { gap: 4px; }
+  .dot { width: 6px; height: 6px; }
+}
+
+/* ═══════════════════════════════════════════
+   MISC
+   ═══════════════════════════════════════════ */
+.output-block {
+  background: #1a1d23;
+  color: #a3e635;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 10px 0;
+  line-height: 1.7;
+}
+.wrapper-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.wrap-layer {
+  border: 2px solid;
+  border-radius: 14px;
+  padding: 14px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+.wrap-core { border-color: var(--border-teal); background: var(--bg-teal); color: var(--text-teal); }
+.wrap-d1 { border-color: var(--border-coral); background: var(--bg-coral); color: var(--text-coral); }
+.wrap-d2 { border-color: var(--border-purple); background: var(--bg-purple); color: var(--text-purple); }
+.cost-chain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.cost-node {
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+.cost-arrow { color: var(--text-tertiary); font-size: 1.1rem; }
+.explosion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 4px;
+  margin: 10px 0;
+}
+.explosion-item {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  background: var(--bg-danger);
+  color: var(--text-danger);
+  padding: 4px 6px;
+  border-radius: 4px;
+  text-align: center;
+  border: 1px solid var(--border-danger);
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <span class="header-title">Ch 3 · Decorator Pattern</span>
+    <div style="display:flex;align-items:center;">
+      <span class="theme-toggle-label">Theme</span>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="card">
+    <div class="step-container" id="stepContainer"></div>
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn" disabled>← Back</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn primary" id="nextBtn">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STEPS DATA
+// ═══════════════════════════════════════════
+const steps = [
+
+// ─── 0: THE BRIEF ───
+{
+  pill: 'pill-gray', phase: 'Phase 1 · The Brief',
+  title: 'Welcome to Starbuzz Coffee',
+  html: `
+<p class="step-desc">Starbuzz Coffee has made a name for itself as the fastest-growing coffee shop around. They need an ordering system that handles <strong>beverages</strong> and <strong>condiments</strong> (milk, soy, mocha, whip) with flexible pricing.</p>
+<p class="step-desc">Here's what they started with — a simple abstract <code>Beverage</code> class with subclasses for each drink:</p>
+<div class="cd-row">
+  <div class="cd-box ctx">
+    <div class="cd-h">«abstract» Beverage</div>
+    <div class="cd-b">description</div>
+    <div class="cd-m">getDescription()<br>cost() <span class="cm">// abstract</span></div>
+  </div>
+</div>
+<div class="cd-arr">△ extends</div>
+<div class="cd-row">
+  <div class="cd-box"><div class="cd-h">HouseBlend</div><div class="cd-m">cost() → $0.89</div></div>
+  <div class="cd-box"><div class="cd-h">DarkRoast</div><div class="cd-m">cost() → $0.99</div></div>
+  <div class="cd-box"><div class="cd-h">Espresso</div><div class="cd-m">cost() → $1.99</div></div>
+  <div class="cd-box"><div class="cd-h">Decaf</div><div class="cd-m">cost() → $1.05</div></div>
+</div>
+<p class="step-desc" style="margin-top:16px">So far so good — four beverages, each reporting its own price. But customers want <strong>condiments</strong>: steamed milk (+$0.10), soy (+$0.15), mocha (+$0.20), whip (+$0.10). How do we add them to the system?</p>
+<div class="callout info"><strong>The challenge:</strong> Design a system where any beverage can have any combination of condiments, each adding to the total cost.</div>
+`
+},
+
+// ─── 1: FIRST ATTEMPT — CLASS EXPLOSION ───
+{
+  pill: 'pill-gray', phase: 'Phase 1 · First Attempt',
+  title: 'The Naïve Approach: One Class Per Combo',
+  html: `
+<p class="step-desc">The most obvious approach? Just create a subclass for every possible combination. Dark Roast with Mocha? That's a class. House Blend with Soy and Whip? Another class. The developer feels confident...</p>
+<div class="explosion-grid">
+  <div class="explosion-item">HouseBlendWithMilk</div>
+  <div class="explosion-item">HouseBlendWithSoy</div>
+  <div class="explosion-item">HouseBlendWithMocha</div>
+  <div class="explosion-item">HouseBlendWithWhip</div>
+  <div class="explosion-item">HouseBlendMilkSoy</div>
+  <div class="explosion-item">HouseBlendMilkMocha</div>
+  <div class="explosion-item">HouseBlendMilkWhip</div>
+  <div class="explosion-item">HouseBlendSoyMocha</div>
+  <div class="explosion-item">HouseBlendSoyWhip</div>
+  <div class="explosion-item">HouseBlendMochaWhip</div>
+  <div class="explosion-item">DarkRoastWithMilk</div>
+  <div class="explosion-item">DarkRoastWithSoy</div>
+  <div class="explosion-item">DarkRoastMilkSoy</div>
+  <div class="explosion-item">DarkRoastMilkMocha</div>
+  <div class="explosion-item">DarkRoastSoyMocha</div>
+  <div class="explosion-item">DarkRoastMochaWhip</div>
+  <div class="explosion-item">EspressoWithMilk</div>
+  <div class="explosion-item">EspressoWithSoy</div>
+  <div class="explosion-item">EspressoMilkMocha</div>
+  <div class="explosion-item">EspressoSoyWhip</div>
+  <div class="explosion-item">DecafWithMocha</div>
+  <div class="explosion-item">DecafMilkSoyWhip</div>
+  <div class="explosion-item">DecafMochaWhip</div>
+  <div class="explosion-item">... dozens more</div>
+</div>
+<p class="step-desc" style="margin-top: 14px">With 4 beverages and 4 condiments (each can be on or off), that's <strong>4 × 2⁴ = 64 classes</strong> — and that's before we add "double mocha" or a new condiment like caramel!</p>
+<div class="callout danger"><strong>Class explosion!</strong> This is unmaintainable. Every new condiment doubles the number of classes. We need a better approach.</div>
+`
+},
+
+// ─── 2: SECOND ATTEMPT — BOOLEAN FLAGS ───
+{
+  pill: 'pill-gray', phase: 'Phase 1 · Second Attempt',
+  title: 'Try Again: Boolean Flags in the Superclass',
+  html: `
+<p class="step-desc">"Okay, clearly one class per combo is insane. What if we put <strong>boolean flags</strong> for each condiment in the <code>Beverage</code> superclass and compute the total in <code>cost()</code>?"</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">Superclass</div>
+    <div class="panel-body">
+      <div class="cd-box bad" style="max-width:100%;min-width:auto;">
+        <div class="cd-h">Beverage</div>
+        <div class="cd-b">description<br><span class="hi-r">milk: boolean</span><br><span class="hi-r">soy: boolean</span><br><span class="hi-r">mocha: boolean</span><br><span class="hi-r">whip: boolean</span></div>
+        <div class="cd-m">getDescription()<br><span class="hi-r">cost()</span> <span class="cm">// computes condiments</span><br>hasMilk() / setMilk()<br>hasSoy() / setSoy()<br>hasMocha() / setMocha()<br>hasWhip() / setWhip()</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Subclass cost()</div>
+    <div class="panel-body">
+<div class="code-block"><code><span class="cm">// In DarkRoast.java</span>
+public double cost() {
+  <span class="hi-y">return 0.99 + super.cost();</span>
+  <span class="cm">// super.cost() adds up</span>
+  <span class="cm">// condiment booleans</span>
+}
+
+<span class="cm">// In Beverage.java</span>
+public double cost() {
+  double total = 0;
+  <span class="hi-r">if (hasMilk()) total += 0.10;</span>
+  <span class="hi-r">if (hasSoy())  total += 0.15;</span>
+  <span class="hi-r">if (hasMocha()) total += 0.20;</span>
+  <span class="hi-r">if (hasWhip()) total += 0.10;</span>
+  return total;
+}</code></div>
+    </div>
+  </div>
+</div>
+<p class="step-desc">This gives us just 5 classes instead of 64. It <em>feels</em> better. But is it actually good design? Let's stress-test it...</p>
+<div class="callout warning"><strong>It compiles, it runs... but what happens when requirements change?</strong> New condiment? Edit Beverage. Price change? Edit Beverage. Iced tea that shouldn't have whip? It still inherits hasWhip(). And what about <em>double mocha</em>?</div>
+`
+},
+
+// ─── 3: OH NO — DIAGNOSE ───
+{
+  pill: 'pill-red', phase: 'Phase 1 · Diagnosis',
+  title: 'Oh No! Which Principles Are We Violating?',
+  html: `
+<p class="step-desc">Time to put on our detective hat. We know some OO design principles from Chapters 1 and 2. Let's use them as a <strong>diagnostic checklist</strong> against the boolean-flags design:</p>
+
+<div class="principle-box" style="border-color: var(--border-danger); background: var(--bg-danger);">
+  <div class="label" style="color: var(--text-danger);">Principle Check #1</div>
+  <div class="text" style="color: var(--text-danger);">❌ "Encapsulate what varies"</div>
+</div>
+<div class="code-block"><code><span class="cm">// Beverage.java — the SUPERCLASS knows about EVERY condiment</span>
+<span class="hi-r">milk: boolean</span>   <span class="cm">// ← Condiment detail baked into base class</span>
+<span class="hi-r">soy: boolean</span>    <span class="cm">// ← New condiment? EDIT THIS CLASS</span>
+<span class="hi-r">mocha: boolean</span>  <span class="cm">// ← Price change? EDIT THIS CLASS</span>
+<span class="hi-r">whip: boolean</span>   <span class="cm">// ← Condiments are NOT encapsulated — they're splattered everywhere</span></code></div>
+
+<div class="principle-box" style="border-color: var(--border-danger); background: var(--bg-danger);">
+  <div class="label" style="color: var(--text-danger);">Principle Check #2</div>
+  <div class="text" style="color: var(--text-danger);">❌ "Favor composition over inheritance"</div>
+</div>
+<div class="code-block"><code><span class="cm">// DarkRoast inherits ALL condiment logic</span>
+class DarkRoast extends Beverage {
+  <span class="hi-r">// Gets hasMilk(), hasSoy(), hasMocha(), hasWhip()</span>
+  <span class="hi-r">// Even if DarkRoast should NEVER have soy!</span>
+  <span class="cm">// Behavior locked at compile time — no runtime flexibility</span>
+}</code></div>
+
+<div class="principle-box" style="border-color: var(--border-danger); background: var(--bg-danger);">
+  <div class="label" style="color: var(--text-danger);">Principle Check #3</div>
+  <div class="text" style="color: var(--text-danger);">❌ "Classes should be open for extension, closed for modification"</div>
+</div>
+<p class="step-desc">Every change — new condiment, price update, new beverage type — forces us to <strong>modify</strong> the Beverage class. It's open for modification everywhere and closed for nothing.</p>
+
+<div class="callout danger"><strong>Three strikes.</strong> The boolean-flags approach violates three core principles. Can we fix this? Let's apply these principles <em>one at a time</em> and see what design emerges.</div>
+`
+},
+
+// ─── 4: APPLY PRINCIPLE 1 — ENCAPSULATE WHAT VARIES ───
+{
+  pill: 'pill-blue', phase: 'Phase 2 · Apply Principle',
+  title: 'Fix #1: Encapsulate What Varies',
+  html: `
+<div class="principle-box">
+  <div class="label">Design Principle</div>
+  <div class="text">"Identify the aspects of your application that vary and separate them from what stays the same."</div>
+</div>
+<p class="step-desc"><strong>What varies?</strong> The condiments. <strong>What stays the same?</strong> The base beverage. So let's <em>pull condiments OUT</em> of the superclass and give them their own existence.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before">Before — condiments embedded</div>
+    <div class="panel-body">
+      <div class="cd-box bad" style="max-width:100%;min-width:auto;">
+        <div class="cd-h">Beverage</div>
+        <div class="cd-b"><span class="hi-r">milk, soy, mocha, whip</span><br>description</div>
+        <div class="cd-m">cost() <span class="cm">// knows ALL condiments</span><br><span class="hi-r">hasMilk(), setSoy()...</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label after">After — condiments separated</div>
+    <div class="panel-body">
+      <div class="cd-box ctx" style="max-width:100%;min-width:auto;">
+        <div class="cd-h">Beverage</div>
+        <div class="cd-b">description</div>
+        <div class="cd-m">getDescription()<br>cost() <span class="cm">// abstract</span></div>
+      </div>
+      <div class="cd-arr" style="margin:8px 0">+ separate condiment objects</div>
+      <div class="cd-row">
+        <div class="cd-box obs" style="min-width:70px"><div class="cd-h">Milk</div><div class="cd-m">cost()</div></div>
+        <div class="cd-box obs" style="min-width:70px"><div class="cd-h">Mocha</div><div class="cd-m">cost()</div></div>
+        <div class="cd-box obs" style="min-width:70px"><div class="cd-h">Whip</div><div class="cd-m">cost()</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="step-desc"><strong>What changed:</strong> Beverage is clean again — no boolean soup. Condiments are their own objects.</p>
+<div class="callout info"><strong>But wait...</strong> these condiment objects need to <em>wrap</em> a beverage and compute a combined cost. What type should they be? We need them to be interchangeable with Beverage so the rest of the system doesn't care. That's where the next principle comes in.</div>
+`
+},
+
+// ─── 5: APPLY PRINCIPLE 2 — PROGRAM TO INTERFACES ───
+{
+  pill: 'pill-blue', phase: 'Phase 2 · Apply Principle',
+  title: 'Fix #2: Program to Interfaces, Not Implementations',
+  html: `
+<div class="principle-box">
+  <div class="label">Design Principle</div>
+  <div class="text">"Program to an interface (supertype), not an implementation."</div>
+</div>
+<p class="step-desc">If condiment wrappers <strong>extend Beverage</strong>, then a Mocha-wrapped DarkRoast <em>is still a Beverage</em>. Any code that expects a Beverage can receive a decorated one — <strong>polymorphism</strong> handles the rest.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before">Before — separate, unrelated types</div>
+    <div class="panel-body">
+      <div class="cd-row">
+        <div class="cd-box ctx" style="min-width:100px"><div class="cd-h">Beverage</div><div class="cd-m">cost()</div></div>
+      </div>
+      <div class="cd-row" style="margin-top:8px">
+        <div class="cd-box obs" style="min-width:80px"><div class="cd-h">Milk</div><div class="cd-m"><span class="hi-r">???</span></div></div>
+        <div class="cd-box obs" style="min-width:80px"><div class="cd-h">Mocha</div><div class="cd-m"><span class="hi-r">???</span></div></div>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-tertiary);text-align:center;margin-top:6px">No shared type — can't substitute!</p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label after">After — shared supertype</div>
+    <div class="panel-body">
+      <div class="cd-row">
+        <div class="cd-box iface" style="min-width:100px"><div class="cd-h">«abstract» Beverage</div><div class="cd-m">cost()<br>getDescription()</div></div>
+      </div>
+      <div class="cd-arr">△ extends</div>
+      <div class="cd-row">
+        <div class="cd-box ctx" style="min-width:80px"><div class="cd-h">DarkRoast</div></div>
+        <div class="cd-box good" style="min-width:100px"><div class="cd-h"><span class="hi-g">CondimentDecorator</span></div><div class="cd-m">getDescription()</div></div>
+      </div>
+      <div class="cd-arr">△ extends</div>
+      <div class="cd-row">
+        <div class="cd-box obs" style="min-width:70px"><div class="cd-h">Mocha</div></div>
+        <div class="cd-box obs" style="min-width:70px"><div class="cd-h">Whip</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="step-desc"><strong>Key insight:</strong> We use inheritance here for <em>type matching</em>, not for getting behavior. The CondimentDecorator extends Beverage so it <em>IS-A</em> Beverage, but its <strong>behavior</strong> comes from composition.</p>
+<div class="callout info"><strong>But wait...</strong> how does a Mocha object actually <em>know about</em> the beverage it's decorating? It needs a <strong>reference</strong> to the wrapped object. That's composition — the next principle!</div>
+`
+},
+
+// ─── 6: APPLY PRINCIPLE 3 — FAVOR COMPOSITION ───
+{
+  pill: 'pill-blue', phase: 'Phase 2 · Apply Principle',
+  title: 'Fix #3: Favor Composition Over Inheritance',
+  html: `
+<div class="principle-box">
+  <div class="label">Design Principle</div>
+  <div class="text">"Favor composition over inheritance." — Use HAS-A, not just IS-A.</div>
+</div>
+<p class="step-desc">Each condiment decorator <strong>HAS-A Beverage</strong> — it holds a reference to the thing it wraps. When you call <code>cost()</code>, it <em>delegates</em> to the wrapped object, then adds its own cost on top.</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label before">Before — inheritance only</div>
+    <div class="panel-body">
+<div class="code-block"><code>class DarkRoast extends Beverage {
+  cost() { <span class="hi-r">return 0.99 + super.cost();</span> }
+  <span class="cm">// super.cost() = boolean soup</span>
+  <span class="cm">// Locked at compile time</span>
+  <span class="cm">// Can't add double mocha!</span>
+}</code></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label after">After — composition + delegation</div>
+    <div class="panel-body">
+<div class="code-block"><code>class Mocha extends CondimentDecorator {
+  <span class="hi-g">Beverage beverage;</span> <span class="cm">// HAS-A</span>
+  Mocha(<span class="hi-g">Beverage b</span>) {
+    this.beverage = b;
+  }
+  cost() {
+    return <span class="hi-g">0.20 + beverage.cost();</span>
+  }
+  <span class="cm">// Delegates to wrapped object!</span>
+  <span class="cm">// Works at RUNTIME</span>
+}</code></div>
+    </div>
+  </div>
+</div>
+<p class="step-desc"><strong>Now we can wrap anything, any number of times, at runtime.</strong> Double mocha? Wrap it twice. New condiment? Write one new class — never touch Beverage.</p>
+<div class="wrapper-visual">
+  <div class="wrap-layer wrap-d2" style="padding:16px 20px;">
+    Whip.cost()
+    <div class="wrap-layer wrap-d1" style="margin-top:8px;">
+      Mocha.cost()
+      <div class="wrap-layer wrap-core" style="margin-top:8px;">
+        DarkRoast.cost() → $0.99
+      </div>
+      → + $0.20
+    </div>
+    → + $0.10 = <strong>$1.29</strong>
+  </div>
+</div>
+<div class="callout success"><strong>All three principles applied!</strong> Condiments are encapsulated (Principle 1), share a supertype with Beverage (Principle 2), and compose via HAS-A delegation (Principle 3). The design is complete — but does it have a name?</div>
+`
+},
+
+// ─── 7: THE REVELATION ───
+{
+  pill: 'pill-purple', phase: 'Phase 3 · The Pattern Emerges',
+  title: '✨ Wait... What We Built Has a Name!',
+  html: `
+<p class="step-desc">By applying three known principles to a broken design, we independently arrived at a well-known pattern. Let's name it:</p>
+<div class="principle-box" style="border-color: var(--border-purple); background: var(--bg-purple);">
+  <div class="label" style="color: var(--text-purple);">The Decorator Pattern</div>
+  <div class="text" style="color: var(--text-purple);">Attaches additional responsibilities to an object dynamically. Decorators provide a flexible alternative to subclassing for extending functionality.</div>
+</div>
+<p class="step-desc">Think of it like a <strong>gift wrapping station</strong>: you start with a gift (the component), then wrap it in tissue paper (decorator #1), then a box (decorator #2), then ribbon (decorator #3). At each step, the "gift" is still a gift — but it gains new features. And you can add or remove layers at any time.</p>
+<div class="cd-row">
+  <div class="cd-box iface" style="min-width:140px"><div class="cd-h">«abstract» Component</div><div class="cd-m">methodA()<br>methodB()</div></div>
+</div>
+<div class="cd-arr">△ extends</div>
+<div class="cd-row">
+  <div class="cd-box ctx"><div class="cd-h">ConcreteComponent</div><div class="cd-m">methodA()<br>methodB()</div></div>
+  <div class="cd-box iface" style="border-color:var(--border-coral)"><div class="cd-h">«abstract» Decorator</div><div class="cd-b"><span class="hi-b">Component wrappedObj</span></div><div class="cd-m">methodA()<br>methodB()</div></div>
+</div>
+<div class="cd-arr">△ extends &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ extends</div>
+<div class="cd-row">
+  <div class="cd-box obs"><div class="cd-h">ConcreteDecoratorA</div><div class="cd-m">methodA()<br>newBehavior()</div></div>
+  <div class="cd-box obs"><div class="cd-h">ConcreteDecoratorB</div><div class="cd-b">Object newState</div><div class="cd-m">methodA()</div></div>
+</div>
+<div class="callout purple"><strong>The "aha!" moment:</strong> We didn't memorize this pattern — we <em>discovered</em> it by fixing broken code with principles we already knew. That's the power of principled design.</div>
+`
+},
+
+// ─── 8: NEW PRINCIPLE — OPEN-CLOSED ───
+{
+  pill: 'pill-green', phase: 'Phase 3 · New Principle',
+  title: 'New Principle: The Open-Closed Principle',
+  html: `
+<p class="step-desc">The Decorator Pattern naturally gives us a new design principle — one that <em>emerges</em> as a consequence of the pattern, not a prerequisite:</p>
+<div class="principle-box" style="border-color: var(--border-success); background: var(--bg-success);">
+  <div class="label" style="color: var(--text-success);">New Design Principle ★</div>
+  <div class="text" style="color: var(--text-success);">"Classes should be open for extension, but closed for modification."</div>
+</div>
+<p class="step-desc">Look at what our Decorator design achieves:</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label" style="color:var(--text-success)">✓ Open for Extension</div>
+    <div class="panel-body">
+<div class="code-block"><code><span class="cm">// Add a new condiment? Write ONE class:</span>
+<span class="hi-g">class Caramel extends CondimentDecorator</span> {
+  Beverage beverage;
+  Caramel(Beverage b) { this.beverage = b; }
+  cost() { return 0.15 + beverage.cost(); }
+  getDescription() {
+    return beverage.getDescription()
+      + ", Caramel";
+  }
+}
+<span class="cm">// Zero changes to Beverage, DarkRoast,
+// or any existing class!</span></code></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label" style="color:var(--text-danger)">✗ Closed for Modification</div>
+    <div class="panel-body">
+<div class="code-block"><code><span class="cm">// The Beverage class stays UNTOUCHED:</span>
+abstract class Beverage {
+  String description;
+  getDescription() { ... }
+  abstract double cost();
+  <span class="cm">// No booleans. No condiment logic.</span>
+  <span class="cm">// No reason to ever change this.</span>
+}
+
+<span class="cm">// Existing decorators? Also untouched.</span>
+<span class="cm">// New behavior = new code, not edits.</span></code></div>
+    </div>
+  </div>
+</div>
+<p class="step-desc">This principle is <strong>the result</strong> of applying encapsulation + interfaces + composition together. When all three work in concert, you get code that grows by <em>addition</em>, not <em>modification</em>.</p>
+<div class="callout success"><strong>The Observer Pattern from Chapter 2 also follows this principle!</strong> Adding new observers extends the subject without modifying it. OCP isn't tied to one pattern — it's a universal goal.</div>
+`
+},
+
+// ─── 9: INTERFACES ───
+{
+  pill: 'pill-green', phase: 'Phase 4 · Implementation',
+  title: 'The Formal Interfaces',
+  html: `
+<p class="step-desc">Let's look at the actual Starbuzz code. First, the abstract types that form the contract:</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label">Beverage.java (Component)</div>
+    <div class="panel-body">
+<div class="code-block"><code><span class="hi-b">public abstract class Beverage</span> {
+  String description = "Unknown Beverage";
+
+  public String getDescription() {
+    return description;
+  }
+
+  <span class="hi-b">public abstract double cost();</span>
+}</code></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label">CondimentDecorator.java (Decorator)</div>
+    <div class="panel-body">
+<div class="code-block"><code><span class="hi-b">public abstract class CondimentDecorator</span>
+    <span class="hi-g">extends Beverage</span> {
+
+  <span class="hi-b">Beverage beverage;</span> <span class="cm">// wraps a Beverage</span>
+
+  <span class="hi-b">public abstract String getDescription();</span>
+  <span class="cm">// Forces condiments to re-describe</span>
+  <span class="cm">// themselves (e.g. "DarkRoast, Mocha")</span>
+}</code></div>
+    </div>
+  </div>
+</div>
+<div class="cd-row" style="margin-top:16px">
+  <div class="cd-box iface" style="min-width:170px">
+    <div class="cd-h">«abstract» Beverage</div>
+    <div class="cd-b">description: String</div>
+    <div class="cd-m">getDescription(): String<br><em>cost(): double</em></div>
+  </div>
+</div>
+<div class="cd-arr">△ extends</div>
+<div class="cd-row">
+  <div class="cd-box good" style="min-width:180px">
+    <div class="cd-h">«abstract» CondimentDecorator</div>
+    <div class="cd-b"><span class="hi-b">beverage: Beverage</span></div>
+    <div class="cd-m"><em>getDescription(): String</em></div>
+  </div>
+</div>
+<div class="callout info"><strong>Why abstract class, not interface?</strong> Starbuzz already had an abstract Beverage class. Traditionally the pattern uses an abstract component, and in Java we could use an interface — but we try to avoid altering existing code.</div>
+`
+},
+
+// ─── 10: CONCRETE CLASSES ───
+{
+  pill: 'pill-green', phase: 'Phase 4 · Implementation',
+  title: 'Concrete Components & Decorators',
+  html: `
+<p class="step-desc">Now the concrete classes — the actual beverages and the condiment wrappers:</p>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-label" style="color:var(--text-teal)">Concrete Beverages</div>
+    <div class="panel-body">
+<div class="code-block"><code><span class="hi-g">public class Espresso extends Beverage</span> {
+  public Espresso() {
+    description = "Espresso";
+  }
+  public double cost() {
+    <span class="hi-g">return 1.99;</span>
+  }
+}
+
+<span class="hi-g">public class HouseBlend extends Beverage</span> {
+  public HouseBlend() {
+    description = "House Blend Coffee";
+  }
+  public double cost() {
+    <span class="hi-g">return 0.89;</span>
+  }
+}</code></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-label" style="color:var(--text-coral)">Concrete Decorators</div>
+    <div class="panel-body">
+<div class="code-block"><code><span class="hi-g">public class Mocha</span>
+    <span class="hi-g">extends CondimentDecorator</span> {
+  public Mocha(<span class="hi-b">Beverage beverage</span>) {
+    this.beverage = beverage;
+  }
+  public String getDescription() {
+    return <span class="hi-g">beverage.getDescription()
+      + ", Mocha";</span>
+  }
+  public double cost() {
+    return <span class="hi-g">0.20 + beverage.cost();</span>
+  }
+}
+
+<span class="cm">// Whip, Soy, Milk follow same pattern</span></code></div>
+    </div>
+  </div>
+</div>
+<div class="cd-row" style="margin-top:10px">
+  <div class="cd-box ctx"><div class="cd-h">Espresso</div><div class="cd-m">cost() → 1.99</div></div>
+  <div class="cd-box ctx"><div class="cd-h">HouseBlend</div><div class="cd-m">cost() → 0.89</div></div>
+  <div class="cd-box ctx"><div class="cd-h">DarkRoast</div><div class="cd-m">cost() → 0.99</div></div>
+  <div class="cd-box ctx"><div class="cd-h">Decaf</div><div class="cd-m">cost() → 1.05</div></div>
+</div>
+<div class="cd-arr">◇ wraps Beverage</div>
+<div class="cd-row">
+  <div class="cd-box obs"><div class="cd-h">Mocha</div><div class="cd-m">+$0.20</div></div>
+  <div class="cd-box obs"><div class="cd-h">Whip</div><div class="cd-m">+$0.10</div></div>
+  <div class="cd-box obs"><div class="cd-h">Soy</div><div class="cd-m">+$0.15</div></div>
+  <div class="cd-box obs"><div class="cd-h">Milk</div><div class="cd-m">+$0.10</div></div>
+</div>
+<div class="callout success"><strong>Pattern:</strong> Every condiment constructor takes a Beverage, delegates to it, and adds its own behavior. Clean, composable, open for extension.</div>
+`
+},
+
+// ─── 11: INTEGRATION ───
+{
+  pill: 'pill-green', phase: 'Phase 4 · Integration',
+  title: 'Wiring It Together: The Test Harness',
+  html: `
+<p class="step-desc">Let's order some coffees and see the pattern in action:</p>
+<div class="code-block"><code>public class StarbuzzCoffee {
+  public static void main(String args[]) {
+    <span class="cm">// Order #1: plain espresso</span>
+    Beverage bev1 = <span class="hi-g">new Espresso()</span>;
+    System.out.println(bev1.getDescription() + " $" + bev1.cost());
+
+    <span class="cm">// Order #2: DarkRoast + double Mocha + Whip</span>
+    Beverage bev2 = <span class="hi-g">new DarkRoast()</span>;
+    bev2 = <span class="hi-y">new Mocha(bev2)</span>;    <span class="cm">// wrap with Mocha</span>
+    bev2 = <span class="hi-y">new Mocha(bev2)</span>;    <span class="cm">// wrap with ANOTHER Mocha!</span>
+    bev2 = <span class="hi-y">new Whip(bev2)</span>;     <span class="cm">// wrap with Whip</span>
+    System.out.println(bev2.getDescription() + " $" + bev2.cost());
+
+    <span class="cm">// Order #3: HouseBlend + Soy + Mocha + Whip</span>
+    Beverage bev3 = <span class="hi-g">new HouseBlend()</span>;
+    bev3 = <span class="hi-y">new Soy(bev3)</span>;
+    bev3 = <span class="hi-y">new Mocha(bev3)</span>;
+    bev3 = <span class="hi-y">new Whip(bev3)</span>;
+    System.out.println(bev3.getDescription() + " $" + bev3.cost());
+  }
+}</code></div>
+<div class="output-block">
+% java StarbuzzCoffee<br>
+Espresso $1.99<br>
+Dark Roast Coffee, Mocha, Mocha, Whip $1.49<br>
+House Blend Coffee, Soy, Mocha, Whip $1.34<br>
+%
+</div>
+<div class="cost-chain">
+  <div class="cost-node" style="background:var(--bg-teal);color:var(--text-teal)">DarkRoast<br>$0.99</div>
+  <div class="cost-arrow">→</div>
+  <div class="cost-node" style="background:var(--bg-coral);color:var(--text-coral)">+Mocha<br>$1.19</div>
+  <div class="cost-arrow">→</div>
+  <div class="cost-node" style="background:var(--bg-coral);color:var(--text-coral)">+Mocha<br>$1.39</div>
+  <div class="cost-arrow">→</div>
+  <div class="cost-node" style="background:var(--bg-purple);color:var(--text-purple)">+Whip<br><strong>$1.49</strong></div>
+</div>
+<div class="callout success"><strong>Double mocha? No problem.</strong> Just wrap twice. The boolean-flag approach couldn't handle this at all. Decorator handles it elegantly — each layer delegates to the next.</div>
+`
+},
+
+// ─── 12: REAL-WORLD — JAVA I/O ───
+{
+  pill: 'pill-yellow', phase: 'Phase 5 · Trade-offs',
+  title: 'Real World: Java I/O Is a Decorator!',
+  html: `
+<p class="step-desc">The Decorator Pattern isn't just academic — the <strong>entire java.io package</strong> is built on it. Once you see it, the "overwhelming" I/O API suddenly makes sense:</p>
+<div class="cd-row">
+  <div class="cd-box iface" style="min-width:160px"><div class="cd-h">«abstract» InputStream</div><div class="cd-m">read()</div></div>
+</div>
+<div class="cd-arr">△ extends</div>
+<div class="cd-row">
+  <div class="cd-box ctx"><div class="cd-h">FileInputStream</div><div class="cd-m"><span class="cm">component</span></div></div>
+  <div class="cd-box ctx"><div class="cd-h">ByteArrayInputStream</div><div class="cd-m"><span class="cm">component</span></div></div>
+  <div class="cd-box good" style="min-width:140px"><div class="cd-h">FilterInputStream</div><div class="cd-m"><span class="cm">abstract decorator</span></div></div>
+</div>
+<div class="cd-arr" style="padding-left:200px">△ extends</div>
+<div class="cd-row">
+  <div class="cd-box obs"><div class="cd-h">BufferedInputStream</div><div class="cd-m"><span class="cm">adds buffering</span></div></div>
+  <div class="cd-box obs"><div class="cd-h">DataInputStream</div><div class="cd-m"><span class="cm">adds readInt()</span></div></div>
+  <div class="cd-box obs"><div class="cd-h">LineNumberInputStream</div><div class="cd-m"><span class="cm">adds line count</span></div></div>
+</div>
+<p class="step-desc" style="margin-top:14px">You can even write your own I/O decorator:</p>
+<div class="code-block"><code><span class="hi-g">public class LowerCaseInputStream extends FilterInputStream</span> {
+  public LowerCaseInputStream(InputStream in) { super(in); }
+
+  public int read() throws IOException {
+    int c = <span class="hi-y">super.read();</span>  <span class="cm">// delegate to wrapped stream</span>
+    return (c == -1 ? c : <span class="hi-g">Character.toLowerCase((char)c)</span>);
+  }
+}
+
+<span class="cm">// Usage — same wrapping pattern as Starbuzz!</span>
+InputStream in = <span class="hi-g">new LowerCaseInputStream(</span>
+  <span class="hi-y">new BufferedInputStream(</span>
+    <span class="hi-b">new FileInputStream("test.txt")</span>
+  <span class="hi-y">)</span>
+<span class="hi-g">)</span>;</code></div>
+<div class="callout warning"><strong>Trade-off alert:</strong> Java I/O also shows the <em>downside</em> of Decorator — so many small wrapper classes that newcomers find the API overwhelming. The flexibility comes at the cost of complexity.</div>
+`
+},
+
+// ─── 13: DARK SIDE ───
+{
+  pill: 'pill-red', phase: 'Phase 5 · Cautionary Tale',
+  title: 'The Dark Side of Decorators',
+  html: `
+<p class="step-desc">Every pattern has pitfalls. Let's diagnose them using <strong>the same principles we used to build it</strong>:</p>
+
+<div class="principle-box" style="border-color: var(--border-warning); background: var(--bg-warning);">
+  <div class="label" style="color: var(--text-warning);">Pitfall #1: Type-Checking Breaks</div>
+  <div class="text" style="color: var(--text-warning);">Code that checks for a specific concrete type will fail with decorated objects.</div>
+</div>
+<div class="code-block"><code><span class="cm">// This code BREAKS with decorators:</span>
+if (beverage <span class="hi-r">instanceof HouseBlend</span>) {
+  applyDiscount(beverage);  <span class="cm">// ← Won't match!</span>
+}
+<span class="cm">// Because beverage is actually Whip(Mocha(HouseBlend))</span>
+<span class="cm">// Fix: program to interfaces, not implementations!</span></code></div>
+
+<div class="principle-box" style="border-color: var(--border-warning); background: var(--bg-warning);">
+  <div class="label" style="color: var(--text-warning);">Pitfall #2: Instantiation Complexity</div>
+  <div class="text" style="color: var(--text-warning);">Creating decorated objects requires multiple wrapping steps.</div>
+</div>
+<div class="code-block"><code><span class="cm">// Instead of simple:</span>
+Beverage b = new DoubleDecafMochaWhip();
+
+<span class="cm">// You write:</span>
+Beverage b = <span class="hi-y">new Whip(new Mocha(new Mocha(new Decaf())))</span>;
+<span class="cm">// Nesting gets deep fast!
+// Fix: use Factory or Builder patterns (coming in later chapters)</span></code></div>
+
+<div class="principle-box" style="border-color: var(--border-warning); background: var(--bg-warning);">
+  <div class="label" style="color: var(--text-warning);">Pitfall #3: Small Class Proliferation</div>
+  <div class="text" style="color: var(--text-warning);">Many small decorator classes can make the codebase hard to navigate — just look at java.io!</div>
+</div>
+
+<p class="step-desc">Notice how we diagnosed these problems using the <em>same principles</em> that built the pattern. Principles aren't just for building — they're reusable diagnostic tools for evaluating <em>any</em> design.</p>
+<div class="callout danger"><strong>Key lesson:</strong> Decorator is powerful but not free. Use it where flexibility matters, and pair it with Factory/Builder to tame the instantiation complexity.</div>
+`
+},
+
+// ─── 14: COMPLETE PATTERN ───
+{
+  pill: 'pill-purple', phase: 'Phase 6 · Summary',
+  title: 'The Complete Decorator Pattern',
+  html: `
+<p class="step-desc">Here's the full Starbuzz class diagram — every piece connected:</p>
+<div class="cd-row">
+  <div class="cd-box iface" style="min-width:200px">
+    <div class="cd-h">«abstract» Beverage</div>
+    <div class="cd-b">description: String</div>
+    <div class="cd-m">getDescription(): String<br><em>cost(): double</em></div>
+  </div>
+</div>
+<div class="cd-arr">△ extends &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ extends</div>
+<div class="cd-row">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+    <div class="cd-row">
+      <div class="cd-box ctx" style="min-width:85px"><div class="cd-h">HouseBlend</div><div class="cd-m">cost()</div></div>
+      <div class="cd-box ctx" style="min-width:85px"><div class="cd-h">DarkRoast</div><div class="cd-m">cost()</div></div>
+    </div>
+    <div class="cd-row">
+      <div class="cd-box ctx" style="min-width:85px"><div class="cd-h">Espresso</div><div class="cd-m">cost()</div></div>
+      <div class="cd-box ctx" style="min-width:85px"><div class="cd-h">Decaf</div><div class="cd-m">cost()</div></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+    <div class="cd-box good" style="min-width:180px">
+      <div class="cd-h">«abstract» CondimentDecorator</div>
+      <div class="cd-b"><span class="hi-b">beverage: Beverage</span></div>
+      <div class="cd-m"><em>getDescription()</em></div>
+    </div>
+    <div class="cd-arr">△ extends</div>
+    <div class="cd-row">
+      <div class="cd-box obs" style="min-width:65px"><div class="cd-h">Milk</div><div class="cd-m">cost()</div></div>
+      <div class="cd-box obs" style="min-width:65px"><div class="cd-h">Mocha</div><div class="cd-m">cost()</div></div>
+      <div class="cd-box obs" style="min-width:65px"><div class="cd-h">Soy</div><div class="cd-m">cost()</div></div>
+      <div class="cd-box obs" style="min-width:65px"><div class="cd-h">Whip</div><div class="cd-m">cost()</div></div>
+    </div>
+  </div>
+</div>
+<p class="step-desc" style="margin-top:18px">The <strong>inheritance</strong> (△) gives us type compatibility. The <strong>composition</strong> (beverage field) gives us runtime flexibility. Together they create the Decorator Pattern.</p>
+<div class="callout purple"><strong>Remember the journey:</strong> Class explosion → Boolean flags → Diagnose with principles → Encapsulate what varies → Program to interfaces → Favor composition → <em>The Decorator Pattern emerges.</em></div>
+`
+},
+
+// ─── 15: TOOLBOX UPDATE ───
+{
+  pill: 'pill-purple', phase: 'Phase 6 · Toolbox',
+  title: 'Your Design Toolbox — Updated',
+  html: `
+<p class="step-desc">Let's update our toolbox with everything we've learned. The journey on the left, the accumulated tools on the right:</p>
+<div class="toolbox-grid">
+  <div class="toolbox-col">
+    <h4>The Journey</h4>
+    <div class="toolbox-item"><span class="step-phase pill-gray" style="font-size:0.58rem">Brief</span> Starbuzz needs condiment pricing</div>
+    <div class="toolbox-item"><span class="step-phase pill-gray" style="font-size:0.58rem">Attempt</span> Class explosion — 64+ subclasses</div>
+    <div class="toolbox-item"><span class="step-phase pill-gray" style="font-size:0.58rem">Attempt</span> Boolean flags in superclass</div>
+    <div class="toolbox-item"><span class="step-phase pill-red" style="font-size:0.58rem">Oh no</span> Three principles violated!</div>
+    <div class="toolbox-item"><span class="step-phase pill-blue" style="font-size:0.58rem">Fix #1</span> Encapsulate condiments as objects</div>
+    <div class="toolbox-item"><span class="step-phase pill-blue" style="font-size:0.58rem">Fix #2</span> Share Beverage supertype</div>
+    <div class="toolbox-item"><span class="step-phase pill-blue" style="font-size:0.58rem">Fix #3</span> Compose via HAS-A delegation</div>
+    <div class="toolbox-item"><span class="step-phase pill-purple" style="font-size:0.58rem">Reveal</span> It's the Decorator Pattern!</div>
+    <div class="toolbox-item"><span class="step-phase pill-green" style="font-size:0.58rem">New</span> Open-Closed Principle</div>
+    <div class="toolbox-item"><span class="step-phase pill-yellow" style="font-size:0.58rem">Real</span> Java I/O as Decorator</div>
+    <div class="toolbox-item"><span class="step-phase pill-red" style="font-size:0.58rem">Pitfalls</span> Type-check, complexity, sprawl</div>
+  </div>
+  <div class="toolbox-col">
+    <h4>OO Principles</h4>
+    <div class="toolbox-item"><span class="badge badge-prev">Ch1</span> Encapsulate what varies</div>
+    <div class="toolbox-item"><span class="badge badge-prev">Ch1</span> Favor composition over inheritance</div>
+    <div class="toolbox-item"><span class="badge badge-prev">Ch1</span> Program to interfaces, not implementations</div>
+    <div class="toolbox-item"><span class="badge badge-prev">Ch2</span> Strive for loosely coupled designs</div>
+    <div class="toolbox-item"><span class="badge badge-new">★ Ch3</span> <strong>Open for extension, closed for modification</strong></div>
+
+    <h4 style="margin-top:16px">OO Patterns</h4>
+    <div class="toolbox-item"><span class="badge badge-prev">Ch1</span> Strategy</div>
+    <div class="toolbox-item"><span class="badge badge-prev">Ch2</span> Observer</div>
+    <div class="toolbox-item"><span class="badge badge-new">★ Ch3</span> <strong>Decorator</strong> — attach additional responsibilities dynamically; a flexible alternative to subclassing</div>
+  </div>
+</div>
+<div class="callout purple"><strong>Key takeaway:</strong> Patterns aren't recipes to memorize — they're natural consequences of applying design principles to real problems. Master the principles and the patterns follow.</div>
+`
+}
+];
+
+// ═══════════════════════════════════════════
+//  APP LOGIC
+// ═══════════════════════════════════════════
+let current = 0;
+const container = document.getElementById('stepContainer');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const dotsEl = document.getElementById('dots');
+const progressFill = document.getElementById('progressFill');
+const themeToggle = document.getElementById('themeToggle');
+
+function render() {
+  const s = steps[current];
+  container.innerHTML = `<div class="step">
+    <span class="step-phase ${s.pill}">${s.phase}</span>
+    <h2 class="step-title">${s.title}</h2>
+    ${s.html}
+  </div>`;
+  container.scrollTop = 0;
+
+  prevBtn.disabled = current === 0;
+  nextBtn.textContent = current === steps.length - 1 ? 'Done ✓' : 'Next →';
+  nextBtn.disabled = current === steps.length - 1;
+
+  progressFill.style.width = ((current + 1) / steps.length * 100) + '%';
+
+  dotsEl.innerHTML = '';
+  steps.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === current ? ' active' : '');
+    d.setAttribute('aria-label', 'Go to step ' + (i + 1));
+    d.onclick = () => { current = i; render(); };
+    dotsEl.appendChild(d);
+  });
+}
+
+prevBtn.onclick = () => { if (current > 0) { current--; render(); } };
+nextBtn.onclick = () => { if (current < steps.length - 1) { current++; render(); } };
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' && current < steps.length - 1) { current++; render(); }
+  if (e.key === 'ArrowLeft' && current > 0) { current--; render(); }
+});
+
+themeToggle.onclick = () => {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+};
+
+render();
+</script>
+</body>
+</html>
