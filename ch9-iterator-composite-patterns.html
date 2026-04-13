@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.9 — Iterator &amp; Composite Patterns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f7f9;
+  --bg-tertiary: #ebedf2;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f7ed;
+  --bg-warning: #fef6e0;
+  --bg-purple: #f3edff;
+
+  --text-primary: #1a1d23;
+  --text-secondary: #4a5068;
+  --text-tertiary: #7c829d;
+  --text-info: #1a56db;
+  --text-danger: #c62828;
+  --text-success: #1b7340;
+  --text-warning: #b45309;
+  --text-purple: #6c3fc5;
+
+  --border-primary: #d1d5e0;
+  --border-secondary: #e3e6ed;
+  --border-tertiary: #ebedf2;
+
+  --purple-50: #f8f5ff; --purple-100: #f0e8ff; --purple-200: #ddd0ff;
+  --purple-300: #c4a8ff; --purple-400: #a47aff; --purple-500: #7c4dff;
+  --purple-600: #6c3fc5; --purple-700: #5530a0; --purple-800: #3e2272;
+
+  --teal-50: #f0fdfa; --teal-100: #ccfbf1; --teal-200: #99f6e4;
+  --teal-300: #5eead4; --teal-400: #2dd4bf; --teal-500: #14b8a6;
+  --teal-600: #0d9488; --teal-700: #0f766e; --teal-800: #115e59;
+
+  --coral-50: #fff5f5; --coral-100: #ffe3e3; --coral-200: #ffc9c9;
+  --coral-300: #ffa8a8; --coral-400: #ff8787; --coral-500: #ff6b6b;
+  --coral-600: #fa5252; --coral-700: #e03131; --coral-800: #c92a2a;
+
+  --progress-bg: #e3e6ed;
+  --progress-fill: var(--purple-500);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1e2028;
+  --bg-secondary: #262830;
+  --bg-tertiary: #16171c;
+  --bg-info: #1a2744;
+  --bg-danger: #3b1a1a;
+  --bg-success: #1a3328;
+  --bg-warning: #3b2e14;
+  --bg-purple: #2a1f46;
+
+  --text-primary: #e8eaf0;
+  --text-secondary: #a0a6be;
+  --text-tertiary: #6b7194;
+  --text-info: #7aabff;
+  --text-danger: #ff8a8a;
+  --text-success: #6ee7a0;
+  --text-warning: #fbbf24;
+  --text-purple: #c4a8ff;
+
+  --border-primary: #3a3d4a;
+  --border-secondary: #2e3040;
+  --border-tertiary: #262830;
+
+  --purple-50: #1e1836; --purple-100: #2a1f46; --purple-200: #3d2d6b;
+  --purple-300: #5530a0; --purple-400: #7c4dff; --purple-500: #a47aff;
+  --purple-600: #c4a8ff; --purple-700: #ddd0ff; --purple-800: #f0e8ff;
+
+  --teal-50: #0f2925; --teal-100: #134e45; --teal-200: #196b60;
+  --teal-300: #2dd4bf; --teal-400: #5eead4; --teal-500: #99f6e4;
+  --teal-600: #ccfbf1; --teal-700: #e0fdf6; --teal-800: #f0fdfa;
+
+  --coral-50: #2c1616; --coral-100: #4a1e1e; --coral-200: #7a2e2e;
+  --coral-300: #e03131; --coral-400: #ff6b6b; --coral-500: #ff8787;
+  --coral-600: #ffa8a8; --coral-700: #ffc9c9; --coral-800: #ffe3e3;
+
+  --progress-bg: #2e3040;
+  --progress-fill: var(--purple-400);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.65;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.header h1 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: -0.02em;
+}
+.header h1 span { color: var(--purple-500); }
+.theme-toggle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+.theme-toggle:hover { border-color: var(--purple-400); color: var(--text-primary); }
+
+/* ── Progress Bar ── */
+.progress-bar {
+  height: 3px;
+  background: var(--progress-bg);
+  border-radius: 3px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--progress-fill);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ── Main Card ── */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+/* ── Step Header ── */
+.step-header {
+  padding: 24px 28px 0;
+}
+.phase-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.pill-gray   { background: var(--bg-tertiary); color: var(--text-tertiary); }
+.pill-red    { background: var(--bg-danger); color: var(--text-danger); }
+.pill-yellow { background: var(--bg-warning); color: var(--text-warning); }
+.pill-blue   { background: var(--bg-info); color: var(--text-info); }
+.pill-green  { background: var(--bg-success); color: var(--text-success); }
+.pill-purple { background: var(--bg-purple); color: var(--text-purple); }
+.pill-teal   { background: var(--teal-50); color: var(--teal-600); }
+
+.step-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.step-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ── Step Body ── */
+.step-body {
+  padding: 0 28px 20px;
+}
+
+/* ── Principle Box ── */
+.principle-box {
+  border: 2px solid var(--text-info);
+  background: var(--bg-info);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+.principle-box .principle-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-info);
+  margin-bottom: 4px;
+}
+.principle-box .principle-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-info);
+}
+
+/* ── Panels (side by side) ── */
+.panels {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.panel {
+  flex: 1;
+  min-width: 0;
+}
+.panel-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  color: var(--text-tertiary);
+}
+.panel-label.before-label { color: var(--text-danger); }
+.panel-label.after-label  { color: var(--text-success); }
+
+.full-panel { margin-bottom: 16px; }
+
+/* ── Code Block ── */
+.code-block {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-primary);
+}
+.code-block .hi-r { background: var(--bg-danger); border-radius: 3px; padding: 1px 3px; color: var(--text-danger); }
+.code-block .hi-g { background: var(--bg-success); border-radius: 3px; padding: 1px 3px; color: var(--text-success); }
+.code-block .hi-y { background: var(--bg-warning); border-radius: 3px; padding: 1px 3px; color: var(--text-warning); }
+.code-block .hi-b { background: var(--bg-info); border-radius: 3px; padding: 1px 3px; color: var(--text-info); }
+.code-block .cm   { color: var(--text-tertiary); }
+
+/* ── Class Diagram ── */
+.cd-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.cd-arr {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  padding: 4px 0;
+  margin-bottom: 4px;
+}
+.cd-box {
+  border: 2px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  min-width: 130px;
+  max-width: 200px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  overflow: hidden;
+}
+.cd-box.bad    { border-color: var(--coral-400); background: var(--coral-50); }
+.cd-box.dup    { border-color: var(--text-warning); background: var(--bg-warning); }
+.cd-box.iface  { border-style: dashed; border-color: var(--purple-400); background: var(--purple-50); }
+.cd-box.ctx    { border-color: var(--teal-400); background: var(--teal-50); }
+.cd-box.obs    { border-color: var(--coral-400); background: var(--coral-50); }
+.cd-box.good   { border-color: var(--text-success); background: var(--bg-success); }
+.cd-box.composite { border-color: var(--teal-500); background: var(--teal-50); }
+
+.cd-h {
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  border-bottom: 1px solid var(--border-secondary);
+  text-align: center;
+}
+.cd-b, .cd-m {
+  padding: 5px 10px;
+  font-size: 0.63rem;
+  line-height: 1.55;
+}
+.cd-b { border-bottom: 1px solid var(--border-secondary); }
+
+/* ── Callout ── */
+.callout {
+  border-left: 3px solid var(--border-primary);
+  background: var(--bg-secondary);
+  padding: 12px 16px;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.callout.info    { border-left-color: var(--text-info); background: var(--bg-info); color: var(--text-info); }
+.callout.danger  { border-left-color: var(--text-danger); background: var(--bg-danger); color: var(--text-danger); }
+.callout.success { border-left-color: var(--text-success); background: var(--bg-success); color: var(--text-success); }
+.callout.warning { border-left-color: var(--text-warning); background: var(--bg-warning); color: var(--text-warning); }
+.callout.purple  { border-left-color: var(--text-purple); background: var(--bg-purple); color: var(--text-purple); }
+.callout strong { font-weight: 600; }
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--border-tertiary);
+}
+.nav-btn {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+.nav-btn:hover { border-color: var(--purple-400); color: var(--purple-500); }
+.nav-btn:disabled { opacity: 0.35; cursor: default; }
+.nav-btn:disabled:hover { border-color: var(--border-primary); color: var(--text-primary); }
+.nav-btn.primary {
+  background: var(--purple-500);
+  color: #fff;
+  border-color: var(--purple-500);
+}
+.nav-btn.primary:hover { background: var(--purple-600); }
+
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 60%;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-primary);
+  cursor: pointer;
+  transition: all 0.25s;
+  border: none;
+  padding: 0;
+}
+.dot:hover { background: var(--purple-300); }
+.dot.active {
+  background: var(--purple-500);
+  width: 22px;
+  border-radius: 4px;
+}
+
+/* ── Animation ── */
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.step { display: none; }
+.step.active {
+  display: block;
+  animation: fadeSlide 0.35s ease;
+}
+
+/* ── Bridge ── */
+.bridge {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--bg-warning);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--text-warning);
+  font-weight: 500;
+}
+
+/* ── Descriptive text in body ── */
+.desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+
+/* ── Toolbox columns ── */
+.toolbox-cols {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.toolbox-col { flex: 1; }
+.toolbox-col h4 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+.toolbox-item {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-tertiary);
+}
+.toolbox-item.new {
+  background: var(--bg-success);
+  border-color: var(--text-success);
+  color: var(--text-success);
+  font-weight: 600;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .panels { flex-direction: column; }
+  .toolbox-cols { flex-direction: column; }
+  .container { padding: 12px 8px 24px; }
+  .step-header, .step-body, .nav { padding-left: 18px; padding-right: 18px; }
+  .step-title { font-size: 1.15rem; }
+  .dots { max-width: 80%; }
+  .cd-box { min-width: 100px; max-width: 160px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><span>Ch. 9</span> — Iterator &amp; Composite</h1>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">Light / Dark</button>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card">
+    <div id="stepContainer">
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 0 — THE BRIEF                                     ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step active" data-step="0">
+  <div class="step-header">
+    <span class="phase-pill pill-gray">Phase 1 · The Brief</span>
+    <div class="step-title">Two Menus, One Waitress</div>
+    <div class="step-subtitle">Objectville Diner and Pancake House have merged. Both restaurants have their own menu implementation — and neither chef will budge.</div>
+  </div>
+  <div class="step-body">
+    <div class="desc">Lou (Pancake House) stores menu items in an <strong>ArrayList</strong>. Mel (Diner) uses a plain <strong>Array</strong>. They agreed on a common <code>MenuItem</code> class, but that's where cooperation ends. Our job: build a Waitress that can print <em>both</em> menus.</div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">Lou's Pancake House Menu</div>
+        <div class="code-block"><span class="hi-y">ArrayList&lt;MenuItem&gt; menuItems</span>
+
+<span class="cm">// add items via ArrayList.add()</span>
+public ArrayList getMenuItems() {
+  return menuItems;
+}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Mel's Diner Menu</div>
+        <div class="code-block"><span class="hi-y">MenuItem[] menuItems</span>
+
+<span class="cm">// add items via array index</span>
+public MenuItem[] getMenuItems() {
+  return menuItems;
+}</div>
+      </div>
+    </div>
+    <div class="cd-row">
+      <div class="cd-box ctx"><div class="cd-h">PancakeHouseMenu</div><div class="cd-b">menuItems: ArrayList</div><div class="cd-m">getMenuItems()</div></div>
+      <div class="cd-box ctx"><div class="cd-h">DinerMenu</div><div class="cd-b">menuItems: MenuItem[]</div><div class="cd-m">getMenuItems()</div></div>
+    </div>
+    <div class="cd-arr">← two menus, two different collection types →</div>
+    <div class="callout info"><strong>The goal:</strong> build a Waitress class that can iterate over both menus to print items, check for vegetarian options, etc. — without caring how each menu stores its items.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 1 — FIRST ATTEMPT (Naive Waitress)                ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="1">
+  <div class="step-header">
+    <span class="phase-pill pill-gray">Phase 1 · First Attempt</span>
+    <div class="step-title">The Brute-Force Waitress</div>
+    <div class="step-subtitle">We call getMenuItems() on both menus and write loops. Simple, right?</div>
+  </div>
+  <div class="step-body">
+    <div class="full-panel">
+      <div class="code-block">public class Waitress {
+  PancakeHouseMenu pancakeHouseMenu;
+  DinerMenu dinerMenu;
+
+  public void printMenu() {
+    <span class="hi-r">ArrayList breakfastItems = pancakeHouseMenu.getMenuItems();</span>
+    <span class="hi-r">MenuItem[] lunchItems = dinerMenu.getMenuItems();</span>
+
+    <span class="hi-r">for (int i = 0; i &lt; breakfastItems.size(); i++) {</span>
+      MenuItem m = (MenuItem) breakfastItems.get(i);
+      System.out.println(m.getName() + " " + m.getPrice());
+    }
+
+    <span class="hi-r">for (int i = 0; i &lt; lunchItems.length; i++) {</span>
+      MenuItem m = lunchItems[i];
+      System.out.println(m.getName() + " " + m.getPrice());
+    }
+  }
+}</div>
+    </div>
+    <div class="desc">It compiles. It runs. The developer feels confident. But then a Café wants to join the merger — they use a Hashtable. Now we need <em>three</em> loops, three concrete types, and the Waitress keeps growing...</div>
+    <div class="callout warning"><strong>Feels fine now</strong> — but what happens when a 4th restaurant joins? We'd need a 4th loop, a 4th concrete reference. Every menu change means changing the Waitress.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 2 — OH NO! Diagnose                               ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="2">
+  <div class="step-header">
+    <span class="phase-pill pill-red">Phase 1 · Oh No!</span>
+    <div class="step-title">Diagnosis: Which Principles Are Violated?</div>
+    <div class="step-subtitle">Let's use the OO principles we already know as a diagnostic checklist against our naive Waitress code.</div>
+  </div>
+  <div class="step-body">
+    <div class="full-panel">
+      <div class="code-block">public void printMenu() {
+  <span class="hi-r">ArrayList breakfastItems = pancakeHouseMenu.getMenuItems();</span>  <span class="cm">// ❌ Encapsulation: internal collection exposed</span>
+  <span class="hi-r">MenuItem[] lunchItems = dinerMenu.getMenuItems();</span>            <span class="cm">// ❌ Encapsulation: internal collection exposed</span>
+
+  <span class="hi-r">for (int i = 0; i &lt; breakfastItems.size(); i++)</span>  <span class="cm">// ❌ Coding to concrete ArrayList</span>
+    ...
+  <span class="hi-r">for (int i = 0; i &lt; lunchItems.length; i++)</span>      <span class="cm">// ❌ Coding to concrete Array</span>
+    ...
+  <span class="cm">// ❌ Open-Closed: adding a 3rd menu = modifying Waitress</span>
+  <span class="cm">// ❌ No common interface for menus</span>
+}</div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label" style="color:var(--text-danger)">Violations Found</div>
+        <div class="code-block" style="font-family:var(--font-body);font-size:0.8rem;line-height:1.8">
+<span class="hi-r">1. Encapsulate what varies</span>
+   Iteration logic varies per collection type — but it's baked into Waitress.
+
+<span class="hi-r">2. Program to interfaces</span>
+   Waitress references ArrayList and MenuItem[] directly — concrete types.
+
+<span class="hi-r">3. Open-Closed Principle</span>
+   Every new menu means modifying Waitress code.
+
+<span class="hi-r">4. Single Responsibility</span>
+   Waitress manages iteration AND uses menu data — two reasons to change.</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">System Diagram</div>
+        <div class="cd-row">
+          <div class="cd-box bad"><div class="cd-h">Waitress</div><div class="cd-m">printMenu()<br><span style="color:var(--text-danger)">⚠ 2 loops</span><br><span style="color:var(--text-danger)">⚠ 2 concrete refs</span></div></div>
+        </div>
+        <div class="cd-arr">depends on concrete types ↓</div>
+        <div class="cd-row">
+          <div class="cd-box bad"><div class="cd-h">PancakeHouseMenu</div><div class="cd-m">getMenuItems(): ArrayList</div></div>
+          <div class="cd-box bad"><div class="cd-h">DinerMenu</div><div class="cd-m">getMenuItems(): MenuItem[]</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout danger"><strong>Verdict:</strong> Four principles violated. The root cause? The Waitress knows too much about how each menu stores its items. Let's fix them one at a time, starting with <em>"Encapsulate what varies."</em></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 3 — PRINCIPLE 1: Encapsulate What Varies           ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="3">
+  <div class="step-header">
+    <span class="phase-pill pill-blue">Phase 2 · Apply Principle</span>
+    <div class="step-title">Principle 1: Encapsulate What Varies</div>
+    <div class="step-subtitle">What varies between the two menus? The iteration logic. Let's extract it into its own object.</div>
+  </div>
+  <div class="step-body">
+    <div class="principle-box">
+      <div class="principle-label">Design Principle</div>
+      <div class="principle-text">"Encapsulate what varies — identify the aspects that vary and separate them from what stays the same."</div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label before-label">Before — iteration mixed in</div>
+        <div class="code-block"><span class="cm">// In Waitress — two different loops!</span>
+<span class="hi-r">for (int i = 0; i &lt; breakfastItems.size(); i++)</span>
+  MenuItem m = (MenuItem) breakfastItems.get(i);
+
+<span class="hi-r">for (int i = 0; i &lt; lunchItems.length; i++)</span>
+  MenuItem m = lunchItems[i];</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label after-label">After — iteration encapsulated</div>
+        <div class="code-block"><span class="cm">// New idea: an Iterator object!</span>
+<span class="hi-g">Iterator iter = menu.createIterator();</span>
+<span class="hi-g">while (iter.hasNext()) {</span>
+<span class="hi-g">  MenuItem m = (MenuItem) iter.next();</span>
+<span class="hi-g">}</span>
+<span class="cm">// ONE loop style for ALL menus!</span></div>
+      </div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label before-label">Before — Diagram</div>
+        <div class="cd-row"><div class="cd-box bad"><div class="cd-h">Waitress</div><div class="cd-m"><span style="color:var(--text-danger)">breakfastItems.size()</span><br><span style="color:var(--text-danger)">lunchItems.length</span></div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-label after-label">After — Diagram</div>
+        <div class="cd-row"><div class="cd-box good"><div class="cd-h">Waitress</div><div class="cd-m">iter.hasNext()<br>iter.next()</div></div></div>
+        <div class="cd-arr">↓ uses</div>
+        <div class="cd-row"><div class="cd-box" style="border-style:dashed;border-color:var(--text-tertiary)"><div class="cd-h">Iterator ???</div><div class="cd-m">hasNext()<br>next()</div></div></div>
+      </div>
+    </div>
+    <div class="bridge">But wait — we wrote <code>Iterator</code> with a <code>???</code>. What type is that? Is it a class? An interface? We need something that both Array-iterators and ArrayList-iterators can conform to. That's where the next principle comes in...</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 4 — PRINCIPLE 2: Program to Interfaces             ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="4">
+  <div class="step-header">
+    <span class="phase-pill pill-blue">Phase 2 · Apply Principle</span>
+    <div class="step-title">Principle 2: Program to Interfaces</div>
+    <div class="step-subtitle">Define an Iterator interface so every menu can provide its own iterator implementation.</div>
+  </div>
+  <div class="step-body">
+    <div class="principle-box">
+      <div class="principle-label">Design Principle</div>
+      <div class="principle-text">"Program to an interface, not an implementation."</div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label before-label">Before — concrete types</div>
+        <div class="code-block"><span class="cm">// Waitress bound to concrete types</span>
+<span class="hi-r">ArrayList breakfastItems = ...</span>
+<span class="hi-r">MenuItem[] lunchItems = ...</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-label after-label">After — interface</div>
+        <div class="code-block"><span class="hi-b">public interface Iterator {</span>
+<span class="hi-b">  boolean hasNext();</span>
+<span class="hi-b">  Object next();</span>
+<span class="hi-b">}</span>
+
+<span class="cm">// Now Waitress only knows Iterator!</span>
+<span class="hi-g">Iterator iter = menu.createIterator();</span></div>
+      </div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label after-label">Concrete: DinerMenuIterator</div>
+        <div class="code-block"><span class="hi-g">public class DinerMenuIterator</span>
+<span class="hi-g">    implements Iterator {</span>
+  MenuItem[] items;
+  int position = 0;
+
+  public Object <span class="hi-g">next()</span> {
+    MenuItem m = items[position];
+    position++;
+    return m;
+  }
+  public boolean <span class="hi-g">hasNext()</span> {
+    return position &lt; items.length
+        &amp;&amp; items[position] != null;
+  }
+}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label after-label">Diagram — evolving</div>
+        <div class="cd-row"><div class="cd-box good"><div class="cd-h">Waitress</div><div class="cd-m">printMenu(Iterator)</div></div></div>
+        <div class="cd-arr">↓ uses</div>
+        <div class="cd-row"><div class="cd-box iface"><div class="cd-h">«interface» Iterator</div><div class="cd-m">hasNext()<br>next()</div></div></div>
+        <div class="cd-arr">△ implements</div>
+        <div class="cd-row">
+          <div class="cd-box obs"><div class="cd-h">PancakeIterator</div></div>
+          <div class="cd-box obs"><div class="cd-h">DinerMenuIterator</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bridge">Great — the Waitress now talks to an Iterator interface. But the menus themselves still don't have a common interface. The Waitress still references <code>PancakeHouseMenu</code> and <code>DinerMenu</code> directly. One more principle to go...</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 5 — PRINCIPLE 3: Open-Closed + Menu Interface      ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="5">
+  <div class="step-header">
+    <span class="phase-pill pill-blue">Phase 2 · Apply Principle</span>
+    <div class="step-title">Principle 3: Open for Extension, Closed for Modification</div>
+    <div class="step-subtitle">Create a Menu interface so the Waitress can handle any number of menus without code changes.</div>
+  </div>
+  <div class="step-body">
+    <div class="principle-box">
+      <div class="principle-label">Design Principle</div>
+      <div class="principle-text">"Classes should be open for extension but closed for modification."</div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label before-label">Before — concrete menu refs</div>
+        <div class="code-block">public class Waitress {
+  <span class="hi-r">PancakeHouseMenu pancakeHouseMenu;</span>
+  <span class="hi-r">DinerMenu dinerMenu;</span>
+  <span class="cm">// Adding CafeMenu? Change this class!</span>
+}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label after-label">After — Menu interface</div>
+        <div class="code-block"><span class="hi-b">public interface Menu {</span>
+<span class="hi-b">  Iterator createIterator();</span>
+<span class="hi-b">}</span>
+
+public class Waitress {
+  <span class="hi-g">ArrayList&lt;Menu&gt; menus;</span>
+  <span class="cm">// Add new menus? No changes needed!</span>
+}</div>
+      </div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label after-label">Updated Waitress</div>
+        <div class="code-block">public class Waitress {
+  <span class="hi-g">ArrayList&lt;Menu&gt; menus;</span>
+
+  public void printMenu() {
+    <span class="hi-g">Iterator menuIter = menus.iterator();</span>
+    while (menuIter.hasNext()) {
+      Menu menu = (Menu) menuIter.next();
+      <span class="hi-g">printMenu(menu.createIterator());</span>
+    }
+  }
+
+  void printMenu(<span class="hi-g">Iterator iter</span>) {
+    while (iter.hasNext()) {
+      MenuItem m = (MenuItem) iter.next();
+      System.out.println(m.getName());
+    }
+  }
+}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label after-label">Final Diagram</div>
+        <div class="cd-row"><div class="cd-box good"><div class="cd-h">Waitress</div><div class="cd-m">printMenu()</div></div></div>
+        <div class="cd-arr">↓ uses</div>
+        <div class="cd-row">
+          <div class="cd-box iface"><div class="cd-h">«interface» Menu</div><div class="cd-m">createIterator()</div></div>
+          <div class="cd-box iface"><div class="cd-h">«interface» Iterator</div><div class="cd-m">hasNext() · next()</div></div>
+        </div>
+        <div class="cd-arr">△ implements</div>
+        <div class="cd-row">
+          <div class="cd-box obs"><div class="cd-h">PancakeHouseMenu</div></div>
+          <div class="cd-box obs"><div class="cd-h">DinerMenu</div></div>
+          <div class="cd-box obs"><div class="cd-h">CafeMenu</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout success"><strong>All four violations — fixed!</strong> Iteration is encapsulated. The Waitress programs to interfaces. New menus can be added without modifying the Waitress. And each class now has a single responsibility.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 6 — REVELATION: Iterator Pattern                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="6">
+  <div class="step-header">
+    <span class="phase-pill pill-purple">Phase 3 · The Revelation</span>
+    <div class="step-title">Wait... This Has a Name!</div>
+    <div class="step-subtitle">By applying known principles one at a time, we've independently arrived at the Iterator Pattern.</div>
+  </div>
+  <div class="step-body">
+    <div class="principle-box" style="border-color:var(--purple-400); background:var(--bg-purple);">
+      <div class="principle-label" style="color:var(--text-purple)">Iterator Pattern — Definition</div>
+      <div class="principle-text" style="color:var(--text-purple)">"The Iterator Pattern provides a way to access the elements of an aggregate object sequentially without exposing its underlying representation."</div>
+    </div>
+    <div class="desc">Think of it like a waiter in a real restaurant: you don't need to go into the kitchen and look through the fridge yourself. The waiter brings items to you one at a time. You don't care if they're stored on shelves, in drawers, or stacked in a pile — you just say <em>"next, please."</em></div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">Pattern Class Diagram</div>
+        <div class="cd-row"><div class="cd-box good"><div class="cd-h">Client</div></div></div>
+        <div class="cd-arr">↓ uses</div>
+        <div class="cd-row">
+          <div class="cd-box iface"><div class="cd-h">«interface» Aggregate</div><div class="cd-m">createIterator()</div></div>
+          <div class="cd-box iface"><div class="cd-h">«interface» Iterator</div><div class="cd-m">hasNext()<br>next()</div></div>
+        </div>
+        <div class="cd-arr">△ implements</div>
+        <div class="cd-row">
+          <div class="cd-box obs"><div class="cd-h">ConcreteAggregate</div></div>
+          <div class="cd-box obs"><div class="cd-h">ConcreteIterator</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">New Principle Unlocked!</div>
+        <div class="principle-box" style="border-color:var(--teal-500); background:var(--teal-50);">
+          <div class="principle-label" style="color:var(--teal-600)">Single Responsibility Principle</div>
+          <div class="principle-text" style="color:var(--teal-600);">"A class should have only one reason to change."</div>
+        </div>
+        <div class="desc">By pulling iteration out of the aggregate, we gave each class exactly one job. The aggregate manages the collection; the iterator manages traversal. This is the Single Responsibility Principle — and it <em>emerged</em> from applying the pattern, not the other way around.</div>
+      </div>
+    </div>
+    <div class="callout purple"><strong>The aha moment:</strong> Encapsulate what varies → Program to interfaces → Open-Closed → and you get the Iterator Pattern + the Single Responsibility Principle as a bonus.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 7 — TEST DRIVE                                     ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="7">
+  <div class="step-header">
+    <span class="phase-pill pill-green">Phase 4 · Integration</span>
+    <div class="step-title">Test Drive: All Menus, One Waitress</div>
+    <div class="step-subtitle">With java.util.Iterator and a Menu interface, adding the Café is trivial.</div>
+  </div>
+  <div class="step-body">
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">Test Harness</div>
+        <div class="code-block">public static void main(String[] args) {
+  <span class="hi-g">Menu pancake = new PancakeHouseMenu();</span>
+  <span class="hi-g">Menu diner   = new DinerMenu();</span>
+  <span class="hi-g">Menu cafe    = new CafeMenu();</span>
+
+  Waitress waitress =
+    new Waitress(pancake, diner, cafe);
+
+  <span class="hi-g">waitress.printMenu();</span>
+}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Output</div>
+        <div class="code-block" style="background:var(--bg-tertiary)"><span class="cm">MENU
+----
+BREAKFAST</span>
+K&amp;B's Pancake Breakfast, 2.99
+Blueberry Pancakes, 3.49
+Waffles, 3.59
+
+<span class="cm">LUNCH</span>
+Vegetarian BLT, 2.99
+Soup of the day, 3.29
+Pasta, 3.89
+
+<span class="cm">DINNER</span>
+Veggie Burger, 3.99
+Burrito, 4.29</div>
+      </div>
+    </div>
+    <div class="callout success"><strong>It works!</strong> Three menus, three different underlying data structures (ArrayList, Array, Hashtable) — all traversed with the same Waitress code. Adding a 4th menu? Just implement <code>Menu</code> and <code>Iterator</code>. No changes to Waitress.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 8 — NEW PROBLEM: Submenus                         ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="8">
+  <div class="step-header">
+    <span class="phase-pill pill-red">Phase 1b · Oh No, Again!</span>
+    <div class="step-title">Just When We Thought It Was Safe...</div>
+    <div class="step-subtitle">The Diner wants a dessert submenu INSIDE its regular menu. Our flat iteration can't handle nested menus.</div>
+  </div>
+  <div class="step-body">
+    <div class="desc">The Diner chef wants to add a Dessert Menu as a sub-item of his menu. But a <code>MenuItem[]</code> can only hold <code>MenuItem</code> objects — not other <code>Menu</code>s. We need a tree structure where menus can contain both items AND other menus.</div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label" style="color:var(--text-danger)">The Problem</div>
+        <div class="code-block"><span class="cm">// Diner Menu is a MenuItem[] array</span>
+<span class="cm">// Can't put a Menu in a MenuItem slot!</span>
+
+dinerMenu:
+  [0] Vegetarian BLT
+  [1] Soup of the day
+  [2] Pasta
+  <span class="hi-r">[3] Dessert Menu ???  // TYPE MISMATCH!</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">What We Want</div>
+        <div class="cd-row"><div class="cd-box ctx"><div class="cd-h">All Menus</div></div></div>
+        <div class="cd-arr">↓ contains</div>
+        <div class="cd-row">
+          <div class="cd-box"><div class="cd-h">Pancake Menu</div></div>
+          <div class="cd-box"><div class="cd-h">Diner Menu</div></div>
+          <div class="cd-box"><div class="cd-h">Cafe Menu</div></div>
+        </div>
+        <div class="cd-arr">↓ Diner contains</div>
+        <div class="cd-row">
+          <div class="cd-box"><div class="cd-h">MenuItem</div></div>
+          <div class="cd-box dup"><div class="cd-h">Dessert Menu</div></div>
+          <div class="cd-box"><div class="cd-h">MenuItem</div></div>
+        </div>
+        <div class="cd-arr">↓ Dessert contains</div>
+        <div class="cd-row">
+          <div class="cd-box"><div class="cd-h">Apple Pie</div></div>
+          <div class="cd-box"><div class="cd-h">Cheesecake</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout danger"><strong>New challenge:</strong> We need a tree structure where menus and menu items are treated uniformly. The Waitress shouldn't need to know whether she's dealing with a single item or an entire sub-menu. Time for another pattern...</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 9 — COMPOSITE: Treat uniformly                     ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="9">
+  <div class="step-header">
+    <span class="phase-pill pill-purple">Phase 3b · The Second Revelation</span>
+    <div class="step-title">The Composite Pattern</div>
+    <div class="step-subtitle">Compose objects into tree structures to represent part-whole hierarchies. Treat individual objects and compositions uniformly.</div>
+  </div>
+  <div class="step-body">
+    <div class="principle-box" style="border-color:var(--purple-400); background:var(--bg-purple);">
+      <div class="principle-label" style="color:var(--text-purple)">Composite Pattern — Definition</div>
+      <div class="principle-text" style="color:var(--text-purple)">"The Composite Pattern allows you to compose objects into tree structures to represent part-whole hierarchies. Composite lets clients treat individual objects and compositions of objects uniformly."</div>
+    </div>
+    <div class="desc">The key insight: create a <strong>MenuComponent</strong> abstract class that both <code>MenuItem</code> (leaf) and <code>Menu</code> (composite) extend. The Waitress calls <code>print()</code> on the top-level component and the recursion handles the rest.</div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">Pattern Structure</div>
+        <div class="cd-row"><div class="cd-box good"><div class="cd-h">Client (Waitress)</div></div></div>
+        <div class="cd-arr">↓ uses</div>
+        <div class="cd-row">
+          <div class="cd-box iface"><div class="cd-h">MenuComponent</div><div class="cd-m">getName()<br>getPrice()<br>print()<br>add(Component)<br>remove(Component)<br>getChild(int)</div></div>
+        </div>
+        <div class="cd-arr">△ extends</div>
+        <div class="cd-row">
+          <div class="cd-box obs"><div class="cd-h">MenuItem (Leaf)</div><div class="cd-m">getName()<br>getPrice()<br>print()</div></div>
+          <div class="cd-box composite"><div class="cd-h">Menu (Composite)</div><div class="cd-b">menuComponents</div><div class="cd-m">getName()<br>print()<br>add() · remove()</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">The Magic: Recursive print()</div>
+        <div class="code-block"><span class="cm">// Menu's print() — the recursive bit</span>
+public void print() {
+  System.out.println(getName());
+  System.out.println("----------");
+
+  <span class="hi-g">Iterator iter =</span>
+    <span class="hi-g">menuComponents.iterator();</span>
+  <span class="hi-g">while (iter.hasNext()) {</span>
+    MenuComponent mc =
+      (MenuComponent) iter.next();
+    <span class="hi-g">mc.print();</span> <span class="cm">// could be a Menu!</span>
+  <span class="hi-g">}</span>
+}
+
+<span class="cm">// Waitress — incredibly simple</span>
+public void printMenu() {
+  <span class="hi-g">allMenus.print();</span> <span class="cm">// that's it!</span>
+}</div>
+      </div>
+    </div>
+    <div class="callout purple"><strong>The beauty:</strong> If <code>mc</code> is a MenuItem, it prints itself. If it's a Menu, it prints its header and then recursively prints all its children. The Waitress doesn't need to know the difference — that's transparency.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 10 — COMPOSITE IMPLEMENTATION                      ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="10">
+  <div class="step-header">
+    <span class="phase-pill pill-green">Phase 4 · Implementation</span>
+    <div class="step-title">Building the Composite Menu</div>
+    <div class="step-subtitle">The MenuComponent base class, MenuItem leaf, and Menu composite — all wired up.</div>
+  </div>
+  <div class="step-body">
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">MenuComponent (abstract)</div>
+        <div class="code-block"><span class="hi-b">public abstract class MenuComponent {</span>
+  <span class="cm">// "composite" methods — default: throw</span>
+  public void add(MenuComponent mc) {
+    throw new UnsupportedOperationException();
+  }
+  public void remove(MenuComponent mc) {
+    throw new UnsupportedOperationException();
+  }
+  public MenuComponent getChild(int i) {
+    throw new UnsupportedOperationException();
+  }
+
+  <span class="cm">// "leaf" methods — default: throw</span>
+  public String getName() {
+    throw new UnsupportedOperationException();
+  }
+  public double getPrice() {
+    throw new UnsupportedOperationException();
+  }
+  public void print() {
+    throw new UnsupportedOperationException();
+  }
+<span class="hi-b">}</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">MenuItem (leaf)</div>
+        <div class="code-block">public class <span class="hi-g">MenuItem</span>
+    extends MenuComponent {
+  String name;
+  String description;
+  boolean vegetarian;
+  double price;
+
+  <span class="cm">// constructor, getters...</span>
+
+  public void <span class="hi-g">print()</span> {
+    System.out.print("  " + getName());
+    if (isVegetarian())
+      System.out.print("(v)");
+    System.out.println(", " + getPrice());
+  }
+}</div>
+        <div style="margin-top:12px">
+        <div class="panel-label">Menu (composite)</div>
+        <div class="code-block">public class <span class="hi-g">Menu</span>
+    extends MenuComponent {
+  <span class="hi-g">ArrayList menuComponents</span>
+    = new ArrayList();
+  String name, description;
+
+  public void add(MenuComponent mc) {
+    menuComponents.add(mc);
+  }
+  public void print() {
+    System.out.println(getName());
+    <span class="hi-g">Iterator i = menuComponents.iterator();</span>
+    <span class="hi-g">while (i.hasNext()) {</span>
+      MenuComponent mc =
+        (MenuComponent) i.next();
+      <span class="hi-g">mc.print();</span>
+    }
+  }
+}</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout success"><strong>Notice:</strong> Iterator and Composite work together beautifully. The Menu uses an Iterator internally to traverse its children, and each child can be either a leaf or another composite. The two patterns complement each other.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 11 — TRADE-OFFS                                    ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="11">
+  <div class="step-header">
+    <span class="phase-pill pill-yellow">Phase 5 · Trade-offs</span>
+    <div class="step-title">Transparency vs. Safety</div>
+    <div class="step-subtitle">The Composite Pattern puts BOTH leaf and composite methods in one interface. Isn't that a violation of Single Responsibility?</div>
+  </div>
+  <div class="step-body">
+    <div class="desc">Sharp eye! The <code>MenuComponent</code> has both leaf operations (<code>getPrice()</code>, <code>isVegetarian()</code>) and composite operations (<code>add()</code>, <code>remove()</code>, <code>getChild()</code>). This is a deliberate trade-off.</div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label" style="color:var(--teal-500)">Option A: Transparency</div>
+        <div class="code-block" style="font-family:var(--font-body);font-size:0.8rem;line-height:1.7"><span class="hi-g">✓ Client treats everything uniformly</span>
+<span class="hi-g">✓ No instanceof checks needed</span>
+<span class="hi-g">✓ Simple client code</span>
+
+<span class="hi-r">✗ Leaf has methods that don't apply</span>
+<span class="hi-r">✗ Calling add() on a MenuItem? Exception!</span>
+<span class="hi-r">✗ Technically violates Single Responsibility</span>
+
+<span class="cm">This is the approach the book takes.</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-label" style="color:var(--coral-500)">Option B: Safety</div>
+        <div class="code-block" style="font-family:var(--font-body);font-size:0.8rem;line-height:1.7"><span class="hi-g">✓ No meaningless methods on leaf</span>
+<span class="hi-g">✓ Compile-time type safety</span>
+<span class="hi-g">✓ Clean Single Responsibility</span>
+
+<span class="hi-r">✗ Client must check types before calling</span>
+<span class="hi-r">✗ Needs instanceof and casting</span>
+<span class="hi-r">✗ Loses uniform treatment</span>
+
+<span class="cm">Separate interfaces for Leaf &amp; Composite.</span></div>
+      </div>
+    </div>
+    <div class="callout warning"><strong>The lesson:</strong> Principles are guides, not laws. Sometimes we intentionally trade one principle (Single Responsibility) for a practical benefit (transparency). The key is making the trade-off <em>consciously</em>, not accidentally.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 12 — COMPOSITE ITERATOR (external)                 ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="12">
+  <div class="step-header">
+    <span class="phase-pill pill-teal">Phase 4 · Advanced</span>
+    <div class="step-title">The CompositeIterator: External Traversal</div>
+    <div class="step-subtitle">What if the Waitress needs to filter items (e.g., vegetarian only) across ALL menus? She needs an external iterator over the entire tree.</div>
+  </div>
+  <div class="step-body">
+    <div class="desc">The internal <code>print()</code> recursion works great for printing everything. But for selective operations — like "show me only vegetarian items across all sub-menus" — we need an external <code>CompositeIterator</code> that walks the entire tree, returning one leaf at a time.</div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-label">CompositeIterator (uses a Stack)</div>
+        <div class="code-block">public class <span class="hi-g">CompositeIterator</span>
+    implements Iterator {
+  <span class="hi-g">Stack stack = new Stack();</span>
+
+  public CompositeIterator(Iterator iter) {
+    stack.push(iter);
+  }
+
+  public boolean hasNext() {
+    if (stack.empty()) return false;
+    Iterator iter = (Iterator) stack.peek();
+    if (!iter.hasNext()) {
+      stack.pop();
+      <span class="hi-g">return hasNext();</span> <span class="cm">// recursive!</span>
+    }
+    return true;
+  }
+
+  public Object next() {
+    Iterator iter = (Iterator) stack.peek();
+    MenuComponent mc =
+      (MenuComponent) iter.next();
+    <span class="hi-g">if (mc instanceof Menu) {</span>
+      <span class="hi-g">stack.push(mc.createIterator());</span>
+    <span class="hi-g">}</span>
+    return mc;
+  }
+}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">Waitress: Vegetarian Filter</div>
+        <div class="code-block">public void printVegetarianMenu() {
+  <span class="hi-g">Iterator iter =</span>
+    <span class="hi-g">allMenus.createIterator();</span>
+
+  while (iter.hasNext()) {
+    MenuComponent mc =
+      (MenuComponent) iter.next();
+    try {
+      if (<span class="hi-g">mc.isVegetarian()</span>) {
+        mc.print();
+      }
+    } catch
+      (UnsupportedOperationException) {}
+  }
+}</div>
+        <div style="margin-top:12px">
+        <div class="panel-label">NullIterator (for leaves)</div>
+        <div class="code-block"><span class="cm">// MenuItem has no children to iterate</span>
+public class NullIterator
+    implements Iterator {
+  public boolean hasNext() {
+    return false; <span class="cm">// always done</span>
+  }
+  public Object next() {
+    return null;
+  }
+}</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout info"><strong>Internal vs. External iteration:</strong> The recursive <code>print()</code> is internal iteration — the composite controls traversal. The CompositeIterator is external — the client (Waitress) controls traversal. Both have their uses; external gives the client more flexibility.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 13 — COMPLETE PATTERN + DIAGRAM                    ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="13">
+  <div class="step-header">
+    <span class="phase-pill pill-purple">Phase 6 · Summary</span>
+    <div class="step-title">The Complete Picture</div>
+    <div class="step-subtitle">Two patterns, one chapter — here's how Iterator and Composite fit together.</div>
+  </div>
+  <div class="step-body">
+    <div class="cd-row"><div class="cd-box good"><div class="cd-h">Waitress (Client)</div><div class="cd-m">printMenu()<br>printVegetarianMenu()</div></div></div>
+    <div class="cd-arr">↓ uses</div>
+    <div class="cd-row">
+      <div class="cd-box iface"><div class="cd-h">«abstract» MenuComponent</div><div class="cd-m">getName() · getPrice() · print()<br>add() · remove() · getChild()<br>createIterator()</div></div>
+    </div>
+    <div class="cd-arr">△ extends</div>
+    <div class="cd-row">
+      <div class="cd-box obs"><div class="cd-h">MenuItem (Leaf)</div><div class="cd-b">name, price, desc</div><div class="cd-m">print() · createIterator()→NullIterator</div></div>
+      <div class="cd-box composite"><div class="cd-h">Menu (Composite)</div><div class="cd-b">menuComponents: ArrayList</div><div class="cd-m">print() · add() · remove()<br>createIterator()→CompositeIterator</div></div>
+    </div>
+    <div class="cd-arr">↓ uses</div>
+    <div class="cd-row">
+      <div class="cd-box iface"><div class="cd-h">«interface» java.util.Iterator</div><div class="cd-m">hasNext() · next() · remove()</div></div>
+    </div>
+    <div class="cd-arr">△ implements</div>
+    <div class="cd-row">
+      <div class="cd-box"><div class="cd-h">CompositeIterator</div><div class="cd-m">Stack-based tree traversal</div></div>
+      <div class="cd-box"><div class="cd-h">NullIterator</div><div class="cd-m">hasNext() → false</div></div>
+    </div>
+    <div style="margin-top:16px"></div>
+    <div class="callout purple"><strong>Two patterns, one elegant system.</strong> Iterator decouples traversal from collection implementation. Composite lets us build tree structures and treat leaves and branches uniformly. Together, they let the Waitress handle any menu hierarchy with minimal code.</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗ -->
+<!-- ║  STEP 14 — TOOLBOX UPDATE                                ║ -->
+<!-- ╚══════════════════════════════════════════════════════════╝ -->
+<div class="step" data-step="14">
+  <div class="step-header">
+    <span class="phase-pill pill-green">Phase 6 · Toolbox</span>
+    <div class="step-title">Design Toolbox Update</div>
+    <div class="step-subtitle">Two new patterns and a new principle join the toolbox.</div>
+  </div>
+  <div class="step-body">
+    <div class="toolbox-cols">
+      <div class="toolbox-col">
+        <h4>The Journey (this chapter)</h4>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-tertiary)">1. Two menus, two collection types</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-tertiary)">2. Brute-force Waitress with multiple loops</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-danger)">3. Diagnose: 4 principle violations</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-info)">4. Encapsulate iteration → Iterator object</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-info)">5. Program to Iterator interface</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-info)">6. Open-Closed → Menu interface</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-purple)">7. Reveal: Iterator Pattern!</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-danger)">8. New problem: submenus → trees</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-purple)">9. Reveal: Composite Pattern!</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--text-warning)">10. Trade-off: Transparency vs Safety</div>
+        <div class="toolbox-item" style="border-left:3px solid var(--teal-500)">11. CompositeIterator: external traversal</div>
+      </div>
+      <div class="toolbox-col">
+        <h4>OO Principles (so far)</h4>
+        <div class="toolbox-item">Encapsulate what varies</div>
+        <div class="toolbox-item">Favor composition over inheritance</div>
+        <div class="toolbox-item">Program to interfaces, not implementations</div>
+        <div class="toolbox-item">Strive for loosely coupled designs</div>
+        <div class="toolbox-item">Open-Closed Principle</div>
+        <div class="toolbox-item">Dependency Inversion Principle</div>
+        <div class="toolbox-item">Principle of Least Knowledge</div>
+        <div class="toolbox-item">Hollywood Principle</div>
+        <div class="toolbox-item new">★ Single Responsibility Principle</div>
+
+        <h4 style="margin-top:14px">OO Patterns (so far)</h4>
+        <div class="toolbox-item">Strategy · Observer · Decorator</div>
+        <div class="toolbox-item">Factory Method · Abstract Factory</div>
+        <div class="toolbox-item">Singleton · Command · Adapter</div>
+        <div class="toolbox-item">Facade · Template Method</div>
+        <div class="toolbox-item new">★ Iterator</div>
+        <div class="toolbox-item new">★ Composite</div>
+      </div>
+    </div>
+    <div class="callout success"><strong>Chapter 9 complete!</strong> You now have two powerful collection-management patterns in your toolbox. Iterator handles traversal; Composite handles tree structures. And the Single Responsibility Principle reminds you: one class, one reason to change.</div>
+  </div>
+</div>
+
+    </div><!-- /stepContainer -->
+
+    <!-- ── Navigation ── -->
+    <div class="nav">
+      <button class="nav-btn" id="btnBack" onclick="go(-1)">← Back</button>
+      <div class="dots" id="dotsContainer"></div>
+      <button class="nav-btn primary" id="btnNext" onclick="go(1)">Next →</button>
+    </div>
+  </div><!-- /card -->
+</div><!-- /container -->
+
+<script>
+(function() {
+  let current = 0;
+  const steps = document.querySelectorAll('.step');
+  const total = steps.length;
+  const dotsC = document.getElementById('dotsContainer');
+  const progress = document.getElementById('progressFill');
+  const btnBack = document.getElementById('btnBack');
+  const btnNext = document.getElementById('btnNext');
+
+  // Build dots
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.setAttribute('aria-label', 'Go to step ' + (i + 1));
+    d.onclick = () => goTo(i);
+    dotsC.appendChild(d);
+  }
+
+  function goTo(n) {
+    if (n < 0 || n >= total) return;
+    steps[current].classList.remove('active');
+    dotsC.children[current].classList.remove('active');
+    current = n;
+    steps[current].classList.add('active');
+    dotsC.children[current].classList.add('active');
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    btnBack.disabled = current === 0;
+    btnNext.textContent = current === total - 1 ? 'Done ✓' : 'Next →';
+    btnNext.disabled = current === total - 1;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.go = function(dir) { goTo(current + dir); };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight') go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  });
+
+  goTo(0);
+})();
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+}
+</script>
+</body>
+</html>

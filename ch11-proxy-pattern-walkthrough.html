@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 11 — The Proxy Pattern: Controlling Object Access</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f1ec;
+  --bg-tertiary: #eae6df;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f5ec;
+  --bg-warning: #fef3e0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #7a7a7a;
+  --text-info: #1a56db;
+  --text-danger: #c02424;
+  --text-success: #166534;
+  --text-warning: #92400e;
+  --border-primary: #d0ccc4;
+  --border-secondary: #e0dcd5;
+  --border-tertiary: #eae6df;
+  --purple-50: #faf5ff; --purple-100: #f0e5ff; --purple-200: #dac5fb;
+  --purple-300: #c4a5f7; --purple-400: #a87bf3; --purple-500: #8b5cf6;
+  --purple-600: #7c3aed; --purple-700: #6d28d9; --purple-800: #5b21b6;
+  --teal-50: #f0fdfa; --teal-100: #ccfbf1; --teal-200: #99f6e4;
+  --teal-300: #5eead4; --teal-400: #2dd4bf; --teal-500: #14b8a6;
+  --teal-600: #0d9488; --teal-700: #0f766e; --teal-800: #115e59;
+  --coral-50: #fff7ed; --coral-100: #ffedd5; --coral-200: #fed7aa;
+  --coral-300: #fdba74; --coral-400: #fb923c; --coral-500: #f97316;
+  --coral-600: #ea580c; --coral-700: #c2410c; --coral-800: #9a3412;
+  --progress-bg: #e0dcd5;
+  --progress-fill: #8b5cf6;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+}
+[data-theme="dark"] {
+  --bg-primary: #1e1e2e;
+  --bg-secondary: #181825;
+  --bg-tertiary: #11111b;
+  --bg-info: #1e2a4a;
+  --bg-danger: #3b1c1c;
+  --bg-success: #1a2e22;
+  --bg-warning: #2e2410;
+  --text-primary: #cdd6f4;
+  --text-secondary: #a6adc8;
+  --text-tertiary: #6c7086;
+  --text-info: #89b4fa;
+  --text-danger: #f38ba8;
+  --text-success: #a6e3a1;
+  --text-warning: #fab387;
+  --border-primary: #45475a;
+  --border-secondary: #313244;
+  --border-tertiary: #262637;
+  --purple-50: #2a2040; --purple-100: #352a50; --purple-200: #4a3a70;
+  --purple-300: #6a50a0; --purple-400: #8b6cc0; --purple-500: #a78bfa;
+  --purple-600: #8b5cf6; --purple-700: #7c3aed; --purple-800: #6d28d9;
+  --teal-50: #1a2e2a; --teal-100: #1f3d35; --teal-200: #255045;
+  --teal-300: #2a6a5a; --teal-400: #2dd4bf; --teal-500: #14b8a6;
+  --teal-600: #0d9488; --teal-700: #0f766e; --teal-800: #115e59;
+  --coral-50: #2e2010; --coral-100: #3d2a15; --coral-200: #4a351a;
+  --coral-300: #6a4a25; --coral-400: #fb923c; --coral-500: #f97316;
+  --coral-600: #ea580c; --coral-700: #c2410c; --coral-800: #9a3412;
+  --progress-bg: #313244;
+  --progress-fill: #a78bfa;
+  --code-bg: #11111b;
+  --code-text: #cdd6f4;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Progress bar */
+.progress-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--progress-bg); z-index: 100;
+}
+.progress-fill {
+  height: 100%; background: var(--progress-fill);
+  transition: width 0.35s ease;
+}
+
+/* Header */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; margin-bottom: 12px;
+}
+.header h1 {
+  font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+.header-controls { display: flex; gap: 8px; }
+.theme-toggle {
+  background: var(--bg-secondary); border: 1px solid var(--border-secondary);
+  border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  font-family: inherit; font-size: 0.8rem; color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.theme-toggle:hover { background: var(--bg-tertiary); }
+
+/* Main card */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  min-height: 500px;
+}
+
+/* Step */
+.step { display: none; padding: 28px 32px; animation: fadeSlide 0.35s ease; }
+.step.active { display: block; }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Phase pill */
+.phase-pill {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 10px;
+}
+.phase-pill.attempt { background: #e5e5e5; color: #555; }
+.phase-pill.problem { background: var(--bg-danger); color: var(--text-danger); }
+.phase-pill.fix { background: var(--bg-warning); color: var(--text-warning); }
+.phase-pill.principle { background: var(--bg-info); color: var(--text-info); }
+.phase-pill.solution { background: var(--bg-success); color: var(--text-success); }
+.phase-pill.reveal { background: var(--purple-100); color: var(--purple-700); }
+[data-theme="dark"] .phase-pill.attempt { background: #333; color: #aaa; }
+
+.step-title {
+  font-size: 1.35rem; font-weight: 700; margin-bottom: 6px;
+  letter-spacing: -0.02em; color: var(--text-primary);
+}
+.step-subtitle {
+  font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 18px;
+  line-height: 1.55;
+}
+
+/* Two-panel layout */
+.panels { display: flex; gap: 16px; margin: 16px 0; }
+.panel {
+  flex: 1; border: 1px solid var(--border-secondary);
+  border-radius: 8px; overflow: hidden;
+}
+.panel-label {
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 6px 12px;
+  background: var(--bg-secondary); color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-secondary);
+}
+.panel-label.before { background: var(--bg-danger); color: var(--text-danger); }
+.panel-label.after { background: var(--bg-success); color: var(--text-success); }
+
+/* Code blocks */
+.code-block {
+  background: var(--code-bg); color: var(--code-text);
+  padding: 14px 16px; font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem; line-height: 1.65; overflow-x: auto;
+  white-space: pre; border-radius: 0;
+}
+.code-block.rounded { border-radius: 8px; }
+.code-block.full { margin: 16px 0; border-radius: 8px; }
+
+.hi-r { background: rgba(220,50,50,0.2); border-radius: 3px; padding: 1px 3px; }
+.hi-g { background: rgba(50,180,80,0.2); border-radius: 3px; padding: 1px 3px; }
+.hi-y { background: rgba(220,180,40,0.2); border-radius: 3px; padding: 1px 3px; }
+.hi-b { background: rgba(70,130,220,0.25); border-radius: 3px; padding: 1px 3px; }
+.cm { color: #6c7086; font-style: italic; }
+
+/* Class diagram boxes */
+.cd-row {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  justify-content: center; margin: 12px 0;
+}
+.cd-box {
+  border: 2px solid var(--border-primary);
+  border-radius: 6px; min-width: 150px; max-width: 220px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+  background: var(--bg-primary); text-align: left;
+}
+.cd-box.bad { border-color: var(--text-danger); background: var(--bg-danger); }
+.cd-box.dup { border-color: var(--text-warning); background: var(--bg-warning); }
+.cd-box.iface { border-style: dashed; border-color: var(--purple-500); background: var(--purple-50); }
+.cd-box.ctx { border-color: var(--teal-500); background: var(--teal-50); }
+.cd-box.obs { border-color: var(--coral-500); background: var(--coral-50); }
+.cd-box.good { border-color: var(--text-success); background: var(--bg-success); }
+.cd-h {
+  padding: 6px 10px; font-weight: 700; font-size: 0.75rem;
+  border-bottom: 1px solid var(--border-secondary); text-align: center;
+}
+.cd-b { padding: 5px 10px; font-size: 0.68rem; border-bottom: 1px solid var(--border-secondary); }
+.cd-m { padding: 5px 10px; font-size: 0.68rem; }
+.cd-arr {
+  text-align: center; font-size: 0.8rem; color: var(--text-tertiary);
+  padding: 4px 0; font-family: 'JetBrains Mono', monospace;
+}
+
+/* Principle box */
+.principle-box {
+  border: 2px solid var(--text-info); background: var(--bg-info);
+  border-radius: 8px; padding: 14px 18px; margin: 16px 0;
+}
+.principle-box .principle-label {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-info); margin-bottom: 4px;
+}
+.principle-box .principle-text {
+  font-size: 1rem; font-weight: 600; color: var(--text-info);
+}
+
+/* Callout bar */
+.callout {
+  border-left: 3px solid var(--text-info);
+  background: var(--bg-info);
+  padding: 10px 16px; margin-top: 18px;
+  font-size: 0.85rem; color: var(--text-info);
+  line-height: 1.5;
+}
+.callout.danger { border-left-color: var(--text-danger); background: var(--bg-danger); color: var(--text-danger); }
+.callout.success { border-left-color: var(--text-success); background: var(--bg-success); color: var(--text-success); }
+.callout.warning { border-left-color: var(--text-warning); background: var(--bg-warning); color: var(--text-warning); }
+.callout.purple { border-left-color: var(--purple-600); background: var(--purple-50); color: var(--purple-700); }
+
+/* Navigation */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; border-top: 1px solid var(--border-secondary);
+  background: var(--bg-secondary);
+}
+.nav-btn {
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+  padding: 7px 18px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border-primary); background: var(--bg-primary);
+  color: var(--text-primary); transition: all 0.2s;
+}
+.nav-btn:hover { background: var(--bg-secondary); }
+.nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.nav-btn.primary { background: var(--purple-600); color: #fff; border-color: var(--purple-600); }
+.nav-btn.primary:hover { background: var(--purple-700); }
+
+.dots {
+  display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 400px;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border-primary); cursor: pointer;
+  transition: all 0.2s; border: none;
+}
+.dot.active { background: var(--purple-500); transform: scale(1.3); }
+.dot:hover { background: var(--purple-400); }
+
+/* Prose */
+.prose { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.65; margin: 10px 0; }
+.prose strong { color: var(--text-primary); }
+
+/* Toolbox */
+.toolbox { display: flex; gap: 16px; margin: 16px 0; }
+.toolbox-col { flex: 1; }
+.toolbox-col h4 {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 8px;
+}
+.tool-item {
+  font-size: 0.82rem; padding: 5px 0; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-tertiary);
+}
+.tool-item.new { color: var(--purple-600); font-weight: 600; }
+.tool-item .star { color: var(--coral-500); }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .panels { flex-direction: column; }
+  .container { padding: 8px; }
+  .step { padding: 18px 16px; }
+  .step-title { font-size: 1.15rem; }
+  .toolbox { flex-direction: column; }
+  .cd-row { gap: 8px; }
+  .cd-box { min-width: 120px; max-width: 180px; }
+  .nav { padding: 10px 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="container">
+  <div class="header">
+    <h1>Ch 11 · The Proxy Pattern</h1>
+    <div class="header-controls">
+      <button class="theme-toggle" onclick="toggleTheme()">🌗 Theme</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="stepsContainer">
+
+<!-- ====== STEP 0: The Brief ====== -->
+<div class="step active" data-step="0">
+<span class="phase-pill attempt">The Brief</span>
+<div class="step-title">The Gumball Machine Needs Remote Monitoring</div>
+<div class="step-subtitle">The CEO of Mighty Gumball, Inc. wants inventory and state reports from gumball machines across the country.</div>
+
+<div class="prose">We already built a <strong>GumballMachine</strong> with the State Pattern (Chapter 10). It tracks gumball count, accepts quarters, and dispenses gumballs. Now the CEO wants a <strong>monitoring system</strong> to check inventory and status remotely.</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">Starting Code</div>
+<div class="code-block"><span class="cm">// What we have from Chapter 10</span>
+<span class="hi-y">public class GumballMachine</span> {
+  String location;
+  int count;
+  State state;
+
+  <span class="hi-g">public String getLocation()</span> { return location; }
+  <span class="hi-g">public int getCount()</span> { return count; }
+  <span class="hi-g">public State getState()</span> { return state; }
+
+  <span class="cm">// insertQuarter(), turnCrank(), etc.</span>
+}</div>
+</div>
+<div class="panel">
+<div class="panel-label">System Overview</div>
+<div style="padding:12px;">
+<div class="cd-row">
+  <div class="cd-box ctx">
+    <div class="cd-h">GumballMachine</div>
+    <div class="cd-b">location<br>count<br>state</div>
+    <div class="cd-m">getLocation()<br>getCount()<br>getState()<br>insertQuarter()<br>turnCrank()</div>
+  </div>
+</div>
+<div class="cd-arr">☝ We need to monitor this remotely</div>
+<div class="cd-row">
+  <div class="cd-box" style="opacity:0.5;">
+    <div class="cd-h">GumballMonitor</div>
+    <div class="cd-m">report()</div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="callout">The CEO has machines in Seattle, Boulder, and Santa Fe. He wants to monitor them all from his desk. Sounds simple enough — let's build a monitor!</div>
+</div>
+
+<!-- ====== STEP 1: First Attempt ====== -->
+<div class="step" data-step="1">
+<span class="phase-pill attempt">First Attempt</span>
+<div class="step-title">The Naive Monitor — Just Use the Object Directly</div>
+<div class="step-subtitle">We write a simple GumballMonitor that takes a GumballMachine and prints a report. What could go wrong?</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">GumballMonitor</div>
+<div class="code-block">public class GumballMonitor {
+  <span class="hi-r">GumballMachine machine;</span>  <span class="cm">// concrete class!</span>
+
+  public GumballMonitor(<span class="hi-r">GumballMachine machine</span>) {
+    this.machine = machine;
+  }
+
+  public void report() {
+    System.out.println("Location: "
+      + machine.getLocation());
+    System.out.println("Inventory: "
+      + machine.getCount() + " gumballs");
+    System.out.println("State: "
+      + machine.getState());
+  }
+}</div>
+</div>
+<div class="panel">
+<div class="panel-label">Test Drive</div>
+<div class="code-block"><span class="cm">// In our test code...</span>
+GumballMachine gm =
+  new GumballMachine("Seattle", 112);
+GumballMonitor monitor =
+  new GumballMonitor(gm);
+
+monitor.report();
+
+<span class="cm">// Output:</span>
+<span class="hi-g">// Location: Seattle</span>
+<span class="hi-g">// Inventory: 112 gumballs</span>
+<span class="hi-g">// State: waiting for quarter</span></div>
+<div style="padding:12px;">
+<div class="cd-row">
+  <div class="cd-box ctx">
+    <div class="cd-h">GumballMachine</div>
+    <div class="cd-m">getLocation()<br>getCount()<br>getState()</div>
+  </div>
+  <div class="cd-box">
+    <div class="cd-h">GumballMonitor</div>
+    <div class="cd-b">machine: GumballMachine</div>
+    <div class="cd-m">report()</div>
+  </div>
+</div>
+<div class="cd-arr">← direct reference</div>
+</div>
+</div>
+</div>
+
+<div class="callout success">It works! Fast turnaround, clean output. The CEO is going to love this... right?</div>
+</div>
+
+<!-- ====== STEP 2: Oh No! ====== -->
+<div class="step" data-step="2">
+<span class="phase-pill problem">Oh No!</span>
+<div class="step-title">"I need to monitor them REMOTELY!"</div>
+<div class="step-subtitle">The CEO doesn't want to walk up to each machine. He wants to sit at his desk and monitor machines over the network. Our monitor only works locally — it needs a direct reference to the GumballMachine object in the same JVM.</div>
+
+<div class="code-block full"><span class="cm">// The problem: our monitor is TIGHTLY COUPLED to the concrete class</span>
+
+public class GumballMonitor {
+  <span class="hi-r">GumballMachine machine;</span>  <span class="cm">// ← Can't get a reference to a remote object!</span>
+                                  <span class="cm">//    Objects live in DIFFERENT JVMs on different machines!</span>
+  public GumballMonitor(<span class="hi-r">GumballMachine machine</span>) {
+    this.machine = machine;   <span class="cm">// ← Violates "program to interfaces"</span>
+  }                            <span class="cm">//    We're coding to a CONCRETE class</span>
+
+  public void report() {
+    machine.getLocation();     <span class="cm">// ← These look like local calls...</span>
+    machine.getCount();        <span class="cm">//    but we need them to work over the NETWORK</span>
+    machine.getState();        <span class="cm">// ← Violates "encapsulate what varies" —</span>
+  }                            <span class="cm">//    the network communication isn't encapsulated!</span>
+}</div>
+
+<div class="prose">Let's diagnose this with the OO principles we already know:</div>
+
+<div style="display:flex;flex-direction:column;gap:8px;margin:12px 0;">
+<div style="padding:8px 14px;background:var(--bg-danger);border-radius:6px;font-size:0.85rem;">
+  <strong style="color:var(--text-danger);">❌ Program to interfaces, not implementations</strong><br>
+  <span style="color:var(--text-danger);">GumballMonitor depends on the concrete GumballMachine class. We can't swap in a remote stand-in.</span>
+</div>
+<div style="padding:8px 14px;background:var(--bg-danger);border-radius:6px;font-size:0.85rem;">
+  <strong style="color:var(--text-danger);">❌ Encapsulate what varies</strong><br>
+  <span style="color:var(--text-danger);">The location of the object (local vs. remote) will vary, but it's not encapsulated. The monitor assumes local access.</span>
+</div>
+<div style="padding:8px 14px;background:var(--bg-danger);border-radius:6px;font-size:0.85rem;">
+  <strong style="color:var(--text-danger);">❌ Depend on abstractions, not concrete classes</strong><br>
+  <span style="color:var(--text-danger);">The monitor is locked to GumballMachine. We can't substitute anything that talks over a network.</span>
+</div>
+</div>
+
+<div class="callout danger">Three principles violated. We need a way for the monitor to talk to a machine that lives in a DIFFERENT JVM, on a DIFFERENT physical computer — without changing the monitor's code much at all.</div>
+</div>
+
+<!-- ====== STEP 3: Apply Principle — Program to Interfaces ====== -->
+<div class="step" data-step="3">
+<span class="phase-pill principle">Design Principle</span>
+<div class="step-title">Apply: "Program to Interfaces, Not Implementations"</div>
+<div class="step-subtitle">Instead of coding to the concrete GumballMachine, we create a remote interface that defines what operations can be called remotely.</div>
+
+<div class="principle-box">
+  <div class="principle-label">OO Principle</div>
+  <div class="principle-text">"Program to interfaces, not implementations."</div>
+</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label before">Before — Concrete Dependency</div>
+<div class="code-block">public class GumballMonitor {
+  <span class="hi-r">GumballMachine machine;</span>
+
+  public GumballMonitor(
+    <span class="hi-r">GumballMachine machine</span>
+  ) {
+    this.machine = machine;
+  }
+}</div>
+<div style="padding:10px;">
+<div class="cd-row">
+  <div class="cd-box bad">
+    <div class="cd-h">GumballMonitor</div>
+    <div class="cd-b"><span style="color:var(--text-danger)">machine: GumballMachine</span></div>
+  </div>
+  <div class="cd-box bad">
+    <div class="cd-h">GumballMachine</div>
+    <div class="cd-m">getCount()<br>getState()<br>getLocation()</div>
+  </div>
+</div>
+<div class="cd-arr" style="color:var(--text-danger)">← concrete dependency</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-label after">After — Interface Dependency</div>
+<div class="code-block">public class GumballMonitor {
+  <span class="hi-g">GumballMachineRemote machine;</span>
+
+  public GumballMonitor(
+    <span class="hi-g">GumballMachineRemote machine</span>
+  ) {
+    this.machine = machine;
+  }
+}
+
+<span class="hi-b">public interface GumballMachineRemote</span>
+    <span class="hi-b">extends Remote</span> {
+  <span class="hi-b">int getCount()</span> throws RemoteException;
+  <span class="hi-b">String getLocation()</span> throws RemoteException;
+  <span class="hi-b">State getState()</span> throws RemoteException;
+}</div>
+<div style="padding:10px;">
+<div class="cd-row">
+  <div class="cd-box iface">
+    <div class="cd-h">«interface»<br>GumballMachineRemote</div>
+    <div class="cd-m">getCount()<br>getState()<br>getLocation()</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements</div>
+<div class="cd-row">
+  <div class="cd-box good">
+    <div class="cd-h">GumballMonitor</div>
+    <div class="cd-b">machine: GumballMachineRemote</div>
+  </div>
+  <div class="cd-box ctx">
+    <div class="cd-h">GumballMachine</div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="callout">Now the monitor depends on an interface, not a concrete class. The GumballMachine implements this interface. But wait — the monitor still can't talk over the network. We need something to <strong>stand in</strong> for the remote machine locally. That's where the next principle comes in...</div>
+</div>
+
+<!-- ====== STEP 4: Encapsulate What Varies ====== -->
+<div class="step" data-step="4">
+<span class="phase-pill principle">Design Principle</span>
+<div class="step-title">Apply: "Encapsulate What Varies"</div>
+<div class="step-subtitle">What varies here? Where the object lives! Sometimes it's local, sometimes it's remote. We need to encapsulate the network communication behind a stand-in object — a proxy.</div>
+
+<div class="principle-box">
+  <div class="principle-label">OO Principle</div>
+  <div class="principle-text">"Encapsulate what varies."</div>
+</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label before">Before — No Encapsulation</div>
+<div style="padding:14px;">
+<div class="cd-row">
+  <div class="cd-box good">
+    <div class="cd-h">GumballMonitor</div>
+    <div class="cd-m">report()</div>
+  </div>
+</div>
+<div class="cd-arr" style="color:var(--text-danger)">🌐 ??? network magic ???</div>
+<div class="cd-row">
+  <div class="cd-box ctx">
+    <div class="cd-h">GumballMachine</div>
+    <div class="cd-m">getCount()<br>getState()</div>
+  </div>
+</div>
+<div class="prose" style="font-size:0.8rem;text-align:center;color:var(--text-danger)">Monitor can't reach across the network. The network details aren't encapsulated anywhere.</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-label after">After — Proxy Encapsulates Network</div>
+<div style="padding:14px;">
+<div class="cd-row">
+  <div class="cd-box good">
+    <div class="cd-h">GumballMonitor</div>
+    <div class="cd-m">report()</div>
+  </div>
+  <div class="cd-box obs">
+    <div class="cd-h">Proxy (Stub)</div>
+    <div class="cd-m">getCount()<br>getState()<br>getLocation()</div>
+  </div>
+</div>
+<div class="cd-arr">← same interface │ 🌐 network │</div>
+<div class="cd-row">
+  <div class="cd-box obs" style="opacity:0.7">
+    <div class="cd-h">Skeleton</div>
+    <div class="cd-m">receives calls</div>
+  </div>
+  <div class="cd-box ctx">
+    <div class="cd-h">GumballMachine</div>
+    <div class="cd-m">getCount()<br>getState()</div>
+  </div>
+</div>
+<div class="prose" style="font-size:0.8rem;text-align:center;color:var(--text-success)">The proxy encapsulates ALL network communication. The monitor thinks it's talking to a local object!</div>
+</div>
+</div>
+</div>
+
+<div class="callout">The proxy stands in for the remote object locally. It implements the <strong>same interface</strong>, so the monitor can't tell the difference. But how does the proxy manage the remote object? We need <strong>composition</strong>...</div>
+</div>
+
+<!-- ====== STEP 5: Favor Composition ====== -->
+<div class="step" data-step="5">
+<span class="phase-pill principle">Design Principle</span>
+<div class="step-title">Apply: "Favor Composition Over Inheritance"</div>
+<div class="step-subtitle">The proxy HAS-A reference to the real subject. It doesn't extend it — it wraps it with composition, forwarding calls through the network.</div>
+
+<div class="principle-box">
+  <div class="principle-label">OO Principle</div>
+  <div class="principle-text">"Favor composition over inheritance."</div>
+</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">Composition in Action</div>
+<div class="code-block"><span class="cm">// The proxy COMPOSES the real subject</span>
+<span class="cm">// via a remote reference (RMI stub)</span>
+
+<span class="hi-b">Client (GumballMonitor)</span>
+  <span class="hi-g">HAS-A → Proxy (Stub)</span>
+    <span class="hi-y">forwards over network →</span>
+      <span class="hi-b">Skeleton</span>
+        <span class="hi-g">HAS-A → RealSubject (GumballMachine)</span>
+
+<span class="cm">// No inheritance needed!</span>
+<span class="cm">// The proxy implements the same interface</span>
+<span class="cm">// and delegates to the real object.</span></div>
+</div>
+<div class="panel">
+<div class="panel-label">Class Diagram</div>
+<div style="padding:10px;">
+<div class="cd-row">
+  <div class="cd-box iface">
+    <div class="cd-h">«interface»<br>GumballMachineRemote</div>
+    <div class="cd-m">getCount()<br>getState()<br>getLocation()</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ implements</div>
+<div class="cd-row">
+  <div class="cd-box obs">
+    <div class="cd-h">Proxy (Stub)</div>
+    <div class="cd-b" style="font-size:0.65rem;">◇ HAS-A reference to remote subject</div>
+    <div class="cd-m">getCount()<br>getState()<br>getLocation()</div>
+  </div>
+  <div class="cd-box ctx">
+    <div class="cd-h">GumballMachine</div>
+    <div class="cd-b">location, count, state</div>
+    <div class="cd-m">getCount()<br>getState()<br>getLocation()</div>
+  </div>
+</div>
+<div class="cd-arr">◇ ——— forwards to ———▷</div>
+</div>
+</div>
+</div>
+
+<div class="callout success">By using composition, the proxy can forward calls across the network without the client ever knowing. The proxy controls access to the remote object. Let's step back and see what we just built...</div>
+</div>
+
+<!-- ====== STEP 6: Revelation ====== -->
+<div class="step" data-step="6">
+<span class="phase-pill reveal">The Revelation</span>
+<div class="step-title">Wait... This Is the Proxy Pattern!</div>
+<div class="step-subtitle">By applying three principles — program to interfaces, encapsulate what varies, and favor composition — we independently arrived at a well-known design pattern.</div>
+
+<div class="principle-box" style="border-color:var(--purple-600);background:var(--purple-50);">
+  <div class="principle-label" style="color:var(--purple-700);">The Proxy Pattern</div>
+  <div class="principle-text" style="color:var(--purple-700);">"Provide a surrogate or placeholder for another object to control access to it."</div>
+</div>
+
+<div class="prose">Think of it like a <strong>corporate bodyguard</strong>. The CEO (client) wants to talk to a celebrity (real subject). The bodyguard (proxy) has the same communication abilities but controls who gets through, handles logistics, and may even stand in when the celebrity isn't available yet.</div>
+
+<div style="padding:12px 0;">
+<div class="cd-row">
+  <div class="cd-box iface">
+    <div class="cd-h">«interface»<br>Subject</div>
+    <div class="cd-m">request()</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ implements</div>
+<div class="cd-row">
+  <div class="cd-box obs">
+    <div class="cd-h">Proxy</div>
+    <div class="cd-b">◇ subject: Subject</div>
+    <div class="cd-m">request() {<br>&nbsp;&nbsp;subject.request();<br>}</div>
+  </div>
+  <div class="cd-box ctx">
+    <div class="cd-h">RealSubject</div>
+    <div class="cd-m">request()</div>
+  </div>
+</div>
+</div>
+
+<div class="prose">The key insight: <strong>the proxy controls access</strong>. Different types of proxies control different types of access:</div>
+<div style="display:flex;flex-direction:column;gap:6px;margin:10px 0;">
+<div style="padding:8px 14px;background:var(--bg-info);border-radius:6px;font-size:0.85rem;color:var(--text-info);">
+  <strong>Remote Proxy</strong> — controls access to a <strong>remote</strong> object (lives in another JVM/machine)
+</div>
+<div style="padding:8px 14px;background:var(--bg-warning);border-radius:6px;font-size:0.85rem;color:var(--text-warning);">
+  <strong>Virtual Proxy</strong> — controls access to an <strong>expensive</strong> resource (lazy creation)
+</div>
+<div style="padding:8px 14px;background:var(--bg-success);border-radius:6px;font-size:0.85rem;color:var(--text-success);">
+  <strong>Protection Proxy</strong> — controls access based on <strong>permissions</strong> (access rights)
+</div>
+</div>
+
+<div class="callout purple">The proxy implements the same interface as the real subject. The client can't tell if it's talking to the real thing or a proxy. That's the power of programming to interfaces + composition.</div>
+</div>
+
+<!-- ====== STEP 7: Remote Proxy Implementation ====== -->
+<div class="step" data-step="7">
+<span class="phase-pill solution">Implementation</span>
+<div class="step-title">Remote Proxy — Making GumballMachine a Remote Service</div>
+<div class="step-subtitle">Using Java RMI, we turn our GumballMachine into a remote service and create a proxy that the monitor can use from anywhere on the network.</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">Step 1: Remote Interface</div>
+<div class="code-block"><span class="hi-b">import java.rmi.*;</span>
+
+<span class="hi-b">public interface GumballMachineRemote</span>
+    <span class="hi-b">extends Remote</span> {
+
+  public int <span class="hi-b">getCount()</span>
+    throws RemoteException;
+
+  public String <span class="hi-b">getLocation()</span>
+    throws RemoteException;
+
+  public State <span class="hi-b">getState()</span>
+    throws RemoteException;
+}
+
+<span class="cm">// State must be Serializable!</span>
+public interface State
+    <span class="hi-g">extends Serializable</span> {
+  public void insertQuarter();
+  public void ejectQuarter();
+  public void turnCrank();
+  public void dispense();
+}</div>
+</div>
+<div class="panel">
+<div class="panel-label">Step 2: GumballMachine as Service</div>
+<div class="code-block">public class GumballMachine
+    <span class="hi-g">extends UnicastRemoteObject</span>
+    <span class="hi-g">implements GumballMachineRemote</span> {
+
+  <span class="cm">// transient = don't serialize this!</span>
+  <span class="hi-y">transient</span> State state;
+  String location;
+  int count;
+
+  public GumballMachine(
+    String location, int count)
+    <span class="hi-g">throws RemoteException</span> {
+    <span class="cm">// constructor code...</span>
+  }
+
+  <span class="cm">// getCount(), getState(), getLocation()</span>
+  <span class="cm">// all already implemented!</span>
+}</div>
+</div>
+</div>
+
+<div class="callout">The GumballMachine now extends UnicastRemoteObject and implements our remote interface. RMI handles creating the proxy (stub) and skeleton automatically. We just need to register it.</div>
+</div>
+
+<!-- ====== STEP 8: Registration & Monitor ====== -->
+<div class="step" data-step="8">
+<span class="phase-pill solution">Integration</span>
+<div class="step-title">Wiring It Up — Registration & Remote Monitor</div>
+<div class="step-subtitle">We register the gumball machine with RMI registry, then the monitor looks up the proxy and uses it just like a local object.</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">Server Side — Register</div>
+<div class="code-block"><span class="cm">// Register with RMI registry</span>
+try {
+  GumballMachineRemote gm =
+    new GumballMachine(
+      "seattle.mightygumball.com", 250);
+
+  <span class="hi-g">Naming.rebind(</span>
+    <span class="hi-g">"//seattle.mightygumball.com"</span>
+    <span class="hi-g">+ "/gumballmachine", gm);</span>
+
+} catch (Exception e) {
+  e.printStackTrace();
+}
+
+<span class="cm">// RMI swaps the real object for a</span>
+<span class="cm">// stub (proxy) in the registry!</span></div>
+</div>
+<div class="panel">
+<div class="panel-label">Client Side — Monitor</div>
+<div class="code-block"><span class="cm">// Monitor uses the INTERFACE</span>
+public class GumballMonitor {
+  <span class="hi-g">GumballMachineRemote machine;</span>
+
+  public void report() {
+    try {
+      System.out.println(
+        machine.<span class="hi-g">getLocation()</span>);
+      System.out.println(
+        machine.<span class="hi-g">getCount()</span>);
+      System.out.println(
+        machine.<span class="hi-g">getState()</span>);
+    } catch (<span class="hi-y">RemoteException</span> e) {
+      e.printStackTrace();
+    }
+  }
+}
+
+<span class="cm">// Look up the proxy:</span>
+GumballMachineRemote gm =
+  (GumballMachineRemote) <span class="hi-g">Naming.lookup(</span>
+  <span class="hi-g">"rmi://seattle.../gumballmachine"</span>);</div>
+</div>
+</div>
+
+<div class="code-block full"><span class="cm">// Output — The CEO is thrilled!</span>
+<span class="hi-g">Gumball Machine: seattle.mightygumball.com</span>
+<span class="hi-g">Current inventory: 187 gumballs</span>
+<span class="hi-g">Current state: waiting for quarter</span>
+
+<span class="hi-g">Gumball Machine: boulder.mightygumball.com</span>
+<span class="hi-g">Current inventory: 44 gumballs</span>
+<span class="hi-g">Current state: waiting for turn of crank</span></div>
+
+<div class="callout success">The monitor code barely changed! It uses the interface and doesn't care whether the object is local or remote. The proxy handles all the networking transparently.</div>
+</div>
+
+<!-- ====== STEP 9: Virtual Proxy ====== -->
+<div class="step" data-step="9">
+<span class="phase-pill fix">Proxy Variant</span>
+<div class="step-title">Virtual Proxy — The CD Cover Viewer</div>
+<div class="step-subtitle">A different kind of access control: the Virtual Proxy stands in for an expensive-to-create object, displaying a placeholder until the real object is ready.</div>
+
+<div class="prose">Imagine a CD cover viewer app. Loading images from the network takes time. Without a proxy, the entire UI freezes while waiting. A <strong>Virtual Proxy</strong> displays "Loading..." while the real image loads in a background thread.</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">ImageProxy Code</div>
+<div class="code-block">class ImageProxy <span class="hi-b">implements Icon</span> {
+  <span class="hi-y">ImageIcon imageIcon;</span> <span class="cm">// the real subject</span>
+  URL imageURL;
+
+  public void <span class="hi-b">paintIcon</span>(Component c,
+      Graphics g, int x, int y) {
+    if (<span class="hi-g">imageIcon != null</span>) {
+      <span class="cm">// Image loaded — delegate!</span>
+      <span class="hi-g">imageIcon.paintIcon(c, g, x, y);</span>
+    } else {
+      <span class="cm">// Still loading — show placeholder</span>
+      <span class="hi-y">g.drawString(</span>
+        <span class="hi-y">"Loading CD cover...",</span>
+        <span class="hi-y">x+300, y+190);</span>
+      <span class="cm">// Start background thread...</span>
+      <span class="hi-g">retrievalThread = new Thread(() -> {</span>
+        <span class="hi-g">imageIcon = new ImageIcon(imageURL);</span>
+        <span class="hi-g">c.repaint();</span>
+      <span class="hi-g">});</span>
+    }
+  }
+}</div>
+</div>
+<div class="panel">
+<div class="panel-label">How It Works</div>
+<div style="padding:14px;">
+<div class="cd-row">
+  <div class="cd-box iface">
+    <div class="cd-h">«interface»<br>Icon</div>
+    <div class="cd-m">getIconWidth()<br>getIconHeight()<br>paintIcon()</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp; △ implements</div>
+<div class="cd-row">
+  <div class="cd-box obs">
+    <div class="cd-h">ImageProxy</div>
+    <div class="cd-b">◇ imageIcon: ImageIcon</div>
+    <div class="cd-m">paintIcon() {<br>&nbsp;&nbsp;<em>loading? placeholder</em><br>&nbsp;&nbsp;<em>loaded? delegate</em><br>}</div>
+  </div>
+  <div class="cd-box ctx">
+    <div class="cd-h">ImageIcon</div>
+    <div class="cd-m">paintIcon()<br>getIconWidth()<br>getIconHeight()</div>
+  </div>
+</div>
+<div class="prose" style="font-size:0.78rem;margin-top:10px;">
+<strong>State 1:</strong> Image not loaded → proxy shows "Loading..."<br>
+<strong>State 2:</strong> Image loaded → proxy delegates to ImageIcon
+</div>
+</div>
+</div>
+</div>
+
+<div class="callout warning">Notice how the proxy has two states? That's a hint you could apply the <strong>State Pattern</strong> here! The same proxy structure, but different access control: here it controls access to an expensive resource instead of a remote one.</div>
+</div>
+
+<!-- ====== STEP 10: Protection Proxy ====== -->
+<div class="step" data-step="10">
+<span class="phase-pill fix">Proxy Variant</span>
+<div class="step-title">Protection Proxy — The Matchmaking Service</div>
+<div class="step-subtitle">Yet another type of access control: a Protection Proxy controls who can call which methods, based on the caller's role.</div>
+
+<div class="prose">Objectville's dating service has a PersonBean with getters and setters. Problem: users are inflating their own "Hot or Not" ratings and changing other people's profiles. We need <strong>different access rules for different callers</strong>.</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">Owner Proxy — Your Own Profile</div>
+<div class="code-block">public class OwnerInvocationHandler
+    implements <span class="hi-b">InvocationHandler</span> {
+  PersonBean person;
+
+  public Object <span class="hi-b">invoke</span>(Object proxy,
+      Method method, Object[] args) {
+
+    if (method.getName()
+        .startsWith(<span class="hi-g">"get"</span>)) {
+      <span class="cm">// Owners can get anything</span>
+      return method.invoke(person, args);
+    }
+    else if (method.getName()
+        .equals(<span class="hi-r">"setHotOrNotRating"</span>)) {
+      <span class="cm">// Can't rate yourself!</span>
+      <span class="hi-r">throw new IllegalAccessException();</span>
+    }
+    else if (method.getName()
+        .startsWith(<span class="hi-g">"set"</span>)) {
+      <span class="cm">// Owners can set their own info</span>
+      return method.invoke(person, args);
+    }
+  }
+}</div>
+</div>
+<div class="panel">
+<div class="panel-label">Non-Owner Proxy — Someone Else's Profile</div>
+<div class="code-block">public class NonOwnerInvocationHandler
+    implements <span class="hi-b">InvocationHandler</span> {
+  PersonBean person;
+
+  public Object <span class="hi-b">invoke</span>(Object proxy,
+      Method method, Object[] args) {
+
+    if (method.getName()
+        .startsWith(<span class="hi-g">"get"</span>)) {
+      <span class="cm">// Anyone can view profiles</span>
+      return method.invoke(person, args);
+    }
+    else if (method.getName()
+        .equals(<span class="hi-g">"setHotOrNotRating"</span>)) {
+      <span class="cm">// Others CAN rate you</span>
+      <span class="hi-g">return method.invoke(person, args);</span>
+    }
+    else if (method.getName()
+        .startsWith(<span class="hi-r">"set"</span>)) {
+      <span class="cm">// Can't change someone else's info!</span>
+      <span class="hi-r">throw new IllegalAccessException();</span>
+    }
+  }
+}</div>
+</div>
+</div>
+
+<div style="padding:8px 0;">
+<div class="cd-row">
+  <div class="cd-box iface">
+    <div class="cd-h">«interface»<br>InvocationHandler</div>
+    <div class="cd-m">invoke(proxy, method, args)</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ implements</div>
+<div class="cd-row">
+  <div class="cd-box obs">
+    <div class="cd-h">OwnerInvocationHandler</div>
+    <div class="cd-m">✅ get*<br>✅ set* (except rating)<br>❌ setHotOrNotRating</div>
+  </div>
+  <div class="cd-box obs">
+    <div class="cd-h">NonOwnerInvocationHandler</div>
+    <div class="cd-m">✅ get*<br>❌ set* (except rating)<br>✅ setHotOrNotRating</div>
+  </div>
+</div>
+</div>
+
+<div class="callout">Java's Dynamic Proxy creates the proxy class <strong>at runtime</strong> from interfaces you supply. You just write the InvocationHandler to control access. The proxy is generated by <code style="font-family:'JetBrains Mono',monospace;font-size:0.8em;">Proxy.newProxyInstance()</code>.</div>
+</div>
+
+<!-- ====== STEP 11: Proxy vs Decorator vs Adapter ====== -->
+<div class="step" data-step="11">
+<span class="phase-pill fix">Trade-offs</span>
+<div class="step-title">Proxy vs. Decorator vs. Adapter — What's the Difference?</div>
+<div class="step-subtitle">They all "wrap" objects. But their INTENT is completely different.</div>
+
+<div class="panels">
+<div class="panel">
+<div class="panel-label">Structural Comparison</div>
+<div style="padding:14px;">
+<div class="cd-row">
+  <div class="cd-box obs">
+    <div class="cd-h">Proxy</div>
+    <div class="cd-m"><strong>Controls access</strong><br>Same interface<br>May create subject<br>Subject may not exist yet</div>
+  </div>
+  <div class="cd-box" style="border-color:var(--coral-500);background:var(--coral-50);">
+    <div class="cd-h">Decorator</div>
+    <div class="cd-m"><strong>Adds behavior</strong><br>Same interface<br>Always wraps existing obj<br>Can stack recursively</div>
+  </div>
+  <div class="cd-box" style="border-color:var(--teal-500);background:var(--teal-50);">
+    <div class="cd-h">Adapter</div>
+    <div class="cd-m"><strong>Changes interface</strong><br>Different interface<br>Always wraps existing obj<br>Converts one API → another</div>
+  </div>
+</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-label">Key Distinctions</div>
+<div class="code-block"><span class="cm">// PROXY — controls access</span>
+<span class="hi-b">proxy.request()</span>
+→ <span class="hi-y">"Should I allow this call?"</span>
+→ subject.request()  <span class="cm">// maybe</span>
+
+<span class="cm">// DECORATOR — adds behavior</span>
+<span class="hi-b">decorator.request()</span>
+→ <span class="hi-g">doExtraStuff()</span>  <span class="cm">// always</span>
+→ wrapped.request()  <span class="cm">// always</span>
+→ <span class="hi-g">doMoreExtraStuff()</span>
+
+<span class="cm">// ADAPTER — changes interface</span>
+<span class="hi-b">adapter.newMethod()</span>
+→ adaptee.<span class="hi-y">oldMethod()</span>  <span class="cm">// different API</span></div>
+</div>
+</div>
+
+<div class="callout warning"><strong>Decorator</strong> never denies access — it always delegates AND adds behavior. <strong>Proxy</strong> may deny access entirely (protection proxy), create the subject lazily (virtual proxy), or forward across a network (remote proxy). <strong>Adapter</strong> changes the interface; proxy and decorator keep it the same.</div>
+</div>
+
+<!-- ====== STEP 12: The Proxy Zoo ====== -->
+<div class="step" data-step="12">
+<span class="phase-pill reveal">The Proxy Zoo</span>
+<div class="step-title">Proxy Variants in the Wild</div>
+<div class="step-subtitle">The Proxy Pattern manifests in many forms. All share the same core structure: a stand-in that controls access.</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;">
+<div style="padding:10px 14px;background:var(--bg-info);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--text-info);margin-bottom:4px;">🌐 Remote Proxy</div>
+  <div style="font-size:0.8rem;color:var(--text-info);">Stand-in for an object in a different JVM. Handles network communication.</div>
+</div>
+<div style="padding:10px 14px;background:var(--bg-warning);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--text-warning);margin-bottom:4px;">⏳ Virtual Proxy</div>
+  <div style="font-size:0.8rem;color:var(--text-warning);">Stand-in for an expensive object. Creates it lazily when needed.</div>
+</div>
+<div style="padding:10px 14px;background:var(--bg-success);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--text-success);margin-bottom:4px;">🛡️ Protection Proxy</div>
+  <div style="font-size:0.8rem;color:var(--text-success);">Controls access based on caller's permissions/role.</div>
+</div>
+<div style="padding:10px 14px;background:var(--purple-50);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--purple-700);margin-bottom:4px;">🔥 Firewall Proxy</div>
+  <div style="font-size:0.8rem;color:var(--purple-700);">Protects subject from "bad" clients on the network.</div>
+</div>
+<div style="padding:10px 14px;background:var(--teal-50);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--teal-700);margin-bottom:4px;">💾 Caching Proxy</div>
+  <div style="font-size:0.8rem;color:var(--teal-700);">Caches results of expensive operations. Shares results across clients.</div>
+</div>
+<div style="padding:10px 14px;background:var(--coral-50);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--coral-700);margin-bottom:4px;">📋 Smart Reference</div>
+  <div style="font-size:0.8rem;color:var(--coral-700);">Adds actions when subject is referenced (e.g., counting references).</div>
+</div>
+<div style="padding:10px 14px;background:var(--bg-secondary);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--text-secondary);margin-bottom:4px;">🔄 Synchronization Proxy</div>
+  <div style="font-size:0.8rem;color:var(--text-secondary);">Provides safe multi-threaded access to a subject.</div>
+</div>
+<div style="padding:10px 14px;background:var(--bg-secondary);border-radius:8px;">
+  <div style="font-weight:700;font-size:0.85rem;color:var(--text-secondary);margin-bottom:4px;">📝 Copy-On-Write Proxy</div>
+  <div style="font-size:0.8rem;color:var(--text-secondary);">Defers copying until modification is needed. (Virtual Proxy variant.)</div>
+</div>
+</div>
+
+<div class="callout purple">All these variants share the same pattern: they implement the same interface as the subject and control access in some way. The proxy structure is the same — only the <strong>type of access control</strong> varies.</div>
+</div>
+
+<!-- ====== STEP 13: Complete Pattern ====== -->
+<div class="step" data-step="13">
+<span class="phase-pill reveal">Complete Pattern</span>
+<div class="step-title">The Proxy Pattern — Full Class Diagram</div>
+<div class="step-subtitle">Here's the complete pattern with all pieces connected, plus the Dynamic Proxy variant used by Java's protection proxy.</div>
+
+<div style="padding:12px 0;">
+<div class="prose" style="text-align:center;font-weight:600;margin-bottom:8px;">Classic Proxy Pattern</div>
+<div class="cd-row">
+  <div class="cd-box" style="min-width:100px;max-width:120px;">
+    <div class="cd-h">Client</div>
+  </div>
+</div>
+<div class="cd-arr">→ uses</div>
+<div class="cd-row">
+  <div class="cd-box iface" style="min-width:200px;max-width:260px;">
+    <div class="cd-h">«interface» Subject</div>
+    <div class="cd-m">request()</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ implements</div>
+<div class="cd-row">
+  <div class="cd-box obs">
+    <div class="cd-h">Proxy</div>
+    <div class="cd-b">◇ subject: Subject</div>
+    <div class="cd-m">request() {<br>&nbsp;&nbsp;<em>// control access</em><br>&nbsp;&nbsp;subject.request();<br>}</div>
+  </div>
+  <div class="cd-box ctx">
+    <div class="cd-h">RealSubject</div>
+    <div class="cd-m">request() {<br>&nbsp;&nbsp;<em>// real work here</em><br>}</div>
+  </div>
+</div>
+</div>
+
+<div style="padding:12px 0;border-top:1px solid var(--border-secondary);margin-top:12px;">
+<div class="prose" style="text-align:center;font-weight:600;margin-bottom:8px;">Java Dynamic Proxy Variant</div>
+<div class="cd-row">
+  <div class="cd-box iface">
+    <div class="cd-h">«interface» Subject</div>
+    <div class="cd-m">request()</div>
+  </div>
+  <div class="cd-box iface">
+    <div class="cd-h">«interface»<br>InvocationHandler</div>
+    <div class="cd-m">invoke(proxy, method, args)</div>
+  </div>
+</div>
+<div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; △ implements</div>
+<div class="cd-row">
+  <div class="cd-box obs">
+    <div class="cd-h">Proxy<br><span style="font-size:0.6rem;font-weight:400">(generated at runtime)</span></div>
+    <div class="cd-m">request() → invoke()</div>
+  </div>
+  <div class="cd-box obs">
+    <div class="cd-h">YourInvocationHandler</div>
+    <div class="cd-m">invoke() {<br>&nbsp;&nbsp;<em>// access control logic</em><br>&nbsp;&nbsp;method.invoke(subject);<br>}</div>
+  </div>
+</div>
+</div>
+
+<div class="callout purple">The Proxy Pattern is a <strong>structural pattern</strong> — it composes objects to control access. The proxy and real subject share the same interface, making them interchangeable from the client's perspective.</div>
+</div>
+
+<!-- ====== STEP 14: Toolbox ====== -->
+<div class="step" data-step="14">
+<span class="phase-pill solution">Toolbox Update</span>
+<div class="step-title">Your Design Toolbox — Updated</div>
+<div class="step-subtitle">Here's everything we've accumulated through 11 chapters.</div>
+
+<div class="toolbox">
+<div class="toolbox-col">
+  <h4>The Journey We Took</h4>
+  <div class="tool-item"><span style="color:var(--text-tertiary)">①</span> CEO wants remote monitoring</div>
+  <div class="tool-item"><span style="color:var(--text-tertiary)">②</span> Naive monitor — works locally only</div>
+  <div class="tool-item" style="color:var(--text-danger)"><span>③</span> Oh no! Can't reach remote JVMs</div>
+  <div class="tool-item" style="color:var(--text-info)"><span>④</span> Program to interfaces → remote interface</div>
+  <div class="tool-item" style="color:var(--text-info)"><span>⑤</span> Encapsulate what varies → proxy hides network</div>
+  <div class="tool-item" style="color:var(--text-info)"><span>⑥</span> Favor composition → proxy HAS-A subject</div>
+  <div class="tool-item" style="color:var(--purple-600)"><span>⑦</span> Revelation: it's the Proxy Pattern!</div>
+  <div class="tool-item" style="color:var(--text-success)"><span>⑧</span> Remote proxy with RMI</div>
+  <div class="tool-item" style="color:var(--text-warning)"><span>⑨</span> Virtual proxy — lazy loading</div>
+  <div class="tool-item" style="color:var(--text-success)"><span>⑩</span> Protection proxy — access control</div>
+</div>
+<div class="toolbox-col">
+  <h4>OO Principles</h4>
+  <div class="tool-item">Encapsulate what varies</div>
+  <div class="tool-item">Favor composition over inheritance</div>
+  <div class="tool-item">Program to interfaces</div>
+  <div class="tool-item">Strive for loosely coupled designs</div>
+  <div class="tool-item">Open/Closed Principle</div>
+  <div class="tool-item">Dependency Inversion</div>
+  <div class="tool-item">Principle of Least Knowledge</div>
+  <div class="tool-item">Hollywood Principle</div>
+  <div class="tool-item">Single Responsibility</div>
+  <h4 style="margin-top:14px;">OO Patterns</h4>
+  <div class="tool-item">Strategy · Observer · Decorator</div>
+  <div class="tool-item">Factory Method · Abstract Factory</div>
+  <div class="tool-item">Singleton · Command · Adapter</div>
+  <div class="tool-item">Facade · Template Method</div>
+  <div class="tool-item">Iterator · Composite · State</div>
+  <div class="tool-item new"><span class="star">★</span> Proxy — surrogate that controls access to another object</div>
+</div>
+</div>
+
+<div class="callout success"><strong>Key takeaway:</strong> The Proxy Pattern provides a surrogate or placeholder for another object to control access. Whether it's remote access, lazy creation, or permission-based access — the proxy implements the same interface and stands in for the real thing.</div>
+</div>
+
+    </div><!-- end stepsContainer -->
+
+    <!-- Navigation -->
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn" onclick="navigate(-1)" disabled>← Back</button>
+      <div class="dots" id="dotsContainer"></div>
+      <button class="nav-btn primary" id="nextBtn" onclick="navigate(1)">Next →</button>
+    </div>
+  </div><!-- end card -->
+</div><!-- end container -->
+
+<script>
+let currentStep = 0;
+const steps = document.querySelectorAll('.step');
+const totalSteps = steps.length;
+const dotsContainer = document.getElementById('dotsContainer');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const progressFill = document.getElementById('progressFill');
+
+// Create dots
+for (let i = 0; i < totalSteps; i++) {
+  const dot = document.createElement('button');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.onclick = () => goToStep(i);
+  dot.title = `Step ${i + 1}`;
+  dotsContainer.appendChild(dot);
+}
+
+function goToStep(n) {
+  if (n < 0 || n >= totalSteps) return;
+  steps[currentStep].classList.remove('active');
+  currentStep = n;
+  steps[currentStep].classList.add('active');
+  updateNav();
+}
+
+function navigate(dir) {
+  goToStep(currentStep + dir);
+}
+
+function updateNav() {
+  prevBtn.disabled = currentStep === 0;
+  nextBtn.disabled = currentStep === totalSteps - 1;
+  nextBtn.textContent = currentStep === totalSteps - 1 ? 'Done ✓' : 'Next →';
+
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i === currentStep);
+  });
+
+  progressFill.style.width = ((currentStep + 1) / totalSteps * 100) + '%';
+
+  // Scroll card into view
+  document.querySelector('.card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); navigate(1); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); navigate(-1); }
+});
+
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+}
+</script>
+</body>
+</html>

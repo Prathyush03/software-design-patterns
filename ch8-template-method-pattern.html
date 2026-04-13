@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.8 — The Template Method Pattern</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f1ec;
+  --bg-tertiary: #ebe7e0;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f5ea;
+  --bg-warning: #fff8e1;
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #7a7a7a;
+  --text-info: #1a56db;
+  --text-danger: #c53030;
+  --text-success: #22763d;
+  --text-warning: #92600a;
+
+  --border-primary: #d0ccc5;
+  --border-secondary: #e0ddd7;
+  --border-tertiary: #eae7e1;
+
+  --purple-50: #f5f0ff; --purple-100: #ede5ff; --purple-200: #d4c4fc;
+  --purple-300: #b799f5; --purple-400: #9b6eee; --purple-500: #7c3aed;
+  --purple-600: #6d28d9; --purple-700: #5b21b6; --purple-800: #4c1d95;
+
+  --teal-50: #f0fdfa; --teal-100: #ccfbf1; --teal-200: #99f6e4;
+  --teal-300: #5eead4; --teal-400: #2dd4bf; --teal-500: #14b8a6;
+  --teal-600: #0d9488; --teal-700: #0f766e; --teal-800: #115e59;
+
+  --coral-50: #fff5f5; --coral-100: #ffe3e3; --coral-200: #ffc9c9;
+  --coral-300: #ffa8a8; --coral-400: #ff8787; --coral-500: #ff6b6b;
+  --coral-600: #fa5252; --coral-700: #f03e3e; --coral-800: #e03131;
+
+  --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+  --amber-500: #f59e0b; --amber-700: #b45309;
+
+  --progress-bg: #e0ddd7;
+  --progress-fill: var(--teal-500);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1e1e24;
+  --bg-secondary: #27272e;
+  --bg-tertiary: #16161b;
+  --bg-info: #1e2a3a;
+  --bg-danger: #3a1e1e;
+  --bg-success: #1e3a24;
+  --bg-warning: #3a341e;
+
+  --text-primary: #e8e6e1;
+  --text-secondary: #b0ada6;
+  --text-tertiary: #7a7872;
+  --text-info: #7ab4f5;
+  --text-danger: #f5a0a0;
+  --text-success: #80d49a;
+  --text-warning: #f5d080;
+
+  --border-primary: #3a3940;
+  --border-secondary: #2e2d34;
+  --border-tertiary: #252429;
+
+  --purple-50: #2a2040; --purple-100: #322850;
+  --teal-50: #1a2e2a; --teal-100: #203530;
+  --coral-50: #2e1e1e; --coral-100: #3a2424;
+  --amber-50: #2e2a1a; --amber-100: #3a3420;
+
+  --progress-bg: #3a3940;
+  --progress-fill: var(--teal-400);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  margin-bottom: 8px;
+}
+.header h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.02em;
+}
+.theme-toggle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+.theme-toggle:hover { background: var(--bg-primary); }
+
+/* Progress bar */
+.progress-bar {
+  height: 3px;
+  background: var(--progress-bg);
+  border-radius: 2px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--progress-fill);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* Main card */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+/* Step content area */
+.step {
+  display: none;
+  padding: 28px 32px;
+  animation: fadeSlide 0.35s ease;
+}
+.step.active { display: block; }
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Phase pill */
+.phase-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.pill-gray { background: var(--bg-secondary); color: var(--text-tertiary); }
+.pill-red { background: var(--bg-danger); color: var(--text-danger); }
+.pill-yellow { background: var(--bg-warning); color: var(--text-warning); }
+.pill-blue { background: var(--bg-info); color: var(--text-info); }
+.pill-green { background: var(--bg-success); color: var(--text-success); }
+.pill-purple { background: var(--purple-50); color: var(--purple-600); }
+
+.step-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+  line-height: 1.25;
+}
+
+.step-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  max-width: 720px;
+}
+
+/* Panels */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.panel-full {
+  display: block;
+  margin: 16px 0;
+}
+
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-tertiary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.panel-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-tertiary);
+  color: var(--text-tertiary);
+}
+.panel-label.before-label { color: var(--text-danger); }
+.panel-label.after-label { color: var(--text-success); }
+
+/* Code blocks */
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  padding: 14px;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+.hi-r { background: rgba(220, 53, 53, 0.12); border-radius: 3px; padding: 1px 2px; }
+.hi-g { background: rgba(34, 158, 75, 0.12); border-radius: 3px; padding: 1px 2px; }
+.hi-y { background: rgba(245, 158, 11, 0.12); border-radius: 3px; padding: 1px 2px; }
+.hi-b { background: rgba(59, 130, 246, 0.12); border-radius: 3px; padding: 1px 2px; }
+.cm { color: var(--text-tertiary); font-style: italic; }
+
+[data-theme="dark"] .hi-r { background: rgba(245, 100, 100, 0.15); }
+[data-theme="dark"] .hi-g { background: rgba(100, 220, 130, 0.15); }
+[data-theme="dark"] .hi-y { background: rgba(245, 190, 50, 0.15); }
+[data-theme="dark"] .hi-b { background: rgba(100, 160, 245, 0.15); }
+
+/* Class diagram boxes */
+.cd-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px 0;
+}
+.cd-box {
+  border: 2px solid var(--border-primary);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  min-width: 160px;
+  max-width: 220px;
+  background: var(--bg-primary);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.cd-box.bad { border-color: var(--coral-500); background: var(--coral-50); }
+.cd-box.dup { border-color: var(--amber-500); background: var(--amber-50); }
+.cd-box.iface { border-style: dashed; border-color: var(--purple-400); background: var(--purple-50); }
+.cd-box.ctx { border-color: var(--teal-500); background: var(--teal-50); }
+.cd-box.obs { border-color: var(--coral-400); background: var(--coral-50); }
+.cd-box.good { border-color: var(--teal-500); background: var(--teal-50); }
+.cd-box.abstract-box { border-color: var(--purple-400); background: var(--purple-50); }
+
+.cd-h {
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-secondary);
+  background: rgba(0,0,0,0.03);
+}
+.cd-b {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+.cd-m {
+  padding: 5px 10px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+.cd-arr {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  padding: 4px 0;
+  font-family: var(--font-mono);
+}
+
+/* Principle box */
+.principle-box {
+  border: 2px solid var(--text-info);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  background: var(--bg-info);
+}
+.principle-box .label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-info);
+  margin-bottom: 4px;
+}
+.principle-box .text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-info);
+}
+
+/* Callout bar */
+.callout {
+  border-left: 3px solid var(--border-primary);
+  padding: 10px 16px;
+  margin-top: 20px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+.callout.info { border-left-color: var(--text-info); background: var(--bg-info); }
+.callout.danger { border-left-color: var(--text-danger); background: var(--bg-danger); }
+.callout.success { border-left-color: var(--text-success); background: var(--bg-success); }
+.callout.warning { border-left-color: var(--text-warning); background: var(--bg-warning); }
+.callout.purple { border-left-color: var(--purple-500); background: var(--purple-50); }
+
+/* Comparison table */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 14px 0;
+}
+.compare-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-primary);
+  color: var(--text-secondary);
+}
+.compare-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-tertiary);
+  vertical-align: top;
+}
+.compare-table tr td:first-child { color: var(--text-danger); }
+.compare-table tr td:last-child { color: var(--text-success); }
+
+/* Toolbox grid */
+.toolbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 14px 0;
+}
+.toolbox-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-tertiary);
+  border-radius: 8px;
+  padding: 14px;
+}
+.toolbox-section h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+.toolbox-item {
+  font-size: 0.8rem;
+  padding: 3px 0;
+  color: var(--text-secondary);
+}
+.toolbox-item.new-item { color: var(--text-info); font-weight: 600; }
+.star { color: var(--amber-500); }
+
+/* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-tertiary);
+  background: var(--bg-secondary);
+}
+.nav-btn {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+.nav-btn:hover:not(:disabled) { background: var(--teal-50); border-color: var(--teal-500); color: var(--teal-700); }
+.nav-btn:disabled { opacity: 0.35; cursor: default; }
+.nav-btn.next-btn { background: var(--teal-500); color: #fff; border-color: var(--teal-600); }
+.nav-btn.next-btn:hover:not(:disabled) { background: var(--teal-600); }
+
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 400px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  padding: 0;
+}
+.dot.active { background: var(--teal-500); transform: scale(1.3); }
+.dot:hover { background: var(--teal-400); }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .container { padding: 8px; }
+  .step { padding: 20px 16px; }
+  .panels { grid-template-columns: 1fr; }
+  .step-title { font-size: 1.2rem; }
+  pre { font-size: 0.72rem; }
+  .cd-box { min-width: 130px; font-size: 0.65rem; }
+  .toolbox-grid { grid-template-columns: 1fr; }
+  .nav { padding: 12px 16px; }
+  .dots { max-width: 250px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Ch. 8 &mdash; The Template Method Pattern</h1>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">&#9790; / &#9788;</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <div class="card">
+
+    <!-- ========== STEP 0: THE BRIEF ========== -->
+    <div class="step active" data-step="0">
+      <span class="phase-pill pill-gray">Phase 1 &middot; The Brief</span>
+      <h2 class="step-title">Starbuzz needs a barista algorithm</h2>
+      <p class="step-desc">Starbuzz Coffee wants to codify their beverage preparation. They've got two recipes: one for Coffee, one for Tea. Your job: write the code so baristas can just call <code>prepareRecipe()</code> and the beverage gets made.</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label">Coffee Recipe</div>
+<pre>
+<span class="cm">// Starbuzz Coffee Recipe</span>
+(1) Boil some water
+(2) Brew coffee in boiling water
+(3) Pour coffee in cup
+(4) Add sugar and milk
+</pre>
+        </div>
+        <div class="panel">
+          <div class="panel-label">Tea Recipe</div>
+<pre>
+<span class="cm">// Starbuzz Tea Recipe</span>
+(1) Boil some water
+(2) Steep tea in boiling water
+(3) Pour tea in cup
+(4) Add lemon
+</pre>
+        </div>
+      </div>
+
+      <div class="panel panel-full">
+        <div class="panel-label">System Overview</div>
+        <div style="padding:16px;">
+          <div class="cd-row">
+            <div class="cd-box">
+              <div class="cd-h">Coffee</div>
+              <div class="cd-m">prepareRecipe()<br>boilWater()<br>brewCoffeeGrinds()<br>pourInCup()<br>addSugarAndMilk()</div>
+            </div>
+            <div class="cd-box">
+              <div class="cd-h">Tea</div>
+              <div class="cd-m">prepareRecipe()<br>boilWater()<br>steepTeaBag()<br>pourInCup()<br>addLemon()</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">Two recipes, four steps each, two standalone classes. Let's code them up.</div>
+    </div>
+
+    <!-- ========== STEP 1: FIRST ATTEMPT ========== -->
+    <div class="step" data-step="1">
+      <span class="phase-pill pill-gray">Phase 1 &middot; First Attempt</span>
+      <h2 class="step-title">Coding barista: Coffee &amp; Tea classes</h2>
+      <p class="step-desc">We translate each recipe straight into a Java class. Each class has <code>prepareRecipe()</code> and helper methods. It compiles, it runs, beverages are made. Ship it?</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label">Coffee.java</div>
+<pre>
+public class Coffee {
+  void prepareRecipe() {
+    boilWater();
+    brewCoffeeGrinds();
+    pourInCup();
+    addSugarAndMilk();
+  }
+  public void <span class="hi-y">boilWater()</span> {
+    System.out.println("Boiling water");
+  }
+  public void brewCoffeeGrinds() {
+    System.out.println(
+      "Dripping Coffee through filter");
+  }
+  public void <span class="hi-y">pourInCup()</span> {
+    System.out.println("Pouring into cup");
+  }
+  public void addSugarAndMilk() {
+    System.out.println(
+      "Adding Sugar and Milk");
+  }
+}
+</pre>
+        </div>
+        <div class="panel">
+          <div class="panel-label">Tea.java</div>
+<pre>
+public class Tea {
+  void prepareRecipe() {
+    boilWater();
+    steepTeaBag();
+    pourInCup();
+    addLemon();
+  }
+  public void <span class="hi-y">boilWater()</span> {
+    System.out.println("Boiling water");
+  }
+  public void steepTeaBag() {
+    System.out.println(
+      "Steeping the tea");
+  }
+  public void <span class="hi-y">pourInCup()</span> {
+    System.out.println("Pouring into cup");
+  }
+  public void addLemon() {
+    System.out.println("Adding Lemon");
+  }
+}
+</pre>
+        </div>
+      </div>
+
+      <div class="callout warning">Yellow highlights = identical code in both classes. That's <code>boilWater()</code> and <code>pourInCup()</code> — copy-pasted word for word. Hmm&hellip;</div>
+    </div>
+
+    <!-- ========== STEP 2: OH NO! ========== -->
+    <div class="step" data-step="2">
+      <span class="phase-pill pill-red">Phase 1 &middot; Oh No!</span>
+      <h2 class="step-title">Diagnosis: what principles are we violating?</h2>
+      <p class="step-desc">Let's pull out our OO design principle checklist and examine this code. We've learned several principles across chapters 1–7. Let's see which ones we're breaking.</p>
+
+      <div class="panel panel-full">
+        <div class="panel-label">Diagnostic Checklist</div>
+<pre>
+<span class="cm">// ❌ PRINCIPLE: "Encapsulate what varies"</span>
+<span class="hi-r">Coffee.prepareRecipe()  — controls the algorithm</span>
+<span class="hi-r">Tea.prepareRecipe()     — controls the SAME algorithm</span>
+<span class="cm">//    The algorithm structure is the SAME but it's scattered</span>
+<span class="cm">//    across two classes. If the recipe changes, we edit BOTH.</span>
+
+<span class="cm">// ❌ PRINCIPLE: "Don't duplicate code" (DRY)</span>
+<span class="hi-r">Coffee.boilWater()  == Tea.boilWater()</span>     <span class="cm">// IDENTICAL</span>
+<span class="hi-r">Coffee.pourInCup()  == Tea.pourInCup()</span>     <span class="cm">// IDENTICAL</span>
+<span class="cm">//    Two copies of the same code. Bug fix = fix twice.</span>
+
+<span class="cm">// ❌ PRINCIPLE: "Program to interfaces/abstractions"</span>
+<span class="hi-r">// No shared type! A Waitress can't treat Coffee and Tea</span>
+<span class="hi-r">// the same way. No polymorphism possible.</span>
+
+<span class="cm">// ❌ PRINCIPLE: "Closed for modification"</span>
+<span class="hi-r">// Adding a new beverage (HotChocolate) means writing</span>
+<span class="hi-r">// the ENTIRE algorithm again from scratch.</span>
+</pre>
+      </div>
+
+      <div class="panel panel-full" style="margin-top:10px;">
+        <div class="panel-label">Class Diagram — The Problem</div>
+        <div style="padding:16px;">
+          <div class="cd-row">
+            <div class="cd-box bad">
+              <div class="cd-h">Coffee</div>
+              <div class="cd-m" style="color:var(--text-danger);">prepareRecipe() <span class="cm">← dup algorithm</span><br>boilWater() <span class="cm">← dup code</span><br>brewCoffeeGrinds()<br>pourInCup() <span class="cm">← dup code</span><br>addSugarAndMilk()</div>
+            </div>
+            <div class="cd-box bad">
+              <div class="cd-h">Tea</div>
+              <div class="cd-m" style="color:var(--text-danger);">prepareRecipe() <span class="cm">← dup algorithm</span><br>boilWater() <span class="cm">← dup code</span><br>steepTeaBag()<br>pourInCup() <span class="cm">← dup code</span><br>addLemon()</div>
+            </div>
+          </div>
+          <div class="cd-arr" style="color:var(--text-danger);">No shared type. No abstraction. Just two independent classes.</div>
+        </div>
+      </div>
+
+      <div class="callout danger">Four principles violated. Every one of them is going to drive a specific fix. Let's apply them one at a time.</div>
+    </div>
+
+    <!-- ========== STEP 3: APPLY PRINCIPLE 1 — DRY / ENCAPSULATE WHAT VARIES ========== -->
+    <div class="step" data-step="3">
+      <span class="phase-pill pill-blue">Phase 2 &middot; Apply Principle 1</span>
+      <h2 class="step-title">Pull up common code into a superclass</h2>
+
+      <div class="principle-box">
+        <div class="label">Design Principle</div>
+        <div class="text">"Encapsulate what varies" + DRY — extract common code into one place</div>
+      </div>
+
+      <p class="step-desc"><code>boilWater()</code> and <code>pourInCup()</code> are identical in both classes. We create a <code>CaffeineBeverage</code> superclass and pull the shared methods up. Each subclass keeps its own <code>prepareRecipe()</code> for now.</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label before-label">Before — Two copies of everything</div>
+          <div style="padding:16px;">
+            <div class="cd-row">
+              <div class="cd-box bad">
+                <div class="cd-h">Coffee</div>
+                <div class="cd-m"><span class="hi-r">boilWater()</span><br>brewCoffeeGrinds()<br><span class="hi-r">pourInCup()</span><br>addSugarAndMilk()<br>prepareRecipe()</div>
+              </div>
+              <div class="cd-box bad">
+                <div class="cd-h">Tea</div>
+                <div class="cd-m"><span class="hi-r">boilWater()</span><br>steepTeaBag()<br><span class="hi-r">pourInCup()</span><br>addLemon()<br>prepareRecipe()</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-label after-label">After — Common code pulled up</div>
+          <div style="padding:16px;">
+            <div class="cd-row">
+              <div class="cd-box good">
+                <div class="cd-h">CaffeineBeverage</div>
+                <div class="cd-m"><span class="hi-g">boilWater()</span><br><span class="hi-g">pourInCup()</span></div>
+              </div>
+            </div>
+            <div class="cd-arr">&#9651; extends</div>
+            <div class="cd-row">
+              <div class="cd-box dup">
+                <div class="cd-h">Coffee</div>
+                <div class="cd-m">brewCoffeeGrinds()<br>addSugarAndMilk()<br><span class="hi-y">prepareRecipe()</span></div>
+              </div>
+              <div class="cd-box dup">
+                <div class="cd-h">Tea</div>
+                <div class="cd-m">steepTeaBag()<br>addLemon()<br><span class="hi-y">prepareRecipe()</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warning">Good — duplicated methods are gone. But <code>prepareRecipe()</code> is still in each subclass (yellow). Each subclass still controls its own algorithm. Can we pull that up too? The algorithms are <em>almost</em> the same…</div>
+    </div>
+
+    <!-- ========== STEP 4: APPLY PRINCIPLE 2 — ABSTRACT THE ALGORITHM ========== -->
+    <div class="step" data-step="4">
+      <span class="phase-pill pill-blue">Phase 2 &middot; Apply Principle 2</span>
+      <h2 class="step-title">Generalize the algorithm steps</h2>
+
+      <div class="principle-box">
+        <div class="label">Design Principle</div>
+        <div class="text">"Program to abstractions" — find the common structure even when details differ</div>
+      </div>
+
+      <p class="step-desc">Look at the two recipes side by side. Steps 1 and 3 are identical. Steps 2 and 4 are <em>different in detail</em> but <em>same in concept</em>: "brew" the beverage and "add condiments." If we generalize the names, the algorithm is identical!</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label before-label">Before — Different method names</div>
+<pre>
+<span class="cm">// Coffee</span>
+void prepareRecipe() {
+  boilWater();
+  <span class="hi-r">brewCoffeeGrinds();</span>
+  pourInCup();
+  <span class="hi-r">addSugarAndMilk();</span>
+}
+
+<span class="cm">// Tea</span>
+void prepareRecipe() {
+  boilWater();
+  <span class="hi-r">steepTeaBag();</span>
+  pourInCup();
+  <span class="hi-r">addLemon();</span>
+}
+</pre>
+        </div>
+        <div class="panel">
+          <div class="panel-label after-label">After — Generalized names</div>
+<pre>
+<span class="cm">// Both Coffee AND Tea:</span>
+void prepareRecipe() {
+  boilWater();
+  <span class="hi-g">brew();</span>          <span class="cm">// generalized!</span>
+  pourInCup();
+  <span class="hi-g">addCondiments();</span> <span class="cm">// generalized!</span>
+}
+
+<span class="cm">// Now the algorithm is IDENTICAL</span>
+<span class="cm">// for both beverages.</span>
+<span class="cm">// We can pull prepareRecipe()</span>
+<span class="cm">// into the superclass!</span>
+</pre>
+        </div>
+      </div>
+
+      <div class="callout info">By renaming <code>brewCoffeeGrinds()</code> → <code>brew()</code> and <code>steepTeaBag()</code> → <code>brew()</code>, and <code>addSugarAndMilk()</code>/<code>addLemon()</code> → <code>addCondiments()</code>, the algorithm structure becomes one thing. But who implements <code>brew()</code> and <code>addCondiments()</code>? The subclasses — via abstract methods!</div>
+    </div>
+
+    <!-- ========== STEP 5: APPLY PRINCIPLE 3 — PROTECT THE ALGORITHM ========== -->
+    <div class="step" data-step="5">
+      <span class="phase-pill pill-blue">Phase 2 &middot; Apply Principle 3</span>
+      <h2 class="step-title">Lock down the algorithm with <code>final</code></h2>
+
+      <div class="principle-box">
+        <div class="label">Design Principle</div>
+        <div class="text">"Closed for modification" — the algorithm structure must not change; only the steps can vary</div>
+      </div>
+
+      <p class="step-desc">We move <code>prepareRecipe()</code> into the superclass and declare it <strong>final</strong>. No subclass can override it. The steps that vary — <code>brew()</code> and <code>addCondiments()</code> — are declared <strong>abstract</strong>.</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label before-label">Before — Subclasses own the algorithm</div>
+          <div style="padding:16px;">
+            <div class="cd-row">
+              <div class="cd-box good">
+                <div class="cd-h">CaffeineBeverage</div>
+                <div class="cd-m">boilWater()<br>pourInCup()</div>
+              </div>
+            </div>
+            <div class="cd-arr">&#9651; extends</div>
+            <div class="cd-row">
+              <div class="cd-box dup">
+                <div class="cd-h">Coffee</div>
+                <div class="cd-m"><span class="hi-r">prepareRecipe()</span><br>brew()<br>addCondiments()</div>
+              </div>
+              <div class="cd-box dup">
+                <div class="cd-h">Tea</div>
+                <div class="cd-m"><span class="hi-r">prepareRecipe()</span><br>brew()<br>addCondiments()</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-label after-label">After — Superclass owns the algorithm</div>
+          <div style="padding:16px;">
+            <div class="cd-row">
+              <div class="cd-box abstract-box">
+                <div class="cd-h">&laquo;abstract&raquo; CaffeineBeverage</div>
+                <div class="cd-m"><span class="hi-g"><b>final</b> prepareRecipe()</span><br>boilWater()<br>pourInCup()<br><span class="hi-b"><i>abstract</i> brew()</span><br><span class="hi-b"><i>abstract</i> addCondiments()</span></div>
+              </div>
+            </div>
+            <div class="cd-arr">&#9651; extends</div>
+            <div class="cd-row">
+              <div class="cd-box good">
+                <div class="cd-h">Coffee</div>
+                <div class="cd-m"><span class="hi-g">brew()</span><br><span class="hi-g">addCondiments()</span></div>
+              </div>
+              <div class="cd-box good">
+                <div class="cd-h">Tea</div>
+                <div class="cd-m"><span class="hi-g">brew()</span><br><span class="hi-g">addCondiments()</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout success">Now the superclass controls the algorithm and calls the subclasses when it needs their specific behavior. The subclasses just fill in the blanks. This is the core of the pattern!</div>
+    </div>
+
+    <!-- ========== STEP 6: REVELATION ========== -->
+    <div class="step" data-step="6">
+      <span class="phase-pill pill-purple">Phase 3 &middot; Revelation</span>
+      <h2 class="step-title">Wait… what we just built has a name!</h2>
+      <p class="step-desc">By applying our principles step by step, we've independently arrived at the <strong>Template Method Pattern</strong>. The <code>prepareRecipe()</code> method <em>is</em> the template method — it defines the skeleton of an algorithm, deferring some steps to subclasses.</p>
+
+      <div class="principle-box" style="border-color: var(--purple-500); background: var(--purple-50);">
+        <div class="label" style="color: var(--purple-600);">The Template Method Pattern</div>
+        <div class="text" style="color: var(--purple-700);">Define the skeleton of an algorithm in a method, deferring some steps to subclasses. Template Method lets subclasses redefine certain steps without changing the algorithm's structure.</div>
+      </div>
+
+      <div class="panel panel-full">
+        <div class="panel-label">The Template Method — Annotated</div>
+<pre>
+public abstract class CaffeineBeverage {
+
+  <span class="hi-g"><b>final</b> void prepareRecipe() {</span>  <span class="cm">// THE template method</span>
+    boilWater();          <span class="cm">// concrete step (shared)</span>
+    <span class="hi-b">brew();</span>               <span class="cm">// abstract step (subclass)</span>
+    pourInCup();          <span class="cm">// concrete step (shared)</span>
+    <span class="hi-b">addCondiments();</span>      <span class="cm">// abstract step (subclass)</span>
+  }
+
+  <span class="hi-b">abstract void brew();</span>            <span class="cm">// subclass MUST provide</span>
+  <span class="hi-b">abstract void addCondiments();</span>   <span class="cm">// subclass MUST provide</span>
+
+  void boilWater() { ... }         <span class="cm">// shared — in superclass</span>
+  void pourInCup() { ... }         <span class="cm">// shared — in superclass</span>
+}
+</pre>
+      </div>
+
+      <div class="callout purple">Think of it like a recipe card with blanks: "1. Boil water, 2. _______, 3. Pour, 4. _______." The card controls the process; you just fill in the blanks.</div>
+    </div>
+
+    <!-- ========== STEP 7: NEW PRINCIPLE — HOLLYWOOD ========== -->
+    <div class="step" data-step="7">
+      <span class="phase-pill pill-blue">Phase 3 &middot; New Principle</span>
+      <h2 class="step-title">The Hollywood Principle: "Don't call us, we'll call you"</h2>
+      <p class="step-desc">Notice something about our design? The superclass <em>calls</em> the subclass methods — never the other way around. <code>CaffeineBeverage</code> says to <code>Tea</code> and <code>Coffee</code>: "Don't call me, I'll call <em>you</em> when I need your <code>brew()</code> step."</p>
+
+      <div class="principle-box">
+        <div class="label">New Design Principle</div>
+        <div class="text">The Hollywood Principle — Don't call us, we'll call you.</div>
+      </div>
+
+      <div class="panel panel-full">
+        <div class="panel-label">How it works</div>
+        <div style="padding: 16px;">
+          <div class="cd-row">
+            <div class="cd-box ctx" style="min-width:220px;">
+              <div class="cd-h">CaffeineBeverage</div>
+              <div class="cd-b" style="font-style:italic;">High-level component</div>
+              <div class="cd-m"><b>final</b> prepareRecipe()<br>→ calls brew()<br>→ calls addCondiments()</div>
+            </div>
+          </div>
+          <div class="cd-arr">&#9651; "I'll call you when I need you"</div>
+          <div class="cd-row">
+            <div class="cd-box obs">
+              <div class="cd-h">Tea</div>
+              <div class="cd-b" style="font-style:italic;">Low-level component</div>
+              <div class="cd-m">brew()<br>addCondiments()</div>
+            </div>
+            <div class="cd-box obs">
+              <div class="cd-h">Coffee</div>
+              <div class="cd-b" style="font-style:italic;">Low-level component</div>
+              <div class="cd-m">brew()<br>addCondiments()</div>
+            </div>
+          </div>
+          <div class="cd-arr" style="color:var(--text-danger); font-size:0.75rem;">Tea &amp; Coffee never call CaffeineBeverage directly</div>
+        </div>
+      </div>
+
+      <div class="callout info">The Hollywood Principle prevents "dependency rot" — where high-level and low-level components become tangled in circular dependencies. It's related to the Dependency Inversion Principle (ch. 4), but is specifically a technique for frameworks: let low-level components hook in, but keep control at the top.</div>
+    </div>
+
+    <!-- ========== STEP 8: HOOKS ========== -->
+    <div class="step" data-step="8">
+      <span class="phase-pill pill-green">Phase 4 &middot; Hooks</span>
+      <h2 class="step-title">Hooks: optional steps in the algorithm</h2>
+      <p class="step-desc">What if a step is <em>optional</em>? We don't want to force subclasses to implement it. That's where <strong>hooks</strong> come in — methods with a default (often empty) implementation that subclasses <em>may</em> override.</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label">Hook in the template</div>
+<pre>
+abstract class CaffeineBeverage {
+
+  <b>final</b> void prepareRecipe() {
+    boilWater();
+    brew();
+    pourInCup();
+    <span class="hi-g">if (customerWantsCondiments()) {</span>
+      addCondiments();
+    <span class="hi-g">}</span>
+  }
+
+  abstract void brew();
+  abstract void addCondiments();
+
+  <span class="hi-g">boolean customerWantsCondiments() {</span>
+    <span class="hi-g">return true;</span> <span class="cm">// hook! default=yes</span>
+  <span class="hi-g">}</span>
+}
+</pre>
+        </div>
+        <div class="panel">
+          <div class="panel-label">Subclass overrides the hook</div>
+<pre>
+public class Coffee
+    extends CaffeineBeverage {
+
+  public void brew() {
+    System.out.println(
+      "Dripping through filter");
+  }
+  public void addCondiments() {
+    System.out.println(
+      "Adding Sugar and Milk");
+  }
+
+  <span class="hi-g">public boolean</span>
+      <span class="hi-g">customerWantsCondiments() {</span>
+    <span class="hi-g">String answer = getUserInput();</span>
+    <span class="hi-g">return answer.startsWith("y");</span>
+  <span class="hi-g">}</span>
+}
+</pre>
+        </div>
+      </div>
+
+      <div class="callout info"><strong>Rule of thumb:</strong> Use abstract methods when the subclass <em>must</em> provide an implementation. Use hooks when it's optional. Hooks keep the subclass's burden light while still allowing control over the algorithm flow.</div>
+    </div>
+
+    <!-- ========== STEP 9: FORMAL CLASS DIAGRAM ========== -->
+    <div class="step" data-step="9">
+      <span class="phase-pill pill-green">Phase 4 &middot; The Formal Pattern</span>
+      <h2 class="step-title">Template Method: the formal class diagram</h2>
+      <p class="step-desc">Here's the general structure that applies to <em>any</em> template method — not just beverages.</p>
+
+      <div class="panel panel-full">
+        <div class="panel-label">General Template Method Structure</div>
+        <div style="padding:20px;">
+          <div class="cd-row">
+            <div class="cd-box abstract-box" style="min-width:260px;">
+              <div class="cd-h">&laquo;abstract&raquo; AbstractClass</div>
+              <div class="cd-m">
+                <span class="hi-g"><b>final</b> templateMethod()</span><br>
+                <span class="cm" style="padding-left:10px;">→ primitiveOp1()</span><br>
+                <span class="cm" style="padding-left:10px;">→ primitiveOp2()</span><br>
+                <span class="cm" style="padding-left:10px;">→ concreteOp()</span><br>
+                <span class="cm" style="padding-left:10px;">→ hook()</span><br>
+                <span class="hi-b"><i>abstract</i> primitiveOp1()</span><br>
+                <span class="hi-b"><i>abstract</i> primitiveOp2()</span><br>
+                concreteOperation()<br>
+                <span class="hi-y">hook() { }</span> <span class="cm">← default empty</span>
+              </div>
+            </div>
+          </div>
+          <div class="cd-arr">&#9651; extends</div>
+          <div class="cd-row">
+            <div class="cd-box good" style="min-width:200px;">
+              <div class="cd-h">ConcreteClass</div>
+              <div class="cd-m">
+                primitiveOp1() <span class="cm">← required</span><br>
+                primitiveOp2() <span class="cm">← required</span><br>
+                <span class="hi-y">hook()</span> <span class="cm">← optional override</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout">Three kinds of methods live in the abstract class: <strong>abstract</strong> (subclass must implement), <strong>concrete</strong> (shared, optionally final), and <strong>hooks</strong> (empty default, subclass may override).</div>
+    </div>
+
+    <!-- ========== STEP 10: INTEGRATION & TEST ========== -->
+    <div class="step" data-step="10">
+      <span class="phase-pill pill-green">Phase 4 &middot; Integration</span>
+      <h2 class="step-title">Test drive: making beverages</h2>
+      <p class="step-desc">Let's wire it all together and see the actual runtime output — with hooks enabled.</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label">Test Harness</div>
+<pre>
+public class BeverageTestDrive {
+  public static void main(String[] args) {
+    <span class="hi-g">Tea tea = new Tea();</span>
+    <span class="hi-g">Coffee coffee = new Coffee();</span>
+
+    System.out.println("Making tea...");
+    <span class="hi-b">tea.prepareRecipe();</span>
+
+    System.out.println("\nMaking coffee...");
+    <span class="hi-b">coffee.prepareRecipe();</span>
+  }
+}
+</pre>
+        </div>
+        <div class="panel">
+          <div class="panel-label">Runtime Output</div>
+<pre>
+<span class="hi-g">Making tea...</span>
+Boiling water
+Steeping the tea
+Pouring into cup
+Would you like lemon? (y/n) <span class="hi-y">y</span>
+Adding Lemon
+
+<span class="hi-g">Making coffee...</span>
+Boiling water
+Dripping Coffee through filter
+Pouring into cup
+Would you like milk and sugar? (y/n) <span class="hi-y">n</span>
+<span class="cm">// no condiments added — hook said no!</span>
+</pre>
+        </div>
+      </div>
+
+      <div class="callout success">The algorithm runs identically for both beverages. The hook lets Coffee ask the user and skip condiments. <code>prepareRecipe()</code> is in control — it calls the subclass, not the other way around.</div>
+    </div>
+
+    <!-- ========== STEP 11: TEMPLATE METHOD IN THE WILD ========== -->
+    <div class="step" data-step="11">
+      <span class="phase-pill pill-yellow">Phase 5 &middot; In the Wild</span>
+      <h2 class="step-title">Template Method is <em>everywhere</em></h2>
+      <p class="step-desc">This pattern appears throughout the Java API. Here's one you use all the time without realizing it: <code>Arrays.sort()</code>.</p>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-label">java.util.Arrays (the template)</div>
+<pre>
+<span class="cm">// Arrays.sort() is the template method</span>
+<span class="cm">// It controls the sort algorithm (mergeSort)</span>
+<span class="cm">// but delegates COMPARISON to YOUR class</span>
+
+public static void sort(Object[] a) {
+  <span class="cm">// ... mergeSort algorithm ...</span>
+  for (...) {
+    <span class="hi-b">if (a[i].compareTo(a[j]) > 0)</span>
+      swap(a, i, j);
+  }
+}
+
+<span class="cm">// compareTo() is the "primitive operation"</span>
+<span class="cm">// — YOU fill in this step!</span>
+</pre>
+        </div>
+        <div class="panel">
+          <div class="panel-label">Duck.java (you implement compareTo)</div>
+<pre>
+public class Duck
+    <span class="hi-g">implements Comparable&lt;Duck&gt;</span> {
+
+  String name;
+  int weight;
+
+  <span class="hi-g">public int compareTo(Duck other) {</span>
+    <span class="hi-g">if (this.weight &lt; other.weight)</span>
+      <span class="hi-g">return -1;</span>
+    <span class="hi-g">else if (this.weight == other.weight)</span>
+      <span class="hi-g">return 0;</span>
+    <span class="hi-g">else return 1;</span>
+  <span class="hi-g">}</span>
+}
+
+<span class="cm">// Arrays.sort(ducks) — now works!</span>
+</pre>
+        </div>
+      </div>
+
+      <div class="callout warning">Note the twist: <code>Arrays.sort()</code> uses composition (Comparable) rather than inheritance. Same idea — the framework controls the algorithm, you supply the varying step — but with an interface instead of a superclass. Other examples: <code>JFrame.paint()</code> (hook), <code>Applet.init()</code> (hook), <code>InputStream.read()</code>.</div>
+    </div>
+
+    <!-- ========== STEP 12: TEMPLATE METHOD VS STRATEGY ========== -->
+    <div class="step" data-step="12">
+      <span class="phase-pill pill-yellow">Phase 5 &middot; Trade-offs</span>
+      <h2 class="step-title">Template Method vs. Strategy: the showdown</h2>
+      <p class="step-desc">Both patterns encapsulate algorithms. But they take fundamentally different approaches. Here's how they compare.</p>
+
+      <table class="compare-table">
+        <tr><th style="width:35%;">Template Method (inheritance)</th><th style="width:35%;">Strategy (composition)</th></tr>
+        <tr>
+          <td>Algorithm defined in superclass</td>
+          <td>Algorithm defined in separate strategy objects</td>
+        </tr>
+        <tr>
+          <td>Subclasses fill in specific steps</td>
+          <td>Client selects the entire algorithm</td>
+        </tr>
+        <tr>
+          <td>More code reuse — shared steps stay in superclass</td>
+          <td>More flexible — swap algorithms at runtime</td>
+        </tr>
+        <tr>
+          <td>Less flexible — locked at compile time</td>
+          <td>Less code reuse — each strategy has full algorithm</td>
+        </tr>
+        <tr>
+          <td>Subclass depends on superclass</td>
+          <td>Strategy is independent — no dependency</td>
+        </tr>
+      </table>
+
+      <div class="callout info"><strong>When to choose:</strong> Template Method when the algorithm structure is fixed and you only need to vary a few steps. Strategy when you need completely interchangeable algorithms or runtime swapping. Factory Method is actually a <em>specialization</em> of Template Method!</div>
+    </div>
+
+    <!-- ========== STEP 13: BEFORE/AFTER COMPARISON ========== -->
+    <div class="step" data-step="13">
+      <span class="phase-pill pill-green">Phase 5 &middot; What we gained</span>
+      <h2 class="step-title">Before vs. After: the full picture</h2>
+      <p class="step-desc">Let's look at everything we fixed.</p>
+
+      <table class="compare-table">
+        <tr><th>Before (naive)</th><th>After (Template Method)</th></tr>
+        <tr>
+          <td>Coffee &amp; Tea each control their own algorithm</td>
+          <td>CaffeineBeverage owns and protects the algorithm</td>
+        </tr>
+        <tr>
+          <td>Algorithm changes = edit multiple subclasses</td>
+          <td>Algorithm lives in one place — change once</td>
+        </tr>
+        <tr>
+          <td>Code duplicated across Coffee and Tea</td>
+          <td>Maximum reuse via the superclass</td>
+        </tr>
+        <tr>
+          <td>Adding a new beverage = rewrite the whole thing</td>
+          <td>New beverage = implement just brew() + addCondiments()</td>
+        </tr>
+        <tr>
+          <td>Knowledge scattered across many classes</td>
+          <td>Knowledge concentrated; subclasses just fill in details</td>
+        </tr>
+      </table>
+
+      <div class="callout success">Every row in this table maps directly to a principle we applied. That's the power of principle-driven design: you don't have to memorize patterns. Apply the principles, and the pattern <em>emerges</em>.</div>
+    </div>
+
+    <!-- ========== STEP 14: FINAL CLASS DIAGRAM ========== -->
+    <div class="step" data-step="14">
+      <span class="phase-pill pill-purple">Phase 6 &middot; Complete Pattern</span>
+      <h2 class="step-title">The complete Template Method class diagram</h2>
+      <p class="step-desc">All the pieces connected — with hooks, abstract methods, concrete methods, and the final template method.</p>
+
+      <div class="panel panel-full">
+        <div class="panel-label">Complete CaffeineBeverage Architecture</div>
+        <div style="padding: 20px;">
+          <div class="cd-row">
+            <div class="cd-box abstract-box" style="min-width:280px; max-width:320px;">
+              <div class="cd-h">&laquo;abstract&raquo; CaffeineBeverage</div>
+              <div class="cd-b">
+                <span style="color:var(--text-info)"><b>final</b> prepareRecipe()</span> <span class="cm">← template</span>
+              </div>
+              <div class="cd-m">
+                boilWater() <span class="cm">← concrete</span><br>
+                pourInCup() <span class="cm">← concrete</span><br>
+                <span style="color:var(--purple-600)"><i>abstract</i> brew()</span><br>
+                <span style="color:var(--purple-600)"><i>abstract</i> addCondiments()</span><br>
+                <span style="color:var(--amber-700)">customerWantsCondiments()</span> <span class="cm">← hook</span>
+              </div>
+            </div>
+          </div>
+          <div class="cd-arr">&#9651; extends</div>
+          <div class="cd-row">
+            <div class="cd-box good">
+              <div class="cd-h">Tea</div>
+              <div class="cd-m">brew() → "Steeping the tea"<br>addCondiments() → "Adding Lemon"</div>
+            </div>
+            <div class="cd-box good">
+              <div class="cd-h">Coffee</div>
+              <div class="cd-m">brew() → "Dripping through filter"<br>addCondiments() → "Sugar and Milk"<br><span style="color:var(--amber-700)">customerWantsCondiments()</span></div>
+            </div>
+            <div class="cd-box" style="border-style:dashed; opacity:0.6;">
+              <div class="cd-h">HotChocolate?</div>
+              <div class="cd-m">brew() → ???<br>addCondiments() → ???</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout purple">Adding a new beverage is trivial: extend <code>CaffeineBeverage</code>, implement <code>brew()</code> and <code>addCondiments()</code>. That's it. The framework calls you.</div>
+    </div>
+
+    <!-- ========== STEP 15: TOOLBOX UPDATE ========== -->
+    <div class="step" data-step="15">
+      <span class="phase-pill pill-purple">Phase 6 &middot; Toolbox Update</span>
+      <h2 class="step-title">Your design toolbox — updated</h2>
+      <p class="step-desc">Here's what you've accumulated through chapters 1–8.</p>
+
+      <div class="toolbox-grid">
+        <div class="toolbox-section">
+          <h4>The Journey (this chapter)</h4>
+          <div class="toolbox-item"><span class="phase-pill pill-gray" style="font-size:0.6rem;">1</span> Two duplicate classes</div>
+          <div class="toolbox-item"><span class="phase-pill pill-red" style="font-size:0.6rem;">2</span> Diagnosed 4 principle violations</div>
+          <div class="toolbox-item"><span class="phase-pill pill-blue" style="font-size:0.6rem;">3</span> Pulled up common code (DRY)</div>
+          <div class="toolbox-item"><span class="phase-pill pill-blue" style="font-size:0.6rem;">4</span> Generalized the algorithm steps</div>
+          <div class="toolbox-item"><span class="phase-pill pill-blue" style="font-size:0.6rem;">5</span> Locked algorithm with <code>final</code></div>
+          <div class="toolbox-item"><span class="phase-pill pill-purple" style="font-size:0.6rem;">6</span> Revealed: Template Method</div>
+          <div class="toolbox-item"><span class="phase-pill pill-blue" style="font-size:0.6rem;">7</span> Hollywood Principle emerged</div>
+          <div class="toolbox-item"><span class="phase-pill pill-green" style="font-size:0.6rem;">8</span> Added hooks for optional steps</div>
+        </div>
+
+        <div>
+          <div class="toolbox-section" style="margin-bottom:12px;">
+            <h4>OO Principles</h4>
+            <div class="toolbox-item">Encapsulate what varies</div>
+            <div class="toolbox-item">Favor composition over inheritance</div>
+            <div class="toolbox-item">Program to interfaces, not implementations</div>
+            <div class="toolbox-item">Strive for loosely coupled designs</div>
+            <div class="toolbox-item">Open for extension, closed for modification</div>
+            <div class="toolbox-item">Depend on abstractions (DIP)</div>
+            <div class="toolbox-item">Principle of Least Knowledge</div>
+            <div class="toolbox-item new-item"><span class="star">&#9733;</span> The Hollywood Principle — Don't call us, we'll call you</div>
+          </div>
+
+          <div class="toolbox-section">
+            <h4>OO Patterns</h4>
+            <div class="toolbox-item">Strategy</div>
+            <div class="toolbox-item">Observer</div>
+            <div class="toolbox-item">Decorator</div>
+            <div class="toolbox-item">Abstract Factory</div>
+            <div class="toolbox-item">Factory Method</div>
+            <div class="toolbox-item">Singleton</div>
+            <div class="toolbox-item">Command</div>
+            <div class="toolbox-item">Adapter &amp; Facade</div>
+            <div class="toolbox-item new-item"><span class="star">&#9733;</span> Template Method</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout success">Key takeaway: Template Method uses <strong>inheritance</strong> to let subclasses fill in steps of an algorithm, while Strategy uses <strong>composition</strong> to let clients swap entire algorithms. Factory Method is actually a specialization of Template Method!</div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn" onclick="changeStep(-1)" disabled>&#8592; Back</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn next-btn" id="nextBtn" onclick="changeStep(1)">Next &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let current = 0;
+const steps = document.querySelectorAll('.step');
+const total = steps.length;
+const dots = document.getElementById('dots');
+const progress = document.getElementById('progress');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+// Create dots
+for (let i = 0; i < total; i++) {
+  const d = document.createElement('button');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.setAttribute('aria-label', 'Go to step ' + (i + 1));
+  d.onclick = () => goTo(i);
+  dots.appendChild(d);
+}
+
+function goTo(n) {
+  if (n < 0 || n >= total) return;
+  steps[current].classList.remove('active');
+  dots.children[current].classList.remove('active');
+  current = n;
+  steps[current].classList.add('active');
+  dots.children[current].classList.add('active');
+  progress.style.width = ((current + 1) / total * 100) + '%';
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === total - 1;
+  nextBtn.textContent = current === total - 1 ? 'Done ✓' : 'Next →';
+}
+
+function changeStep(dir) { goTo(current + dir); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') changeStep(1);
+  if (e.key === 'ArrowLeft') changeStep(-1);
+});
+
+function toggleTheme() {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+}
+
+// Initialize
+progress.style.width = (1 / total * 100) + '%';
+</script>
+
+</body>
+</html>
