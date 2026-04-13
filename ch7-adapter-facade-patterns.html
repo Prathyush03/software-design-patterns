@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 7 — The Adapter &amp; Facade Patterns</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f7f9;
+  --bg-tertiary: #ebedf2;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f7ed;
+  --bg-warning: #fff8e1;
+  --bg-purple: #f3eafc;
+  --bg-teal: #e6f7f5;
+  --bg-coral: #fef0ec;
+
+  --text-primary: #1a1d23;
+  --text-secondary: #4a5060;
+  --text-tertiary: #8891a4;
+  --text-info: #1a56db;
+  --text-danger: #c53030;
+  --text-success: #276749;
+  --text-warning: #975a16;
+  --text-purple: #6b21a8;
+  --text-teal: #0d7377;
+  --text-coral: #c4421a;
+
+  --border-primary: #d1d5df;
+  --border-secondary: #e2e5ec;
+  --border-tertiary: #ebedf2;
+
+  --purple-50: #faf5ff; --purple-100: #f3eafc; --purple-200: #e9d5f5;
+  --purple-300: #d8b4fe; --purple-400: #c084fc; --purple-500: #a855f7;
+  --purple-600: #9333ea; --purple-700: #7e22ce; --purple-800: #6b21a8;
+
+  --teal-50: #f0fdfa; --teal-100: #ccfbf1; --teal-200: #99f6e4;
+  --teal-300: #5eead4; --teal-400: #2dd4bf; --teal-500: #14b8a6;
+  --teal-600: #0d9488; --teal-700: #0f766e; --teal-800: #115e59;
+
+  --coral-50: #fff7ed; --coral-100: #ffedd5; --coral-200: #fed7aa;
+  --coral-300: #fdba74; --coral-400: #fb923c; --coral-500: #f97316;
+  --coral-600: #ea580c; --coral-700: #c4421a; --coral-800: #9a3412;
+
+  --progress-bg: #e2e5ec;
+  --progress-fill: var(--purple-500);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1e2028;
+  --bg-secondary: #272932;
+  --bg-tertiary: #16171d;
+  --bg-info: #1a2744;
+  --bg-danger: #3b1a1a;
+  --bg-success: #1a3329;
+  --bg-warning: #3d2e0a;
+  --bg-purple: #2a1a3e;
+  --bg-teal: #1a3332;
+  --bg-coral: #3b2014;
+
+  --text-primary: #e8eaef;
+  --text-secondary: #a0a8b8;
+  --text-tertiary: #6b7385;
+  --text-info: #7da8f5;
+  --text-danger: #f5a0a0;
+  --text-success: #7cd4a0;
+  --text-warning: #f0d080;
+  --text-purple: #c9a0f0;
+  --text-teal: #6dd4c8;
+  --text-coral: #f0a080;
+
+  --border-primary: #3a3d48;
+  --border-secondary: #2f3240;
+  --border-tertiary: #272932;
+
+  --purple-50: #1e1528; --purple-100: #2a1a3e; --purple-200: #3d2560;
+  --purple-300: #6b3fa0; --purple-400: #9461d4; --purple-500: #a978e8;
+  --purple-600: #b88ef0; --purple-700: #c9a0f0; --purple-800: #dcc0f8;
+
+  --teal-50: #152524; --teal-100: #1a3332; --teal-200: #1f4a48;
+  --teal-300: #2a7370; --teal-400: #38a09c; --teal-500: #50c0b8;
+  --teal-600: #6dd4c8; --teal-700: #90e4da; --teal-800: #b0f0e8;
+
+  --coral-50: #251a12; --coral-100: #3b2014; --coral-200: #5a3018;
+  --coral-300: #8a4a20; --coral-400: #c06830; --coral-500: #e08040;
+  --coral-600: #f0a060; --coral-700: #f5b880; --coral-800: #f8d0a8;
+
+  --progress-bg: #2f3240;
+  --progress-fill: var(--purple-400);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.65;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Top bar */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+.chapter-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.theme-toggle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 20px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+.theme-toggle:hover { background: var(--bg-tertiary); }
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--progress-bg);
+  border-radius: 2px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--progress-fill);
+  border-radius: 2px;
+  transition: width 0.35s ease;
+}
+
+/* Main card */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+/* Step content area */
+.step {
+  display: none;
+  padding: 28px 32px 20px;
+  animation: fadeSlide 0.35s ease;
+}
+.step.active { display: block; }
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Step header */
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.phase-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.pill-gray { background: var(--bg-tertiary); color: var(--text-tertiary); }
+.pill-red { background: var(--bg-danger); color: var(--text-danger); }
+.pill-yellow { background: var(--bg-warning); color: var(--text-warning); }
+.pill-blue { background: var(--bg-info); color: var(--text-info); }
+.pill-green { background: var(--bg-success); color: var(--text-success); }
+.pill-purple { background: var(--bg-purple); color: var(--text-purple); }
+.pill-teal { background: var(--bg-teal); color: var(--text-teal); }
+.pill-coral { background: var(--bg-coral); color: var(--text-coral); }
+
+.step-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.step-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+/* Panels side by side */
+.panels {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.panel {
+  flex: 1;
+  min-width: 0;
+}
+.panel-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  color: var(--text-tertiary);
+}
+.panel-label.before-label { color: var(--text-danger); }
+.panel-label.after-label { color: var(--text-success); }
+
+/* Full width panel */
+.panel-full {
+  margin-bottom: 16px;
+}
+
+/* Code blocks */
+.code-block {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-primary);
+}
+.code-block code { font-family: inherit; }
+
+/* Code highlight spans */
+.hi-r { background: var(--bg-danger); border-radius: 3px; padding: 1px 3px; }
+.hi-g { background: var(--bg-success); border-radius: 3px; padding: 1px 3px; }
+.hi-y { background: var(--bg-warning); border-radius: 3px; padding: 1px 3px; }
+.hi-b { background: var(--bg-info); border-radius: 3px; padding: 1px 3px; }
+.cm { color: var(--text-tertiary); }
+
+/* Class diagram boxes */
+.cd-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.cd-box {
+  border: 2px solid var(--border-primary);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  min-width: 140px;
+  max-width: 210px;
+  background: var(--bg-primary);
+  text-align: left;
+  overflow: hidden;
+}
+.cd-box.bad { border-color: var(--text-danger); background: var(--bg-danger); }
+.cd-box.dup { border-color: var(--text-warning); background: var(--bg-warning); }
+.cd-box.iface { border-style: dashed; border-color: var(--purple-500); background: var(--bg-purple); }
+.cd-box.ctx { border-color: var(--teal-500); background: var(--bg-teal); }
+.cd-box.obs { border-color: var(--coral-500); background: var(--bg-coral); }
+.cd-box.good { border-color: var(--text-success); background: var(--bg-success); }
+.cd-h {
+  font-weight: 700;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-secondary);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.cd-b, .cd-m {
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+.cd-b { border-bottom: 1px solid var(--border-secondary); }
+.cd-arr {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-tertiary);
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+/* Principle box */
+.principle-box {
+  border: 2px solid var(--text-info);
+  background: var(--bg-info);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.principle-box .principle-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-info);
+  margin-bottom: 4px;
+}
+.principle-box .principle-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-info);
+}
+
+/* Callout bar */
+.callout {
+  border-left: 3px solid var(--border-primary);
+  padding: 10px 16px;
+  margin-top: 14px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.callout.callout-gray { border-color: var(--text-tertiary); background: var(--bg-secondary); }
+.callout.callout-red { border-color: var(--text-danger); background: var(--bg-danger); }
+.callout.callout-yellow { border-color: var(--text-warning); background: var(--bg-warning); }
+.callout.callout-blue { border-color: var(--text-info); background: var(--bg-info); }
+.callout.callout-green { border-color: var(--text-success); background: var(--bg-success); }
+.callout.callout-purple { border-color: var(--text-purple); background: var(--bg-purple); }
+.callout.callout-teal { border-color: var(--text-teal); background: var(--bg-teal); }
+
+/* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--border-tertiary);
+}
+.nav-btn {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 80px;
+}
+.nav-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--purple-400);
+}
+.nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 60%;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--progress-bg);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+.dot.active {
+  background: var(--progress-fill);
+  transform: scale(1.3);
+}
+.dot:hover:not(.active) { background: var(--purple-300); }
+
+/* Utility */
+.text-sm { font-size: 0.85rem; }
+.text-xs { font-size: 0.78rem; }
+.mb-12 { margin-bottom: 12px; }
+.mb-8 { margin-bottom: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-8 { margin-top: 8px; }
+.bold { font-weight: 700; }
+.mono { font-family: var(--font-mono); }
+
+/* Comparison table */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 12px 0;
+}
+.compare-table th, .compare-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--border-secondary);
+  text-align: left;
+}
+.compare-table th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Toolbox grid */
+.toolbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.toolbox-col h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  color: var(--text-tertiary);
+}
+.toolbox-item {
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.toolbox-item.new { border-left: 3px solid var(--purple-500); background: var(--bg-purple); }
+.toolbox-item.existing { border-left: 3px solid var(--border-primary); background: var(--bg-secondary); }
+
+@media (max-width: 640px) {
+  .panels { flex-direction: column; }
+  .container { padding: 10px; }
+  .step { padding: 20px 18px 14px; }
+  .step-title { font-size: 1.15rem; }
+  .code-block { font-size: 0.72rem; padding: 10px 12px; }
+  .toolbox-grid { grid-template-columns: 1fr; }
+  .cd-box { min-width: 120px; max-width: 180px; }
+  .nav { padding: 10px 16px 14px; }
+  .dots { max-width: 70%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <span class="chapter-label">Chapter 7 — Adapter &amp; Facade Patterns</span>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card">
+    <div id="stepsContainer">
+
+<!-- ===================== STEP 1: THE BRIEF ===================== -->
+<div class="step active" data-step="0">
+  <div class="step-header">
+    <span class="phase-pill pill-gray">The Brief</span>
+    <span class="step-title">Incompatible Interfaces Everywhere</span>
+  </div>
+  <p class="step-subtitle">You've built a system that uses Ducks. But now Turkeys show up, and they speak a completely different language. Meanwhile, your new home theater has so many components that watching a movie feels like piloting a spaceship.</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label">Problem 1: The Duck System</div>
+      <div class="code-block"><code><span class="hi-b">public interface Duck {</span>
+    <span class="hi-b">public void quack();</span>
+    <span class="hi-b">public void fly();</span>
+<span class="hi-b">}</span>
+
+public class MallardDuck implements Duck {
+    public void quack() {
+        System.out.println("Quack");
+    }
+    public void fly() {
+        System.out.println("I'm flying");
+    }
+}</code></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">The Newcomer: Turkeys</div>
+      <div class="code-block"><code><span class="hi-r">public interface Turkey {</span>
+    <span class="hi-r">public void gobble();</span> <span class="cm">// NOT quack!</span>
+    <span class="hi-r">public void fly();</span>    <span class="cm">// short distance only</span>
+<span class="hi-r">}</span>
+
+public class WildTurkey implements Turkey {
+    public void gobble() {
+        System.out.println("Gobble gobble");
+    }
+    public void fly() {
+        System.out.println("I'm flying a short distance");
+    }
+}</code></div>
+    </div>
+  </div>
+
+  <div class="callout callout-gray">
+    <strong>The setup:</strong> Your client code is written against the <code>Duck</code> interface. Turkeys have <code>gobble()</code> instead of <code>quack()</code>, and they can only fly short distances. You can't change either interface. How do you make a Turkey work where a Duck is expected?
+  </div>
+</div>
+
+<!-- ===================== STEP 2: FIRST ATTEMPT ===================== -->
+<div class="step" data-step="1">
+  <div class="step-header">
+    <span class="phase-pill pill-gray">First Attempt</span>
+    <span class="step-title">Just Use the Turkey Directly?</span>
+  </div>
+  <p class="step-subtitle">A naive developer might think: "I'll just modify my client code to handle both Ducks and Turkeys!"</p>
+
+  <div class="panel-full">
+    <div class="code-block"><code>public class DuckSimulator {
+    public static void main(String[] args) {
+        MallardDuck duck = new MallardDuck();
+        WildTurkey turkey = new WildTurkey();
+
+        System.out.println("The Duck says...");
+        <span class="hi-g">duck.quack();</span>   <span class="cm">// works fine</span>
+        <span class="hi-g">duck.fly();</span>     <span class="cm">// works fine</span>
+
+        System.out.println("The Turkey says...");
+        <span class="hi-r">turkey.gobble();</span> <span class="cm">// different method name!</span>
+        <span class="hi-r">turkey.fly();</span>    <span class="cm">// different behavior!</span>
+
+        <span class="cm">// Can't pass turkey to testDuck()!</span>
+        <span class="hi-r">testDuck(turkey);</span> <span class="cm">// COMPILE ERROR!</span>
+    }
+
+    static void testDuck(<span class="hi-y">Duck duck</span>) {
+        duck.quack();  <span class="cm">// Turkey doesn't have quack()!</span>
+        duck.fly();
+    }
+}</code></div>
+  </div>
+
+  <div class="cd-row">
+    <div class="cd-box bad">
+      <div class="cd-h">DuckSimulator</div>
+      <div class="cd-m">testDuck(Duck)<br>main()</div>
+    </div>
+    <div class="cd-box good">
+      <div class="cd-h">«interface» Duck</div>
+      <div class="cd-m">quack()<br>fly()</div>
+    </div>
+    <div class="cd-box bad">
+      <div class="cd-h">«interface» Turkey</div>
+      <div class="cd-m">gobble()<br>fly()</div>
+    </div>
+  </div>
+  <div class="cd-arr">✗ incompatible interfaces</div>
+
+  <div class="callout callout-red">
+    <strong>Compile error!</strong> The client's <code>testDuck()</code> method expects a <code>Duck</code>. A <code>Turkey</code> is not a <code>Duck</code>. We can't change the client, and we can't change the Turkey. We're stuck... or are we?
+  </div>
+</div>
+
+<!-- ===================== STEP 3: DIAGNOSE ===================== -->
+<div class="step" data-step="2">
+  <div class="step-header">
+    <span class="phase-pill pill-red">Oh No!</span>
+    <span class="step-title">Diagnosing With Known Principles</span>
+  </div>
+  <p class="step-subtitle">Let's use the OO principles we've already learned to figure out what's going wrong and what to do.</p>
+
+  <div class="panel-full">
+    <div class="code-block"><code><span class="cm">// Our client code — hardcoded to ONE interface</span>
+static void testDuck(<span class="hi-r">Duck duck</span>) {  <span class="cm">// ❌ "Program to interfaces"</span>
+    duck.quack();                       <span class="cm">//    — but Turkey has a DIFFERENT interface!</span>
+    duck.fly();
+}
+
+<span class="cm">// If we try to support both directly:</span>
+static void testBird(<span class="hi-r">Object bird</span>) {    <span class="cm">// ❌ "Encapsulate what varies"</span>
+    <span class="hi-r">if (bird instanceof Duck) {</span>       <span class="cm">//    — change is SPREAD across client</span>
+        ((Duck)bird).quack();
+    <span class="hi-r">} else if (bird instanceof Turkey) {</span>
+        ((Turkey)bird).gobble();        <span class="cm">// ❌ "Favor composition"</span>
+    }                                   <span class="cm">//    — we're not COMPOSING, we're type-checking</span>
+}</code></div>
+  </div>
+
+  <table class="compare-table mt-12">
+    <tr>
+      <th>Principle</th>
+      <th>Violation</th>
+    </tr>
+    <tr>
+      <td><strong>Program to interfaces, not implementations</strong></td>
+      <td>Client is coded to <code>Duck</code> — but now there's a second valid interface (<code>Turkey</code>). We need to bridge them.</td>
+    </tr>
+    <tr>
+      <td><strong>Encapsulate what varies</strong></td>
+      <td>The varying part is the interface translation. Currently it's scattered as <code>instanceof</code> checks in the client.</td>
+    </tr>
+    <tr>
+      <td><strong>Favor composition over inheritance</strong></td>
+      <td>We can't make Turkey extend Duck (wrong hierarchy). We need to WRAP the Turkey and delegate.</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-red">
+    <strong>Three principles violated.</strong> Each one tells us exactly what to fix. Let's apply them one at a time.
+  </div>
+</div>
+
+<!-- ===================== STEP 4: PRINCIPLE 1 — ENCAPSULATE WHAT VARIES ===================== -->
+<div class="step" data-step="3">
+  <div class="step-header">
+    <span class="phase-pill pill-blue">Design Principle</span>
+    <span class="step-title">Encapsulate What Varies</span>
+  </div>
+  <div class="principle-box">
+    <div class="principle-label">OO Principle</div>
+    <div class="principle-text">"Identify the aspects of your application that vary and separate them from what stays the same."</div>
+  </div>
+  <p class="step-subtitle">What varies? The interface translation from Turkey methods to Duck methods. Let's extract that into its own class.</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label before-label">Before — Translation in client</div>
+      <div class="code-block"><code>static void testBird(Object bird) {
+    <span class="hi-r">if (bird instanceof Duck) {</span>
+        <span class="hi-r">((Duck)bird).quack();</span>
+    <span class="hi-r">} else if (bird instanceof Turkey){</span>
+        <span class="hi-r">((Turkey)bird).gobble();</span>
+    <span class="hi-r">}</span>
+}
+<span class="cm">// Translation logic INSIDE client
+// Every new bird = more instanceof!</span></code></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label after-label">After — Separate adapter class</div>
+      <div class="code-block"><code><span class="hi-g">public class TurkeyAdapter {</span>
+    <span class="hi-g">Turkey turkey;</span>
+
+    <span class="hi-g">public TurkeyAdapter(Turkey t) {</span>
+        <span class="hi-g">this.turkey = t;</span>
+    <span class="hi-g">}</span>
+
+    <span class="hi-y">public void quack() {</span>
+        <span class="hi-y">turkey.gobble();</span> <span class="cm">// translate!</span>
+    <span class="hi-y">}</span>
+<span class="hi-g">}</span>
+<span class="cm">// Translation is ENCAPSULATED</span></code></div>
+    </div>
+  </div>
+
+  <div class="cd-row">
+    <div class="cd-box ctx">
+      <div class="cd-h">DuckSimulator</div>
+      <div class="cd-m">testDuck(Duck)</div>
+    </div>
+    <div class="cd-box good">
+      <div class="cd-h">TurkeyAdapter</div>
+      <div class="cd-b">turkey</div>
+      <div class="cd-m">quack() → gobble()</div>
+    </div>
+    <div class="cd-box obs">
+      <div class="cd-h">WildTurkey</div>
+      <div class="cd-m">gobble()<br>fly()</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>We encapsulated the translation!</strong> But wait — <code>TurkeyAdapter</code> has a <code>quack()</code> method, but it doesn't actually implement the <code>Duck</code> interface. The client's <code>testDuck(Duck)</code> still won't accept it. We need the next principle...
+  </div>
+</div>
+
+<!-- ===================== STEP 5: PRINCIPLE 2 — PROGRAM TO INTERFACES ===================== -->
+<div class="step" data-step="4">
+  <div class="step-header">
+    <span class="phase-pill pill-blue">Design Principle</span>
+    <span class="step-title">Program to Interfaces</span>
+  </div>
+  <div class="principle-box">
+    <div class="principle-label">OO Principle</div>
+    <div class="principle-text">"Program to an interface, not an implementation."</div>
+  </div>
+  <p class="step-subtitle">The adapter must implement the TARGET interface — <code>Duck</code> — so the client can use it without knowing it's a Turkey underneath.</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label before-label">Before — No interface</div>
+      <div class="code-block"><code>public class TurkeyAdapter {
+    Turkey turkey;
+    <span class="cm">// Has quack() but DOESN'T</span>
+    <span class="cm">// implement Duck!</span>
+    <span class="hi-r">// testDuck(Duck) won't</span>
+    <span class="hi-r">// accept this!</span>
+    public void quack() {
+        turkey.gobble();
+    }
+}</code></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label after-label">After — Implements Duck</div>
+      <div class="code-block"><code>public class TurkeyAdapter
+        <span class="hi-g">implements Duck</span> {
+    Turkey turkey;
+    <span class="cm">// NOW the client can use</span>
+    <span class="cm">// this wherever Duck is</span>
+    <span class="cm">// expected!</span>
+    public void quack() {
+        turkey.gobble();
+    }
+    <span class="hi-g">public void fly() {</span>
+        <span class="hi-g">for(int i=0; i < 5; i++)</span>
+            <span class="hi-g">turkey.fly();</span>
+    <span class="hi-g">}</span>
+}</code></div>
+    </div>
+  </div>
+
+  <div class="cd-row">
+    <div class="cd-box iface">
+      <div class="cd-h">«interface» Duck</div>
+      <div class="cd-m">quack()<br>fly()</div>
+    </div>
+  </div>
+  <div class="cd-arr">△ implements</div>
+  <div class="cd-row">
+    <div class="cd-box good">
+      <div class="cd-h">MallardDuck</div>
+      <div class="cd-m">quack()<br>fly()</div>
+    </div>
+    <div class="cd-box good">
+      <div class="cd-h">TurkeyAdapter</div>
+      <div class="cd-b">turkey</div>
+      <div class="cd-m">quack() → gobble()<br>fly() → 5×turkey.fly()</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>Now TurkeyAdapter IS-A Duck!</strong> The client can call <code>testDuck(turkeyAdapter)</code> without any changes. But how does the adapter talk to the Turkey? Through composition — which is exactly the next principle.
+  </div>
+</div>
+
+<!-- ===================== STEP 6: PRINCIPLE 3 — FAVOR COMPOSITION ===================== -->
+<div class="step" data-step="5">
+  <div class="step-header">
+    <span class="phase-pill pill-blue">Design Principle</span>
+    <span class="step-title">Favor Composition Over Inheritance</span>
+  </div>
+  <div class="principle-box">
+    <div class="principle-label">OO Principle</div>
+    <div class="principle-text">"Favor composition over inheritance."</div>
+  </div>
+  <p class="step-subtitle">The adapter WRAPS the Turkey (HAS-A), it doesn't extend it. This means any Turkey subclass works with our adapter.</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label before-label">Inheritance approach (bad)</div>
+      <div class="code-block"><code><span class="cm">// Can't do this in Java anyway</span>
+<span class="cm">// (no multiple inheritance)</span>
+public class TurkeyAdapter
+    <span class="hi-r">extends WildTurkey</span>
+    <span class="hi-r">extends MallardDuck</span> {
+    <span class="cm">// LOCKED to WildTurkey only</span>
+    <span class="cm">// Can't adapt DomesticTurkey</span>
+    <span class="cm">// or any other Turkey!</span>
+}</code></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label after-label">Composition approach (good)</div>
+      <div class="code-block"><code>public class TurkeyAdapter
+        implements Duck {
+    <span class="hi-g">Turkey turkey;</span> <span class="cm">// HAS-A Turkey</span>
+
+    <span class="hi-g">public TurkeyAdapter(Turkey t) {</span>
+        <span class="hi-g">this.turkey = t;</span>
+    <span class="hi-g">}</span>
+    <span class="cm">// Works with ANY Turkey!</span>
+    <span class="cm">// WildTurkey, DomesticTurkey,</span>
+    <span class="cm">// even turkeys we haven't</span>
+    <span class="cm">// written yet!</span>
+}</code></div>
+    </div>
+  </div>
+
+  <div class="cd-row">
+    <div class="cd-box iface">
+      <div class="cd-h">«interface» Duck</div>
+      <div class="cd-m">quack()<br>fly()</div>
+    </div>
+    <div class="cd-box iface" style="margin-left:30px;">
+      <div class="cd-h">«interface» Turkey</div>
+      <div class="cd-m">gobble()<br>fly()</div>
+    </div>
+  </div>
+  <div class="cd-arr">△ implements &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ◇ has-a</div>
+  <div class="cd-row">
+    <div class="cd-box good">
+      <div class="cd-h">TurkeyAdapter</div>
+      <div class="cd-b">Turkey turkey</div>
+      <div class="cd-m">quack() → turkey.gobble()<br>fly() → 5× turkey.fly()</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>All three principles applied!</strong> The adapter implements the target interface (Duck), holds a reference to the adaptee (Turkey) via composition, and encapsulates the translation logic. Wait... what we just built has a name!
+  </div>
+</div>
+
+<!-- ===================== STEP 7: REVELATION — ADAPTER PATTERN ===================== -->
+<div class="step" data-step="6">
+  <div class="step-header">
+    <span class="phase-pill pill-purple">Revelation</span>
+    <span class="step-title">The Adapter Pattern!</span>
+  </div>
+  <p class="step-subtitle">By applying three principles we already knew, we independently arrived at the <strong>Adapter Pattern</strong>. It's like a real-world power adapter — converting one interface into another!</p>
+
+  <div class="principle-box" style="border-color: var(--purple-500); background: var(--bg-purple);">
+    <div class="principle-label" style="color: var(--text-purple);">Pattern Definition</div>
+    <div class="principle-text" style="color: var(--text-purple);">The Adapter Pattern converts the interface of a class into another interface the clients expect. Adapter lets classes work together that couldn't otherwise because of incompatible interfaces.</div>
+  </div>
+
+  <div class="cd-row">
+    <div class="cd-box ctx">
+      <div class="cd-h">Client</div>
+      <div class="cd-m">Uses Target interface</div>
+    </div>
+  </div>
+  <div class="cd-arr">→ uses</div>
+  <div class="cd-row">
+    <div class="cd-box iface">
+      <div class="cd-h">«interface» Target</div>
+      <div class="cd-m">request()</div>
+    </div>
+  </div>
+  <div class="cd-arr">△ implements</div>
+  <div class="cd-row">
+    <div class="cd-box good">
+      <div class="cd-h">Adapter</div>
+      <div class="cd-b">Adaptee adaptee</div>
+      <div class="cd-m">request() → adaptee.specificRequest()</div>
+    </div>
+    <div class="cd-box obs">
+      <div class="cd-h">Adaptee</div>
+      <div class="cd-m">specificRequest()</div>
+    </div>
+  </div>
+  <div class="cd-arr" style="margin-top: -4px;">◇ has-a ──────────────────→</div>
+
+  <div class="callout callout-purple">
+    <strong>The analogy:</strong> Think of a European power adapter. The wall outlet (Adaptee) has one interface. Your laptop (Client) expects another. The adapter sits in between, converting one into the other. The client never knows the difference.
+  </div>
+</div>
+
+<!-- ===================== STEP 8: FULL IMPLEMENTATION ===================== -->
+<div class="step" data-step="7">
+  <div class="step-header">
+    <span class="phase-pill pill-green">Implementation</span>
+    <span class="step-title">Test Drive — The Complete Adapter</span>
+  </div>
+  <p class="step-subtitle">Let's wire everything together and see the adapter in action.</p>
+
+  <div class="panel-full">
+    <div class="code-block"><code>public class DuckTestDrive {
+    public static void main(String[] args) {
+        MallardDuck duck = new MallardDuck();
+        WildTurkey turkey = new WildTurkey();
+        <span class="hi-g">Duck turkeyAdapter = new TurkeyAdapter(turkey);</span>
+
+        System.out.println("The Turkey says...");
+        turkey.gobble();
+        turkey.fly();
+
+        System.out.println("The Duck says...");
+        <span class="hi-b">testDuck(duck);</span>
+
+        System.out.println("The TurkeyAdapter says...");
+        <span class="hi-b">testDuck(turkeyAdapter);</span> <span class="cm">// Turkey in Duck's clothing!</span>
+    }
+
+    static void testDuck(<span class="hi-b">Duck duck</span>) {
+        duck.quack();  <span class="cm">// calls gobble() behind the scenes</span>
+        duck.fly();    <span class="cm">// calls turkey.fly() × 5</span>
+    }
+}</code></div>
+  </div>
+  <div class="code-block mt-8" style="background: var(--bg-tertiary); border-color: var(--border-primary);">
+<code><span class="cm">OUTPUT:</span>
+The Turkey says...
+Gobble gobble
+I'm flying a short distance
+
+The Duck says...
+Quack
+I'm flying
+
+The TurkeyAdapter says...
+<span class="hi-g">Gobble gobble</span>             <span class="cm">← quack() → gobble()</span>
+<span class="hi-g">I'm flying a short distance</span> <span class="cm">← fly() → 5× turkey.fly()</span>
+<span class="hi-g">I'm flying a short distance</span>
+<span class="hi-g">I'm flying a short distance</span>
+<span class="hi-g">I'm flying a short distance</span>
+<span class="hi-g">I'm flying a short distance</span></code></div>
+
+  <div class="callout callout-green">
+    <strong>It works!</strong> The <code>testDuck()</code> method never knows it's talking to a Turkey. The adapter handles all the translation. Now let's look at a real-world Java example...
+  </div>
+</div>
+
+<!-- ===================== STEP 9: REAL WORLD — ENUMERATION/ITERATOR ===================== -->
+<div class="step" data-step="8">
+  <div class="step-header">
+    <span class="phase-pill pill-green">Real World</span>
+    <span class="step-title">Adapting Enumeration to Iterator</span>
+  </div>
+  <p class="step-subtitle">Java's old collections used <code>Enumeration</code>. New ones use <code>Iterator</code>. We need legacy code to work with new code. Sound familiar?</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label">Old World: Enumeration</div>
+      <div class="cd-box iface" style="max-width: 100%; min-width: 0;">
+        <div class="cd-h">«interface» Enumeration</div>
+        <div class="cd-m">hasMoreElements()<br>nextElement()</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">New World: Iterator</div>
+      <div class="cd-box iface" style="max-width: 100%; min-width: 0;">
+        <div class="cd-h">«interface» Iterator</div>
+        <div class="cd-m">hasNext()<br>next()<br><span class="hi-y">remove()</span> <span class="cm">← no equivalent!</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-full mt-12">
+    <div class="code-block"><code>public class EnumerationIterator <span class="hi-g">implements Iterator</span> {
+    <span class="hi-b">Enumeration enumeration;</span> <span class="cm">// HAS-A adaptee</span>
+
+    public EnumerationIterator(Enumeration enumeration) {
+        this.enumeration = enumeration;
+    }
+    public boolean hasNext() {
+        return <span class="hi-g">enumeration.hasMoreElements();</span> <span class="cm">// direct map</span>
+    }
+    public Object next() {
+        return <span class="hi-g">enumeration.nextElement();</span> <span class="cm">// direct map</span>
+    }
+    public void remove() {
+        <span class="hi-y">throw new UnsupportedOperationException();</span>
+        <span class="cm">// Enumeration is read-only — best we can do!</span>
+    }
+}</code></div>
+  </div>
+
+  <div class="callout callout-yellow">
+    <strong>Imperfect adapter:</strong> The <code>remove()</code> method has no equivalent in <code>Enumeration</code>. We throw <code>UnsupportedOperationException</code> — an honest admission. Not every translation is perfect, but the adapter still provides the bridge.
+  </div>
+</div>
+
+<!-- ===================== STEP 10: FACADE — THE PROBLEM ===================== -->
+<div class="step" data-step="9">
+  <div class="step-header">
+    <span class="phase-pill pill-gray">New Problem</span>
+    <span class="step-title">Home Theater Hell</span>
+  </div>
+  <p class="step-subtitle">Adapters convert interfaces. But what about when the interface isn't incompatible — it's just overwhelmingly complex? Meet your home theater system.</p>
+
+  <div class="panel-full">
+    <div class="code-block"><code><span class="cm">// Just to watch a movie you need to:</span>
+<span class="hi-r">popper.on();</span>           <span class="cm">// 1. Popcorn popper</span>
+<span class="hi-r">popper.pop();</span>
+<span class="hi-r">lights.dim(10);</span>        <span class="cm">// 2. Lights</span>
+<span class="hi-r">screen.down();</span>         <span class="cm">// 3. Screen</span>
+<span class="hi-r">projector.on();</span>        <span class="cm">// 4. Projector</span>
+<span class="hi-r">projector.setInput(dvd);</span>
+<span class="hi-r">projector.wideScreenMode();</span>
+<span class="hi-r">amp.on();</span>              <span class="cm">// 5. Amplifier</span>
+<span class="hi-r">amp.setDvd(dvd);</span>
+<span class="hi-r">amp.setSurroundSound();</span>
+<span class="hi-r">amp.setVolume(5);</span>
+<span class="hi-r">dvd.on();</span>              <span class="cm">// 6. DVD Player</span>
+<span class="hi-r">dvd.play(movie);</span>
+
+<span class="cm">// SIX classes, THIRTEEN method calls... just to watch a movie!</span>
+<span class="cm">// And you have to do it all in reverse to shut down!</span></code></div>
+  </div>
+
+  <div class="cd-row">
+    <div class="cd-box bad"><div class="cd-h">PopcornPopper</div><div class="cd-m">on() off() pop()</div></div>
+    <div class="cd-box bad"><div class="cd-h">TheaterLights</div><div class="cd-m">on() off() dim()</div></div>
+    <div class="cd-box bad"><div class="cd-h">Screen</div><div class="cd-m">up() down()</div></div>
+  </div>
+  <div class="cd-row">
+    <div class="cd-box bad"><div class="cd-h">Projector</div><div class="cd-m">on() off() setInput()<br>wideScreenMode()</div></div>
+    <div class="cd-box bad"><div class="cd-h">Amplifier</div><div class="cd-m">on() off() setDvd()<br>setSurroundSound()<br>setVolume()</div></div>
+    <div class="cd-box bad"><div class="cd-h">DvdPlayer</div><div class="cd-m">on() off() play()<br>stop() eject()</div></div>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>The problem isn't incompatibility — it's complexity.</strong> Six classes, dozens of methods, and a specific ordering to remember. The Adapter Pattern won't help here. We need something that simplifies, not converts.
+  </div>
+</div>
+
+<!-- ===================== STEP 11: FACADE DIAGNOSIS ===================== -->
+<div class="step" data-step="10">
+  <div class="step-header">
+    <span class="phase-pill pill-red">Diagnose</span>
+    <span class="step-title">What Principles Are Violated?</span>
+  </div>
+  <p class="step-subtitle">Let's diagnose this complex subsystem using our principles.</p>
+
+  <div class="panel-full">
+    <div class="code-block"><code><span class="cm">// Client code for watching a movie:</span>
+<span class="hi-r">popper.on();</span>
+<span class="hi-r">popper.pop();</span>
+<span class="hi-r">lights.dim(10);</span>
+<span class="hi-r">screen.down();</span>
+<span class="hi-r">projector.on();</span>
+<span class="hi-r">projector.setInput(dvd);</span>     <span class="cm">// ❌ Client knows about 6 classes</span>
+<span class="hi-r">projector.wideScreenMode();</span>  <span class="cm">// ❌ Client knows internal details</span>
+<span class="hi-r">amp.on();</span>                     <span class="cm">// ❌ Client is tightly coupled to</span>
+<span class="hi-r">amp.setDvd(dvd);</span>             <span class="cm">//    every single subsystem class</span>
+<span class="hi-r">amp.setSurroundSound();</span>
+<span class="hi-r">amp.setVolume(5);</span>
+<span class="hi-r">dvd.on();</span>
+<span class="hi-r">dvd.play(movie);</span></code></div>
+  </div>
+
+  <table class="compare-table mt-12">
+    <tr><th>Principle</th><th>Violation</th></tr>
+    <tr>
+      <td><strong>Encapsulate what varies</strong></td>
+      <td>The "watch movie" workflow is scattered across the client. If the projector brand changes, the CLIENT must change.</td>
+    </tr>
+    <tr>
+      <td><strong>Strive for loosely coupled designs</strong></td>
+      <td>The client is coupled to 6 different subsystem classes! Any change to any of them breaks the client.</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-red">
+    <strong>Tight coupling at scale.</strong> Let's apply the principles to fix this — encapsulate the complexity and reduce coupling.
+  </div>
+</div>
+
+<!-- ===================== STEP 12: FACADE SOLUTION ===================== -->
+<div class="step" data-step="11">
+  <div class="step-header">
+    <span class="phase-pill pill-blue">Apply Principles</span>
+    <span class="step-title">Encapsulate + Decouple = Facade</span>
+  </div>
+  <div class="principle-box">
+    <div class="principle-label">Combined Principles</div>
+    <div class="principle-text">"Encapsulate what varies" + "Strive for loosely coupled designs."</div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label before-label">Before — Client knows everything</div>
+      <div class="code-block"><code><span class="hi-r">popper.on();</span>
+<span class="hi-r">popper.pop();</span>
+<span class="hi-r">lights.dim(10);</span>
+<span class="hi-r">screen.down();</span>
+<span class="hi-r">projector.on();</span>
+<span class="hi-r">projector.setInput(dvd);</span>
+<span class="hi-r">projector.wideScreenMode();</span>
+<span class="hi-r">amp.on();</span>
+<span class="hi-r">amp.setDvd(dvd);</span>
+<span class="hi-r">amp.setSurroundSound();</span>
+<span class="hi-r">amp.setVolume(5);</span>
+<span class="hi-r">dvd.on();</span>
+<span class="hi-r">dvd.play(movie);</span>
+<span class="cm">// 13 calls, 6 classes!</span></code></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label after-label">After — One simple call</div>
+      <div class="code-block"><code><span class="hi-g">homeTheater.watchMovie(</span>
+    <span class="hi-g">"Raiders of the Lost Ark"</span>
+<span class="hi-g">);</span>
+
+<span class="cm">// That's it. ONE class, ONE call.</span>
+<span class="cm">// The Facade handles everything:</span>
+<span class="cm">//   popper, lights, screen,</span>
+<span class="cm">//   projector, amp, dvd...</span>
+<span class="cm">// all in the right order.</span>
+
+
+
+<span class="cm">// When done:</span>
+<span class="hi-g">homeTheater.endMovie();</span></code></div>
+    </div>
+  </div>
+
+  <div class="cd-row">
+    <div class="cd-box ctx"><div class="cd-h">Client</div><div class="cd-m">watchMovie()</div></div>
+  </div>
+  <div class="cd-arr">→ one friend</div>
+  <div class="cd-row">
+    <div class="cd-box good" style="max-width:280px;">
+      <div class="cd-h">HomeTheaterFacade</div>
+      <div class="cd-b">amp, tuner, dvd, cd,<br>projector, screen,<br>lights, popper</div>
+      <div class="cd-m">watchMovie()<br>endMovie()<br>listenToCd()<br>listenToRadio()</div>
+    </div>
+  </div>
+  <div class="cd-arr">◇ composes → subsystem</div>
+  <div class="cd-row">
+    <div class="cd-box obs"><div class="cd-h">Projector</div></div>
+    <div class="cd-box obs"><div class="cd-h">Amplifier</div></div>
+    <div class="cd-box obs"><div class="cd-h">DvdPlayer</div></div>
+    <div class="cd-box obs"><div class="cd-h">Lights</div></div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>The Facade Pattern:</strong> provides a unified, simplified interface to a set of interfaces in a subsystem. It doesn't "hide" the subsystem — you can still access those classes directly if you need low-level control.
+  </div>
+</div>
+
+<!-- ===================== STEP 13: FACADE IMPLEMENTATION ===================== -->
+<div class="step" data-step="12">
+  <div class="step-header">
+    <span class="phase-pill pill-green">Implementation</span>
+    <span class="step-title">Building the HomeTheaterFacade</span>
+  </div>
+  <p class="step-subtitle">The Facade uses composition to hold references to all subsystem components, then delegates to them in the right order.</p>
+
+  <div class="panel-full">
+    <div class="code-block"><code>public class HomeTheaterFacade {
+    <span class="hi-b">Amplifier amp;</span>
+    <span class="hi-b">Tuner tuner;</span>
+    <span class="hi-b">DvdPlayer dvd;</span>
+    <span class="hi-b">CdPlayer cd;</span>
+    <span class="hi-b">Projector projector;</span>
+    <span class="hi-b">TheaterLights lights;</span>
+    <span class="hi-b">Screen screen;</span>
+    <span class="hi-b">PopcornPopper popper;</span>
+
+    public HomeTheaterFacade(<span class="cm">/* all components */</span>) {
+        <span class="cm">// assign each to instance variable</span>
+    }
+
+    <span class="hi-g">public void watchMovie(String movie) {</span>
+        System.out.println("Get ready to watch a movie...");
+        popper.on();
+        popper.pop();
+        lights.dim(10);
+        screen.down();
+        projector.on();
+        projector.wideScreenMode();
+        amp.on();
+        amp.setDvd(dvd);
+        amp.setSurroundSound();
+        amp.setVolume(5);
+        dvd.on();
+        dvd.play(movie);
+    <span class="hi-g">}</span>
+
+    <span class="hi-g">public void endMovie() {</span>
+        popper.off();
+        lights.on();
+        screen.up();
+        projector.off();
+        amp.off();
+        dvd.stop();
+        dvd.eject();
+        dvd.off();
+    <span class="hi-g">}</span>
+}</code></div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>Key insight:</strong> The Facade doesn't add new functionality — it orchestrates existing subsystem functionality into convenient high-level operations. The subsystem classes don't even know the Facade exists.
+  </div>
+</div>
+
+<!-- ===================== STEP 14: NEW PRINCIPLE ===================== -->
+<div class="step" data-step="13">
+  <div class="step-header">
+    <span class="phase-pill pill-purple">New Principle</span>
+    <span class="step-title">The Principle of Least Knowledge</span>
+  </div>
+  <p class="step-subtitle">The Facade Pattern naturally leads us to a new design principle that emerges from what we just built.</p>
+
+  <div class="principle-box" style="border-color: var(--purple-500); background: var(--bg-purple);">
+    <div class="principle-label" style="color: var(--text-purple);">New OO Principle</div>
+    <div class="principle-text" style="color: var(--text-purple);">"Talk only to your immediate friends." (Also known as the Law of Demeter)</div>
+  </div>
+
+  <p class="text-sm mb-12">The principle says: from any method, only call methods on (1) the object itself, (2) objects passed as parameters, (3) objects you create, and (4) your component objects.</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label before-label">Violates the Principle</div>
+      <div class="code-block"><code>public float getTemp() {
+    <span class="hi-r">return station</span>
+        <span class="hi-r">.getThermometer()</span>
+        <span class="hi-r">.getTemperature();</span>
+}
+<span class="cm">// Calling a method on an object
+// returned from ANOTHER call!
+// You now depend on TWO classes.</span></code></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label after-label">Follows the Principle</div>
+      <div class="code-block"><code>public float getTemp() {
+    <span class="hi-g">return station</span>
+        <span class="hi-g">.getTemperature();</span>
+}
+<span class="cm">// Ask the station directly.
+// Station delegates internally.
+// You only depend on ONE class.</span></code></div>
+    </div>
+  </div>
+
+  <div class="callout callout-purple">
+    <strong>This principle is a consequence of the Facade Pattern.</strong> The Facade gives the client ONE friend instead of six. The client talks only to the Facade, and the Facade talks to the subsystem. Fewer dependencies = less fragile system.
+  </div>
+</div>
+
+<!-- ===================== STEP 15: ADAPTER vs FACADE ===================== -->
+<div class="step" data-step="14">
+  <div class="step-header">
+    <span class="phase-pill pill-yellow">Trade-offs</span>
+    <span class="step-title">Adapter vs. Facade vs. Decorator</span>
+  </div>
+  <p class="step-subtitle">All three patterns wrap objects. But their intents are completely different.</p>
+
+  <table class="compare-table">
+    <tr>
+      <th>Pattern</th>
+      <th>Intent</th>
+      <th>Changes interface?</th>
+      <th>Wraps how many?</th>
+    </tr>
+    <tr>
+      <td><strong>Adapter</strong></td>
+      <td>Convert one interface to another</td>
+      <td>Yes — to match target</td>
+      <td>Usually one (but can be more)</td>
+    </tr>
+    <tr>
+      <td><strong>Facade</strong></td>
+      <td>Simplify a complex interface</td>
+      <td>Yes — makes it simpler</td>
+      <td>Many (entire subsystem)</td>
+    </tr>
+    <tr>
+      <td><strong>Decorator</strong></td>
+      <td>Add new responsibilities</td>
+      <td>No — keeps same interface</td>
+      <td>One</td>
+    </tr>
+  </table>
+
+  <div class="panels mt-12">
+    <div class="panel">
+      <div class="panel-label">Object Adapter</div>
+      <div class="cd-box good" style="max-width: 100%;">
+        <div class="cd-h">Adapter</div>
+        <div class="cd-b">Adaptee adaptee</div>
+        <div class="cd-m">Uses <strong>composition</strong><br>Implements Target<br>Works with any Adaptee subclass</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">Class Adapter</div>
+      <div class="cd-box dup" style="max-width: 100%;">
+        <div class="cd-h">Adapter</div>
+        <div class="cd-m">Uses <strong>multiple inheritance</strong><br>Extends Target AND Adaptee<br>⚠ Not possible in Java<br>Committed to one Adaptee class</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-yellow">
+    <strong>Key distinction:</strong> the difference isn't how many classes they wrap — it's their intent. An Adapter wraps to convert. A Facade wraps to simplify. A Decorator wraps to add behavior. Choose based on what you're trying to achieve.
+  </div>
+</div>
+
+<!-- ===================== STEP 16: PRINCIPLE OF LEAST KNOWLEDGE TRADE-OFFS ===================== -->
+<div class="step" data-step="15">
+  <div class="step-header">
+    <span class="phase-pill pill-yellow">Trade-offs</span>
+    <span class="step-title">The Cost of Least Knowledge</span>
+  </div>
+  <p class="step-subtitle">The Principle of Least Knowledge reduces coupling, but it's not free.</p>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label" style="color: var(--text-success);">Advantages</div>
+      <div class="code-block"><code><span class="hi-g">Reduced dependencies</span>
+Fewer classes coupled together.
+Changes don't cascade.
+
+<span class="hi-g">Simpler maintenance</span>
+Studies show this principle
+reduces software maintenance
+costs.
+
+<span class="hi-g">More flexible</span>
+Can swap subsystem components
+without touching client code.</code></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label" style="color: var(--text-danger);">Disadvantages</div>
+      <div class="code-block"><code><span class="hi-r">More wrapper classes</span>
+More "middle-man" code to
+write and maintain.
+
+<span class="hi-r">Complexity &amp; performance</span>
+Extra layers of indirection.
+More method calls to traverse.
+
+<span class="hi-r">Can feel like overkill</span>
+System.out.println() violates
+the principle — should we care?
+<span class="cm">// Sometimes pragmatism wins.</span></code></div>
+    </div>
+  </div>
+
+  <div class="callout callout-yellow">
+    <strong>All principles involve trade-offs.</strong> The Principle of Least Knowledge is a guideline, not a law. Apply it where coupling is causing real pain, not dogmatically everywhere.
+  </div>
+</div>
+
+<!-- ===================== STEP 17: FINAL DIAGRAM ===================== -->
+<div class="step" data-step="16">
+  <div class="step-header">
+    <span class="phase-pill pill-purple">Complete Pattern</span>
+    <span class="step-title">The Full Picture</span>
+  </div>
+
+  <p class="bold mb-8">The Adapter Pattern</p>
+  <div class="cd-row">
+    <div class="cd-box ctx"><div class="cd-h">Client</div></div>
+  </div>
+  <div class="cd-arr">→ uses</div>
+  <div class="cd-row">
+    <div class="cd-box iface"><div class="cd-h">«interface» Target</div><div class="cd-m">request()</div></div>
+  </div>
+  <div class="cd-arr">△ implements</div>
+  <div class="cd-row">
+    <div class="cd-box good"><div class="cd-h">Adapter</div><div class="cd-b">Adaptee adaptee</div><div class="cd-m">request()</div></div>
+    <div class="cd-box obs"><div class="cd-h">Adaptee</div><div class="cd-m">specificRequest()</div></div>
+  </div>
+  <div class="cd-arr">◇ has-a ─────→</div>
+
+  <p class="bold mb-8 mt-12">The Facade Pattern</p>
+  <div class="cd-row">
+    <div class="cd-box ctx"><div class="cd-h">Client</div></div>
+  </div>
+  <div class="cd-arr">→ ONE friend</div>
+  <div class="cd-row">
+    <div class="cd-box good" style="max-width:240px;"><div class="cd-h">Facade</div><div class="cd-m">simplifiedMethod()</div></div>
+  </div>
+  <div class="cd-arr">◇ delegates to subsystem</div>
+  <div class="cd-row">
+    <div class="cd-box obs"><div class="cd-h">ClassA</div></div>
+    <div class="cd-box obs"><div class="cd-h">ClassB</div></div>
+    <div class="cd-box obs"><div class="cd-h">ClassC</div></div>
+    <div class="cd-box obs"><div class="cd-h">ClassD</div></div>
+  </div>
+
+  <div class="callout callout-purple">
+    <strong>Two patterns, one chapter:</strong> Both wrap objects, but with different intents. The Adapter converts an interface; the Facade simplifies a complex subsystem. Both reduce coupling and follow the Principle of Least Knowledge.
+  </div>
+</div>
+
+<!-- ===================== STEP 18: TOOLBOX UPDATE ===================== -->
+<div class="step" data-step="17">
+  <div class="step-header">
+    <span class="phase-pill pill-purple">Toolbox Update</span>
+    <span class="step-title">Your Design Toolbox — Updated</span>
+  </div>
+
+  <div class="toolbox-grid">
+    <div class="toolbox-col">
+      <h4>OO Principles</h4>
+      <div class="toolbox-item existing">Encapsulate what varies</div>
+      <div class="toolbox-item existing">Favor composition over inheritance</div>
+      <div class="toolbox-item existing">Program to interfaces, not implementations</div>
+      <div class="toolbox-item existing">Strive for loosely coupled designs</div>
+      <div class="toolbox-item existing">Open for extension, closed for modification</div>
+      <div class="toolbox-item existing">Depend on abstractions, not concretions</div>
+      <div class="toolbox-item new">⭐ <strong>Talk only to your friends</strong> (Principle of Least Knowledge)</div>
+    </div>
+    <div class="toolbox-col">
+      <h4>OO Patterns</h4>
+      <div class="toolbox-item existing">Strategy — encapsulate interchangeable behaviors</div>
+      <div class="toolbox-item existing">Observer — one-to-many dependency notification</div>
+      <div class="toolbox-item existing">Decorator — add responsibilities dynamically</div>
+      <div class="toolbox-item existing">Factory Method — defer instantiation to subclasses</div>
+      <div class="toolbox-item existing">Abstract Factory — create families of objects</div>
+      <div class="toolbox-item existing">Singleton — ensure one instance</div>
+      <div class="toolbox-item existing">Command — encapsulate requests as objects</div>
+      <div class="toolbox-item new">⭐ <strong>Adapter</strong> — convert one interface to another</div>
+      <div class="toolbox-item new">⭐ <strong>Facade</strong> — simplify a complex subsystem interface</div>
+    </div>
+  </div>
+
+  <div class="callout callout-purple mt-12">
+    <strong>The journey:</strong> We started with incompatible interfaces, applied three known principles (encapsulate, interfaces, composition) and discovered the Adapter. Then we faced a complex subsystem, applied encapsulation and loose coupling, and discovered the Facade — which gave us a brand new principle: talk only to your friends.
+  </div>
+</div>
+
+    </div><!-- end stepsContainer -->
+
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn" onclick="changeStep(-1)" disabled>← Back</button>
+      <div class="dots" id="dotsContainer"></div>
+      <button class="nav-btn" id="nextBtn" onclick="changeStep(1)">Next →</button>
+    </div>
+  </div><!-- end card -->
+</div><!-- end container -->
+
+<script>
+let currentStep = 0;
+const steps = document.querySelectorAll('.step');
+const totalSteps = steps.length;
+const dotsContainer = document.getElementById('dotsContainer');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const progressFill = document.getElementById('progressFill');
+
+// Create dots
+for (let i = 0; i < totalSteps; i++) {
+  const dot = document.createElement('button');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.setAttribute('aria-label', 'Step ' + (i + 1));
+  dot.onclick = () => goToStep(i);
+  dotsContainer.appendChild(dot);
+}
+
+function goToStep(n) {
+  if (n < 0 || n >= totalSteps) return;
+  steps[currentStep].classList.remove('active');
+  currentStep = n;
+  steps[currentStep].classList.add('active');
+  updateNav();
+}
+
+function changeStep(dir) {
+  goToStep(currentStep + dir);
+}
+
+function updateNav() {
+  prevBtn.disabled = currentStep === 0;
+  nextBtn.disabled = currentStep === totalSteps - 1;
+  const dots = dotsContainer.querySelectorAll('.dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === currentStep));
+  progressFill.style.width = ((currentStep + 1) / totalSteps * 100) + '%';
+}
+
+// Keyboard nav
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') changeStep(1);
+  if (e.key === 'ArrowLeft') changeStep(-1);
+});
+
+// Theme toggle
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙 Dark' : '☀️ Light';
+}
+
+updateNav();
+</script>
+</body>
+</html>
