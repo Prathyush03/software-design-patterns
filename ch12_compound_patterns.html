@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 12 — Compound Patterns: The Grand Finale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f7f4;
+  --bg-tertiary: #f0eee9;
+  --bg-info: #e8f0fe;
+  --bg-danger: #fde8e8;
+  --bg-success: #e6f4ea;
+  --bg-warning: #fef7e0;
+  --bg-purple: #f3e8ff;
+  --bg-teal: #e0f7f4;
+  --bg-coral: #fff0ed;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #7a7a7a;
+  --text-info: #1a56db;
+  --text-danger: #c81e1e;
+  --text-success: #046c4e;
+  --text-warning: #92400e;
+  --text-purple: #6b21a8;
+  --text-teal: #0d6d6e;
+  --text-coral: #c2410c;
+  --border-primary: #e2e0dc;
+  --border-secondary: #d4d1cc;
+  --border-tertiary: #c6c3be;
+  --hi-r: #fde8e8;
+  --hi-r-border: #f9a8a8;
+  --hi-g: #d1fae5;
+  --hi-g-border: #6ee7b7;
+  --hi-y: #fef3c7;
+  --hi-y-border: #fcd34d;
+  --hi-b: #dbeafe;
+  --hi-b-border: #93c5fd;
+  --hi-p: #ede9fe;
+  --hi-p-border: #c4b5fd;
+  --cm-color: #7a7a7a;
+  --progress-bg: #e5e3df;
+  --progress-fill: #6b21a8;
+  --pill-gray: #e5e3df;
+  --pill-gray-text: #4a4a4a;
+  --pill-red: #fde8e8;
+  --pill-red-text: #c81e1e;
+  --pill-yellow: #fef3c7;
+  --pill-yellow-text: #92400e;
+  --pill-blue: #dbeafe;
+  --pill-blue-text: #1a56db;
+  --pill-green: #d1fae5;
+  --pill-green-text: #046c4e;
+  --pill-purple: #ede9fe;
+  --pill-purple-text: #6b21a8;
+  --pill-teal: #ccfbf1;
+  --pill-teal-text: #0d6d6e;
+  --pill-coral: #fff0ed;
+  --pill-coral-text: #c2410c;
+  --cd-bad-bg: #fef2f2;
+  --cd-bad-border: #fca5a5;
+  --cd-dup-bg: #fffbeb;
+  --cd-dup-border: #fcd34d;
+  --cd-iface-bg: #f5f3ff;
+  --cd-iface-border: #a78bfa;
+  --cd-ctx-bg: #ecfdf5;
+  --cd-ctx-border: #6ee7b7;
+  --cd-obs-bg: #fff7ed;
+  --cd-obs-border: #fdba74;
+  --cd-good-bg: #f0fdf4;
+  --cd-good-border: #86efac;
+  --cd-dec-bg: #fefce8;
+  --cd-dec-border: #fde047;
+  --cd-comp-bg: #f0fdfa;
+  --cd-comp-border: #5eead4;
+  --cd-factory-bg: #fdf4ff;
+  --cd-factory-border: #d8b4fe;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --dot-active: #6b21a8;
+  --dot-inactive: #d4d1cc;
+  --theme-toggle-bg: #e5e3df;
+}
+[data-theme="dark"] {
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252525;
+  --bg-tertiary: #181818;
+  --bg-info: #1e2a3a;
+  --bg-danger: #3a1e1e;
+  --bg-success: #1e3a2a;
+  --bg-warning: #3a2e1e;
+  --bg-purple: #2a1e3a;
+  --bg-teal: #1e3a38;
+  --bg-coral: #3a261e;
+  --text-primary: #e8e6e3;
+  --text-secondary: #b0ada8;
+  --text-tertiary: #807d78;
+  --text-info: #7db4f5;
+  --text-danger: #f5a0a0;
+  --text-success: #5ed4a0;
+  --text-warning: #f5c872;
+  --text-purple: #c4a8f5;
+  --text-teal: #5ed4c8;
+  --text-coral: #f5a068;
+  --border-primary: #3a3835;
+  --border-secondary: #4a4845;
+  --border-tertiary: #5a5855;
+  --hi-r: #3a1e1e;
+  --hi-r-border: #7a3a3a;
+  --hi-g: #1e3a2a;
+  --hi-g-border: #3a7a5a;
+  --hi-y: #3a2e1e;
+  --hi-y-border: #7a6a3a;
+  --hi-b: #1e2a3a;
+  --hi-b-border: #3a5a7a;
+  --hi-p: #2a1e3a;
+  --hi-p-border: #5a3a7a;
+  --cm-color: #807d78;
+  --progress-bg: #3a3835;
+  --progress-fill: #9b7dd4;
+  --pill-gray: #3a3835;
+  --pill-gray-text: #b0ada8;
+  --pill-red: #3a1e1e;
+  --pill-red-text: #f5a0a0;
+  --pill-yellow: #3a2e1e;
+  --pill-yellow-text: #f5c872;
+  --pill-blue: #1e2a3a;
+  --pill-blue-text: #7db4f5;
+  --pill-green: #1e3a2a;
+  --pill-green-text: #5ed4a0;
+  --pill-purple: #2a1e3a;
+  --pill-purple-text: #c4a8f5;
+  --pill-teal: #1e3a38;
+  --pill-teal-text: #5ed4c8;
+  --pill-coral: #3a261e;
+  --pill-coral-text: #f5a068;
+  --cd-bad-bg: #3a1e1e;
+  --cd-bad-border: #7a3a3a;
+  --cd-dup-bg: #3a2e1e;
+  --cd-dup-border: #7a6a3a;
+  --cd-iface-bg: #2a1e3a;
+  --cd-iface-border: #6a4a8a;
+  --cd-ctx-bg: #1e3a2a;
+  --cd-ctx-border: #3a7a5a;
+  --cd-obs-bg: #3a2a1e;
+  --cd-obs-border: #8a6a4a;
+  --cd-good-bg: #1e3a24;
+  --cd-good-border: #4a8a5a;
+  --cd-dec-bg: #3a3a1e;
+  --cd-dec-border: #7a7a3a;
+  --cd-comp-bg: #1e3a38;
+  --cd-comp-border: #4a8a82;
+  --cd-factory-bg: #2e1e3a;
+  --cd-factory-border: #6a4a8a;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --dot-active: #c4a8f5;
+  --dot-inactive: #4a4845;
+  --theme-toggle-bg: #3a3835;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+.outer { max-width: 900px; margin: 0 auto; padding: 12px; }
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; margin-bottom: 8px;
+}
+.header h1 {
+  font-size: 1.1rem; font-weight: 700; color: var(--text-purple);
+  letter-spacing: -0.02em;
+}
+.header-right { display: flex; gap: 8px; align-items: center; }
+.theme-toggle {
+  background: var(--theme-toggle-bg); border: none; border-radius: 20px;
+  padding: 5px 10px; cursor: pointer; font-size: 0.85rem;
+  color: var(--text-secondary); transition: all 0.2s;
+}
+.theme-toggle:hover { opacity: 0.8; }
+.progress-bar {
+  height: 3px; background: var(--progress-bg); border-radius: 2px;
+  margin-bottom: 10px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--progress-fill);
+  transition: width 0.35s ease; border-radius: 2px;
+}
+.card {
+  background: var(--bg-primary); border: 1px solid var(--border-primary);
+  border-radius: 14px; box-shadow: var(--shadow-md);
+  overflow: hidden; min-height: 500px;
+  display: flex; flex-direction: column;
+}
+.step-container {
+  flex: 1; padding: 28px 32px;
+  animation: fadeSlide 0.35s ease;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.step-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 18px; flex-wrap: wrap;
+}
+.pill {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: 12px; font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+}
+.pill-gray { background: var(--pill-gray); color: var(--pill-gray-text); }
+.pill-red { background: var(--pill-red); color: var(--pill-red-text); }
+.pill-yellow { background: var(--pill-yellow); color: var(--pill-yellow-text); }
+.pill-blue { background: var(--pill-blue); color: var(--pill-blue-text); }
+.pill-green { background: var(--pill-green); color: var(--pill-green-text); }
+.pill-purple { background: var(--pill-purple); color: var(--pill-purple-text); }
+.pill-teal { background: var(--pill-teal); color: var(--pill-teal-text); }
+.pill-coral { background: var(--pill-coral); color: var(--pill-coral-text); }
+.step-title {
+  font-size: 1.25rem; font-weight: 700; color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+.step-subtitle {
+  font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;
+}
+.panels {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-bottom: 16px;
+}
+.panel-full { grid-template-columns: 1fr; }
+.panel {
+  background: var(--bg-secondary); border: 1px solid var(--border-primary);
+  border-radius: 10px; overflow: hidden;
+}
+.panel-label {
+  padding: 6px 14px; font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-tertiary); color: var(--text-tertiary);
+}
+.panel-label.before { background: var(--hi-r); color: var(--text-danger); }
+.panel-label.after { background: var(--hi-g); color: var(--text-success); }
+.panel-label.code { background: var(--bg-info); color: var(--text-info); }
+.panel-label.diagram { background: var(--bg-purple); color: var(--text-purple); }
+.code-block {
+  padding: 14px 16px; font-family: var(--font-mono);
+  font-size: 0.78rem; line-height: 1.65; overflow-x: auto;
+  white-space: pre; color: var(--text-primary);
+}
+.hi-r { background: var(--hi-r); border-radius: 3px; padding: 1px 3px; }
+.hi-g { background: var(--hi-g); border-radius: 3px; padding: 1px 3px; }
+.hi-y { background: var(--hi-y); border-radius: 3px; padding: 1px 3px; }
+.hi-b { background: var(--hi-b); border-radius: 3px; padding: 1px 3px; }
+.hi-p { background: var(--hi-p); border-radius: 3px; padding: 1px 3px; }
+.cm { color: var(--cm-color); }
+.diagram-area {
+  padding: 16px; display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+}
+.cd-row {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  justify-content: center; align-items: flex-start;
+}
+.cd-box {
+  border: 2px solid var(--border-secondary); border-radius: 8px;
+  font-family: var(--font-mono); font-size: 0.68rem;
+  min-width: 120px; max-width: 200px; background: var(--bg-primary);
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.cd-box.bad { background: var(--cd-bad-bg); border-color: var(--cd-bad-border); }
+.cd-box.dup { background: var(--cd-dup-bg); border-color: var(--cd-dup-border); }
+.cd-box.iface { background: var(--cd-iface-bg); border-color: var(--cd-iface-border); border-style: dashed; }
+.cd-box.ctx { background: var(--cd-ctx-bg); border-color: var(--cd-ctx-border); }
+.cd-box.obs { background: var(--cd-obs-bg); border-color: var(--cd-obs-border); }
+.cd-box.good { background: var(--cd-good-bg); border-color: var(--cd-good-border); }
+.cd-box.dec { background: var(--cd-dec-bg); border-color: var(--cd-dec-border); }
+.cd-box.comp { background: var(--cd-comp-bg); border-color: var(--cd-comp-border); }
+.cd-box.factory { background: var(--cd-factory-bg); border-color: var(--cd-factory-border); }
+.cd-h {
+  padding: 5px 8px; font-weight: 700; text-align: center;
+  border-bottom: 1px solid inherit; font-size: 0.72rem;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+.cd-h small { display: block; font-weight: 400; font-size: 0.62rem; font-style: italic; color: var(--text-tertiary); }
+.cd-b, .cd-m {
+  padding: 4px 8px; font-size: 0.64rem; color: var(--text-secondary);
+  line-height: 1.5;
+}
+.cd-b { border-bottom: 1px dotted var(--border-primary); }
+.cd-arr {
+  text-align: center; font-size: 0.72rem; color: var(--text-tertiary);
+  padding: 4px 0; font-family: var(--font-mono);
+}
+.principle-box {
+  background: var(--bg-info); border: 2px solid var(--hi-b-border);
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;
+}
+.principle-box h3 {
+  font-size: 0.85rem; color: var(--text-info); margin-bottom: 4px;
+  font-weight: 700;
+}
+.principle-box p {
+  font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;
+}
+.pattern-box {
+  background: var(--bg-purple); border: 2px solid var(--hi-p-border);
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;
+}
+.pattern-box h3 {
+  font-size: 0.85rem; color: var(--text-purple); margin-bottom: 4px;
+}
+.pattern-box p {
+  font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;
+}
+.callout {
+  border-left: 3px solid var(--border-tertiary);
+  padding: 10px 14px; margin-top: 14px;
+  font-size: 0.82rem; color: var(--text-secondary);
+  line-height: 1.55;
+}
+.callout.info { border-color: var(--text-info); background: var(--bg-info); }
+.callout.danger { border-color: var(--text-danger); background: var(--bg-danger); }
+.callout.success { border-color: var(--text-success); background: var(--bg-success); }
+.callout.warning { border-color: var(--text-warning); background: var(--bg-warning); }
+.callout.purple { border-color: var(--text-purple); background: var(--bg-purple); }
+.callout.teal { border-color: var(--text-teal); background: var(--bg-teal); }
+.callout.coral { border-color: var(--text-coral); background: var(--bg-coral); }
+.callout strong { color: var(--text-primary); }
+.section-divider {
+  text-align: center; padding: 20px 0;
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--text-purple); letter-spacing: -0.01em;
+}
+.section-divider .emoji { font-size: 1.4rem; display: block; margin-bottom: 6px; }
+.toolbox-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.toolbox-col h4 {
+  font-size: 0.78rem; font-weight: 700; color: var(--text-purple);
+  margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.toolbox-item {
+  font-size: 0.76rem; padding: 4px 0; color: var(--text-secondary);
+  display: flex; align-items: baseline; gap: 6px;
+}
+.toolbox-item.new { color: var(--text-purple); font-weight: 600; }
+.toolbox-item .star { color: var(--text-warning); }
+.output-box {
+  background: var(--bg-tertiary); border: 1px solid var(--border-primary);
+  border-radius: 8px; padding: 12px 16px; margin: 10px 0;
+  font-family: var(--font-mono); font-size: 0.74rem;
+  color: var(--text-secondary); line-height: 1.6;
+}
+.output-box .prompt { color: var(--text-info); font-weight: 600; }
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; border-top: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+}
+.nav-btn {
+  background: var(--bg-tertiary); border: 1px solid var(--border-secondary);
+  border-radius: 8px; padding: 7px 18px; font-family: var(--font-body);
+  font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-btn:hover { background: var(--border-primary); }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.nav-btn.next { background: var(--progress-fill); color: #fff; border-color: var(--progress-fill); }
+.nav-btn.next:hover { opacity: 0.85; }
+.nav-btn.next:disabled { opacity: 0.3; }
+.dots {
+  display: flex; gap: 5px; align-items: center; flex-wrap: wrap;
+  justify-content: center; max-width: 60%;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--dot-inactive); cursor: pointer;
+  transition: all 0.2s; border: none; padding: 0;
+}
+.dot.active { background: var(--dot-active); transform: scale(1.3); }
+.dot:hover { background: var(--dot-active); opacity: 0.7; }
+.part-label {
+  font-size: 0.6rem; font-weight: 700; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+}
+.inline-code {
+  font-family: var(--font-mono); font-size: 0.8em;
+  background: var(--bg-tertiary); padding: 1px 5px;
+  border-radius: 3px; border: 1px solid var(--border-primary);
+}
+.two-col-text {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin: 10px 0;
+}
+.two-col-text > div {
+  background: var(--bg-secondary); border-radius: 8px;
+  padding: 12px 14px; border: 1px solid var(--border-primary);
+}
+.two-col-text h4 {
+  font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;
+}
+.two-col-text p, .two-col-text li {
+  font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;
+}
+.mvc-diagram {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; flex-wrap: wrap; padding: 10px;
+}
+.mvc-node {
+  padding: 12px 18px; border-radius: 10px; text-align: center;
+  font-weight: 700; font-size: 0.82rem; min-width: 100px;
+}
+.mvc-arrow {
+  font-size: 1.2rem; color: var(--text-tertiary);
+}
+@media (max-width: 700px) {
+  .panels { grid-template-columns: 1fr; }
+  .two-col-text { grid-template-columns: 1fr; }
+  .toolbox-grid { grid-template-columns: 1fr; }
+  .step-container { padding: 20px 18px; }
+  .outer { padding: 6px; }
+  .dots { max-width: 80%; }
+  .nav { padding: 10px 14px; }
+  .mvc-diagram { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="outer">
+  <div class="header">
+    <h1>Ch 12 — Compound Patterns</h1>
+    <div class="header-right">
+      <span id="stepCounter" style="font-size:0.78rem;color:var(--text-tertiary);font-weight:500;"></span>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="card">
+    <div class="step-container" id="stepContainer"></div>
+    <div class="nav">
+      <button class="nav-btn" id="backBtn" onclick="go(-1)">← Back</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn next" id="nextBtn" onclick="go(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const steps = [
+// ============================================================
+// STEP 0: THE BRIEF
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-gray", "The Brief"],
+  title: "SimUDuck Returns — Rebuilt from Scratch",
+  subtitle: "Our old friend the duck simulator is back. This time, we're going to build it step by step and see how patterns naturally emerge when problems pile up.",
+  panels: "full",
+  left: {
+    label: ["code", "Starting Point — Quackable Interface"],
+    code: `<span class="hi-b">public interface Quackable {</span>
+<span class="hi-b">    public void quack();</span>
+<span class="hi-b">}</span>
+
+public class MallardDuck <span class="hi-g">implements Quackable</span> {
+    public void quack() {
+        System.out.println("Quack");
+    }
+}
+
+public class RedheadDuck <span class="hi-g">implements Quackable</span> {
+    public void quack() {
+        System.out.println("Quack");
+    }
+}
+
+public class DuckCall <span class="hi-g">implements Quackable</span> {
+    public void quack() {
+        System.out.println(<span class="hi-y">"Kwak"</span>);  <span class="cm">// Not quite a real quack</span>
+    }
+}
+
+public class RubberDuck <span class="hi-g">implements Quackable</span> {
+    public void quack() {
+        System.out.println(<span class="hi-y">"Squeak"</span>);
+    }
+}`
+  },
+  right: {
+    label: ["diagram", "System Overview"],
+    diagram: `
+      <div class="cd-box iface" style="min-width:160px">
+        <div class="cd-h">«interface»<br>Quackable</div>
+        <div class="cd-m">+ quack()</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box good">
+          <div class="cd-h">MallardDuck</div>
+          <div class="cd-m">+ quack()</div>
+        </div>
+        <div class="cd-box good">
+          <div class="cd-h">RedheadDuck</div>
+          <div class="cd-m">+ quack()</div>
+        </div>
+        <div class="cd-box good">
+          <div class="cd-h">DuckCall</div>
+          <div class="cd-m">+ quack()</div>
+        </div>
+        <div class="cd-box good">
+          <div class="cd-h">RubberDuck</div>
+          <div class="cd-m">+ quack()</div>
+        </div>
+      </div>`
+  },
+  callout: ["info", "We start clean: a <strong>Quackable</strong> interface and four concrete implementations. Simple, elegant, extensible. We program to an interface — everything that quacks is a <strong>Quackable</strong>. Now let's build a simulator and watch the problems roll in!"]
+},
+
+// ============================================================
+// STEP 1: BASIC SIMULATOR
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-gray", "First Attempt"],
+  title: "The Basic Simulator — It Works!",
+  subtitle: "We create a simple DuckSimulator that exercises all the quackables. Looks great so far...",
+  panels: "dual",
+  left: {
+    label: ["code", "DuckSimulator v1"],
+    code: `public class DuckSimulator {
+    public static void main(String[] args) {
+        DuckSimulator sim = new DuckSimulator();
+        sim.simulate();
+    }
+
+    void simulate() {
+        Quackable mallard  = <span class="hi-y">new MallardDuck()</span>;
+        Quackable redhead  = <span class="hi-y">new RedheadDuck()</span>;
+        Quackable duckCall = <span class="hi-y">new DuckCall()</span>;
+        Quackable rubber   = <span class="hi-y">new RubberDuck()</span>;
+
+        simulate(mallard);
+        simulate(redhead);
+        simulate(duckCall);
+        simulate(rubber);
+    }
+
+    <span class="cm">// Polymorphism does its magic here</span>
+    void simulate(Quackable duck) {
+        duck.quack();
+    }
+}`
+  },
+  right: {
+    label: ["", "Output"],
+    diagram: `
+      <div class="output-box">
+<span class="prompt">% java DuckSimulator</span>
+Duck Simulator
+Quack
+Quack
+Kwak
+Squeak
+      </div>
+      <div style="margin-top:14px; text-align:center">
+        <div class="cd-box good" style="min-width:160px;display:inline-block">
+          <div class="cd-h">DuckSimulator</div>
+          <div class="cd-m">+ main()<br>+ simulate()<br>+ simulate(Quackable)</div>
+        </div>
+        <div class="cd-arr">uses ▷</div>
+        <div class="cd-box iface" style="min-width:140px;display:inline-block">
+          <div class="cd-h">«interface»<br>Quackable</div>
+          <div class="cd-m">+ quack()</div>
+        </div>
+      </div>`
+  },
+  callout: ["success", "It works! The power of polymorphism — <code>simulate(Quackable)</code> calls <code>quack()</code> without caring about the concrete type. But hold on... a <strong>Goose</strong> just wandered into our pond. And it doesn't implement Quackable. What do we do?"]
+},
+
+// ============================================================
+// STEP 2: PROBLEM — GOOSE ARRIVES
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-red", "Problem #1"],
+  title: "A Goose Crashes the Party!",
+  subtitle: "Geese are waterfowl too. They fly, they swim — but they honk() instead of quack(). Our simulator only knows Quackable!",
+  panels: "dual",
+  left: {
+    label: ["code", "The Goose — Incompatible Interface"],
+    code: `public class Goose {
+    public void <span class="hi-r">honk()</span> {  <span class="cm">// Not quack()!</span>
+        System.out.println("Honk");
+    }
+}
+
+<span class="cm">// Our simulator expects Quackable...</span>
+void simulate(<span class="hi-b">Quackable</span> duck) {
+    duck.<span class="hi-b">quack()</span>;
+}
+
+<span class="cm">// Goose doesn't implement Quackable!</span>
+<span class="cm">// simulate(new Goose()); ← WON'T COMPILE</span>`
+  },
+  right: {
+    label: ["diagram", "The Mismatch"],
+    diagram: `
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>Quackable</div>
+        <div class="cd-m">+ quack()</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">MallardDuck</div><div class="cd-m">+ quack()</div></div>
+        <div class="cd-box good"><div class="cd-h">RedheadDuck</div><div class="cd-m">+ quack()</div></div>
+      </div>
+      <div class="cd-arr" style="margin-top:14px;color:var(--text-danger)">✗ no relationship</div>
+      <div class="cd-box bad" style="margin-top:4px">
+        <div class="cd-h">Goose</div>
+        <div class="cd-m">+ honk()</div>
+      </div>`
+  },
+  callout: ["danger", "The Goose has the <em>wrong interface</em>. It honks instead of quacking. We can't modify Goose (it's not our class). We need a way to make a Goose look like a Quackable. <strong>What pattern converts one interface into another?</strong>"]
+},
+
+// ============================================================
+// STEP 3: ADAPTER PATTERN
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-blue", "Pattern #1 — Adapter"],
+  title: "Adapter Pattern — Making the Goose Quack",
+  subtitle: "We wrap the Goose in an adapter that translates quack() calls into honk() calls.",
+  panels: "dual",
+  principle: { title: "Adapter Pattern", text: "Convert the interface of a class into another interface that clients expect. Adapter lets classes work together that couldn't otherwise because of incompatible interfaces." },
+  left: {
+    label: ["after", "GooseAdapter — The Bridge"],
+    code: `<span class="hi-g">public class GooseAdapter implements Quackable {</span>
+    Goose goose;
+
+    public GooseAdapter(Goose goose) {
+        this.goose = goose;
+    }
+
+    <span class="hi-g">public void quack() {</span>
+        <span class="hi-y">goose.honk();</span>  <span class="cm">// Translate!</span>
+    <span class="hi-g">}</span>
+<span class="hi-g">}</span>
+
+<span class="cm">// Now in the simulator:</span>
+Quackable gooseDuck = <span class="hi-g">new GooseAdapter(new Goose())</span>;
+simulate(gooseDuck);  <span class="cm">// → "Honk"</span>`
+  },
+  right: {
+    label: ["diagram", "After Adapter"],
+    diagram: `
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>Quackable</div>
+        <div class="cd-m">+ quack()</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">MallardDuck</div><div class="cd-m">+ quack()</div></div>
+        <div class="cd-box good"><div class="cd-h">RedheadDuck</div><div class="cd-m">+ quack()</div></div>
+        <div class="cd-box obs">
+          <div class="cd-h">GooseAdapter<small>Adapter</small></div>
+          <div class="cd-b">Goose goose</div>
+          <div class="cd-m">+ quack() → honk()</div>
+        </div>
+      </div>
+      <div class="cd-arr">◇ has-a</div>
+      <div class="cd-box" style="display:inline-block">
+        <div class="cd-h">Goose</div>
+        <div class="cd-m">+ honk()</div>
+      </div>`
+  },
+  callout: ["success", "<strong>Pattern count: 1.</strong> The GooseAdapter wraps a Goose and makes it look like a Quackable. Now our simulator treats geese and ducks uniformly! But the Quackologists have a new request: they want to <strong>count all quacks</strong>. How do we add counting without changing the duck classes?"]
+},
+
+// ============================================================
+// STEP 4: PROBLEM — COUNTING QUACKS
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-red", "Problem #2"],
+  title: "The Quackologists Want Data!",
+  subtitle: "\"How many times do the ducks quack?\" We need quack counting — but we can't modify every duck class!",
+  panels: "full",
+  left: {
+    label: ["code", "The Problem — Adding Behavior Without Changing Classes"],
+    code: `<span class="cm">// Option A: Modify every duck class? NO!</span>
+public class MallardDuck implements Quackable {
+    <span class="hi-r">static int count = 0;</span>        <span class="cm">// Added to EVERY class?!</span>
+    public void quack() {
+        <span class="hi-r">count++;</span>                  <span class="cm">// Duplicate in EVERY class?!</span>
+        System.out.println("Quack");
+    }
+}
+
+<span class="cm">// This violates "Encapsulate What Varies" — the counting</span>
+<span class="cm">// behavior is scattered across every single duck class.</span>
+<span class="cm">// And what about our GooseAdapter? DuckCall? RubberDuck?</span>
+<span class="cm">// That's FIVE classes to modify... and counting!</span>
+
+<span class="cm">// We need to ADD behavior (counting) to existing objects</span>
+<span class="cm">// WITHOUT modifying them. What pattern does that?</span>`
+  },
+  callout: ["danger", "We want to add <strong>new behavior</strong> (counting) to existing objects <strong>without modifying their code</strong>. Modifying every duck class would scatter counting logic everywhere. We need to <em>wrap</em> objects to add responsibility dynamically. <strong>That's the Decorator Pattern!</strong>"]
+},
+
+// ============================================================
+// STEP 5: DECORATOR PATTERN
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-blue", "Pattern #2 — Decorator"],
+  title: "Decorator Pattern — QuackCounter",
+  subtitle: "We wrap each duck in a QuackCounter that intercepts quack() calls and counts them before delegating.",
+  panels: "dual",
+  principle: { title: "Decorator Pattern", text: "Attach additional responsibilities to an object dynamically. Decorators provide a flexible alternative to subclassing for extending functionality." },
+  left: {
+    label: ["after", "QuackCounter Decorator"],
+    code: `<span class="hi-g">public class QuackCounter implements Quackable {</span>
+    Quackable duck;              <span class="cm">// Wraps a Quackable</span>
+    <span class="hi-y">static int numberOfQuacks;</span>  <span class="cm">// Shared counter</span>
+
+    public QuackCounter(Quackable duck) {
+        this.duck = duck;
+    }
+
+    public void quack() {
+        duck.quack();            <span class="cm">// Delegate</span>
+        <span class="hi-g">numberOfQuacks++;</span>        <span class="cm">// Count!</span>
+    }
+
+    public static int getQuacks() {
+        return numberOfQuacks;
+    }
+<span class="hi-g">}</span>
+
+<span class="cm">// Usage — wrap each duck:</span>
+Quackable mallard = <span class="hi-g">new QuackCounter(new MallardDuck())</span>;
+Quackable redhead = <span class="hi-g">new QuackCounter(new RedheadDuck())</span>;`
+  },
+  right: {
+    label: ["diagram", "Decorator Layer Added"],
+    diagram: `
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>Quackable</div>
+        <div class="cd-m">+ quack()</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box dec">
+          <div class="cd-h">QuackCounter<small>Decorator</small></div>
+          <div class="cd-b">Quackable duck<br>static int count</div>
+          <div class="cd-m">+ quack()<br>+ getQuacks()</div>
+        </div>
+      </div>
+      <div class="cd-arr">◇ wraps</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">MallardDuck</div><div class="cd-m">+ quack()</div></div>
+        <div class="cd-box good"><div class="cd-h">RedheadDuck</div><div class="cd-m">+ quack()</div></div>
+        <div class="cd-box obs"><div class="cd-h">GooseAdapter</div><div class="cd-m">+ quack()</div></div>
+      </div>`
+  },
+  callout: ["success", "<strong>Pattern count: 2.</strong> QuackCounter wraps any Quackable, counts calls, then delegates. Counting behavior is in ONE place. The ducks don't even know they're being counted! But there's a human problem: <strong>developers keep forgetting to wrap their ducks.</strong> Uncounted quacks are flying under the radar..."]
+},
+
+// ============================================================
+// STEP 6: PROBLEM — FORGETTING TO DECORATE
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-red", "Problem #3"],
+  title: "Developers Keep Forgetting!",
+  subtitle: "Wrapping every duck manually is error-prone. One unwrapped duck and our counts are wrong.",
+  panels: "full",
+  left: {
+    label: ["code", "The Human Error Problem"],
+    code: `void simulate() {
+    Quackable mallard  = new QuackCounter(new MallardDuck());   <span class="cm">// ✓ Wrapped</span>
+    Quackable redhead  = new QuackCounter(new RedheadDuck());   <span class="cm">// ✓ Wrapped</span>
+    Quackable duckCall = <span class="hi-r">new DuckCall()</span>;                        <span class="cm">// ✗ FORGOT!</span>
+    Quackable rubber   = new QuackCounter(new RubberDuck());    <span class="cm">// ✓ Wrapped</span>
+    Quackable goose    = new GooseAdapter(new Goose());         <span class="cm">// Not counted</span>
+
+    <span class="cm">// duckCall's quacks will NEVER be counted!</span>
+    <span class="cm">// The data is now unreliable.</span>
+
+    <span class="cm">// We need to ENCAPSULATE the creation of ducks</span>
+    <span class="cm">// so decoration happens automatically.</span>
+    <span class="cm">// What pattern encapsulates object creation</span>
+    <span class="cm">// into families of related products?</span>
+}`
+  },
+  callout: ["danger", "The problem is that <strong>object creation is scattered</strong> throughout the client code. If we forget to wrap even ONE duck, our data is wrong. We need to <strong>encapsulate creation</strong> so that every duck automatically gets its decorator. <strong>That's the Abstract Factory Pattern!</strong>"]
+},
+
+// ============================================================
+// STEP 7: ABSTRACT FACTORY
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-blue", "Pattern #3 — Abstract Factory"],
+  title: "Abstract Factory — Guaranteed Decoration",
+  subtitle: "We create a factory that produces ducks. The CountingDuckFactory automatically wraps every duck in a QuackCounter.",
+  panels: "dual",
+  principle: { title: "Abstract Factory Pattern", text: "Provide an interface for creating families of related objects without specifying their concrete classes. Now decoration can't be forgotten — the factory handles it!" },
+  left: {
+    label: ["after", "The Duck Factories"],
+    code: `<span class="hi-b">public abstract class AbstractDuckFactory {</span>
+    public abstract Quackable createMallardDuck();
+    public abstract Quackable createRedheadDuck();
+    public abstract Quackable createDuckCall();
+    public abstract Quackable createRubberDuck();
+<span class="hi-b">}</span>
+
+<span class="hi-g">public class CountingDuckFactory</span>
+        extends AbstractDuckFactory {
+
+    public Quackable createMallardDuck() {
+        return <span class="hi-g">new QuackCounter(new MallardDuck())</span>;
+    }
+    public Quackable createRedheadDuck() {
+        return <span class="hi-g">new QuackCounter(new RedheadDuck())</span>;
+    }
+    public Quackable createDuckCall() {
+        return <span class="hi-g">new QuackCounter(new DuckCall())</span>;
+    }
+    public Quackable createRubberDuck() {
+        return <span class="hi-g">new QuackCounter(new RubberDuck())</span>;
+    }
+}`
+  },
+  right: {
+    label: ["diagram", "Factory Hierarchy"],
+    diagram: `
+      <div class="cd-box factory">
+        <div class="cd-h">AbstractDuckFactory<small>Abstract Factory</small></div>
+        <div class="cd-m">+ createMallardDuck()<br>+ createRedheadDuck()<br>+ createDuckCall()<br>+ createRubberDuck()</div>
+      </div>
+      <div class="cd-arr">△ extends</div>
+      <div class="cd-row">
+        <div class="cd-box">
+          <div class="cd-h">DuckFactory</div>
+          <div class="cd-m"><small>Plain ducks</small></div>
+        </div>
+        <div class="cd-box good">
+          <div class="cd-h">CountingDuckFactory</div>
+          <div class="cd-m"><small>Auto-decorated!</small></div>
+        </div>
+      </div>
+      <div class="cd-arr" style="margin-top:10px">produces ▼</div>
+      <div class="cd-box dec" style="display:inline-block">
+        <div class="cd-h">QuackCounter ◇ Duck</div>
+      </div>`
+  },
+  callout: ["success", "<strong>Pattern count: 3.</strong> Now the CountingDuckFactory guarantees every duck gets wrapped. The simulator just asks the factory for ducks — it never touches concrete classes. But Ranger Brewer has a new problem: <strong>managing all these ducks individually is chaos!</strong>"]
+},
+
+// ============================================================
+// STEP 8: PROBLEM — MANAGING DUCKS
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-red", "Problem #4"],
+  title: "\"Can We Manage Ducks as a Group?\"",
+  subtitle: "Ranger Brewer is overwhelmed. He wants to manage flocks, sub-flocks, and duck families — not individuals.",
+  panels: "full",
+  left: {
+    label: ["code", "The Management Nightmare"],
+    code: `void simulate(AbstractDuckFactory duckFactory) {
+    Quackable mallardDuck = duckFactory.createMallardDuck();
+    Quackable redheadDuck = duckFactory.createRedheadDuck();
+    Quackable duckCall    = duckFactory.createDuckCall();
+    Quackable rubberDuck  = duckFactory.createRubberDuck();
+    Quackable gooseDuck   = new GooseAdapter(new Goose());
+
+    <span class="hi-r">simulate(mallardDuck);</span>   <span class="cm">// One at a time?!</span>
+    <span class="hi-r">simulate(redheadDuck);</span>   <span class="cm">// One at a time?!</span>
+    <span class="hi-r">simulate(duckCall);</span>      <span class="cm">// One at a time?!</span>
+    <span class="hi-r">simulate(rubberDuck);</span>    <span class="cm">// One at a time?!</span>
+    <span class="hi-r">simulate(gooseDuck);</span>     <span class="cm">// One at a time?!</span>
+
+    <span class="cm">// What if we want to simulate the "mallard family"</span>
+    <span class="cm">// as a group? Or ALL ducks at once?</span>
+    <span class="cm">// We need to treat collections AND individuals</span>
+    <span class="cm">// uniformly. What pattern does that?</span>
+}`
+  },
+  callout: ["danger", "We need a way to treat <strong>collections of ducks</strong> the same as <strong>individual ducks</strong>. We also want <strong>sub-groups</strong> (duck families). We need a tree structure where flocks contain ducks or other flocks. <strong>That's the Composite Pattern!</strong>"]
+},
+
+// ============================================================
+// STEP 9: COMPOSITE + ITERATOR
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-blue", "Patterns #4 & #5 — Composite + Iterator"],
+  title: "Composite + Iterator — Flock Management",
+  subtitle: "A Flock IS a Quackable that contains other Quackables (including other Flocks). It uses Iterator internally.",
+  panels: "dual",
+  principle: { title: "Composite Pattern + Iterator", text: "Compose objects into tree structures to represent part-whole hierarchies. Composite lets clients treat individual objects and compositions uniformly. Iterator provides a way to traverse the collection." },
+  left: {
+    label: ["after", "Flock — The Composite"],
+    code: `<span class="hi-g">public class Flock implements Quackable {</span>
+    ArrayList quackers = new ArrayList();
+
+    public void <span class="hi-y">add</span>(Quackable quacker) {
+        quackers.add(quacker);
+    }
+
+    public void quack() {
+        <span class="hi-p">Iterator iter = quackers.iterator();</span>
+        while (iter.hasNext()) {
+            Quackable q = (Quackable) iter.next();
+            q.quack();  <span class="cm">// Works on ducks AND flocks!</span>
+        }
+    }
+<span class="hi-g">}</span>
+
+<span class="cm">// Build a flock hierarchy:</span>
+Flock mainFlock = new Flock();
+Flock mallardFamily = new Flock();
+mallardFamily.add(mallard1);
+mallardFamily.add(mallard2);
+<span class="hi-g">mainFlock.add(mallardFamily);</span>  <span class="cm">// Flock of flocks!</span>
+mainFlock.add(redhead);
+
+<span class="hi-g">simulate(mainFlock);</span>  <span class="cm">// Simulates EVERYTHING</span>`
+  },
+  right: {
+    label: ["diagram", "Tree Structure"],
+    diagram: `
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>Quackable</div>
+        <div class="cd-m">+ quack()</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box comp">
+          <div class="cd-h">Flock<small>Composite</small></div>
+          <div class="cd-b">ArrayList quackers</div>
+          <div class="cd-m">+ add(Quackable)<br>+ quack()</div>
+        </div>
+      </div>
+      <div class="cd-arr">◇ contains</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">Duck</div><div class="cd-m"><small>leaf</small></div></div>
+        <div class="cd-box comp"><div class="cd-h">Flock</div><div class="cd-m"><small>sub-flock</small></div></div>
+        <div class="cd-box obs"><div class="cd-h">GooseAdapter</div><div class="cd-m"><small>leaf</small></div></div>
+      </div>
+      <div style="margin-top:12px;font-size:0.7rem;color:var(--text-teal);text-align:center"><em>Iterator used internally to traverse children</em></div>`
+  },
+  callout: ["success", "<strong>Pattern count: 5.</strong> Now Ranger Brewer can manage entire flocks with a single call! The Composite Pattern lets us treat one duck the same as a whole flock. The Iterator is baked right in. But the Quackologists have one more request: <strong>\"Can we observe individual duck behavior in real time?\"</strong>"]
+},
+
+// ============================================================
+// STEP 10: PROBLEM — OBSERVING
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-red", "Problem #5"],
+  title: "\"We Want Real-Time Duck Tracking!\"",
+  subtitle: "The Quackologists want to be notified every time an individual duck quacks. They want to observe the system.",
+  panels: "full",
+  left: {
+    label: ["code", "The Observation Problem"],
+    code: `<span class="cm">// The Quackologists want to know:</span>
+<span class="cm">//   "Mallard Duck just quacked!"</span>
+<span class="cm">//   "Rubber Duck just quacked!"</span>
+<span class="cm">//   ...after EVERY quack, in real time.</span>
+
+<span class="cm">// We can't poll — we need PUSH notifications.</span>
+<span class="cm">// We need ducks to notify interested observers</span>
+<span class="cm">// whenever they quack.</span>
+
+<span class="cm">// And here's the twist:</span>
+<span class="cm">// We want to observe a FLOCK (the Composite)</span>
+<span class="cm">// which means registering with every child!</span>
+
+<span class="cm">// What pattern defines a one-to-many dependency</span>
+<span class="cm">// so that when one object changes state,</span>
+<span class="cm">// all its dependents are notified?</span>`
+  },
+  callout: ["danger", "We need a <strong>one-to-many notification system</strong>. When a duck quacks, all registered Quackologists should be notified. And it needs to work with our Composite — observing a Flock should register you with every member. <strong>That's the Observer Pattern!</strong>"]
+},
+
+// ============================================================
+// STEP 11: OBSERVER PATTERN
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-blue", "Pattern #6 — Observer"],
+  title: "Observer Pattern — Quackologist Notification",
+  subtitle: "Every Quackable becomes observable. Quackologists register and get notified on every quack.",
+  panels: "dual",
+  principle: { title: "Observer Pattern", text: "Define a one-to-many dependency between objects so that when one object changes state, all its dependents are notified and updated automatically." },
+  left: {
+    label: ["after", "Observable Quackables"],
+    code: `<span class="hi-b">public interface QuackObservable {</span>
+    public void registerObserver(Observer o);
+    public void notifyObservers();
+<span class="hi-b">}</span>
+
+<span class="cm">// Quackable now extends QuackObservable!</span>
+<span class="hi-g">public interface Quackable extends QuackObservable {</span>
+    public void quack();
+<span class="hi-g">}</span>
+
+<span class="cm">// Helper class does the heavy lifting:</span>
+public class Observable implements QuackObservable {
+    ArrayList observers = new ArrayList();
+    QuackObservable duck;
+
+    public Observable(QuackObservable duck) {
+        this.duck = duck;
+    }
+    public void registerObserver(Observer o) {
+        observers.add(o);
+    }
+    public void notifyObservers() {
+        Iterator i = observers.iterator();
+        while (i.hasNext()) {
+            Observer o = (Observer) i.next();
+            <span class="hi-g">o.update(duck);</span>
+        }
+    }
+}
+
+<span class="cm">// Quackologist — the Observer:</span>
+public class <span class="hi-y">Quackologist</span> implements Observer {
+    public void update(QuackObservable duck) {
+        System.out.println("Quackologist: "
+            + duck + " just quacked.");
+    }
+}`
+  },
+  right: {
+    label: ["diagram", "Observer Wiring"],
+    diagram: `
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>QuackObservable</div>
+        <div class="cd-m">+ registerObserver(Observer)<br>+ notifyObservers()</div>
+      </div>
+      <div class="cd-arr">△ extends</div>
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>Quackable</div>
+        <div class="cd-m">+ quack()</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box good"><div class="cd-h">MallardDuck</div><div class="cd-b">Observable obs</div><div class="cd-m">+ quack()<br>+ register/notify</div></div>
+        <div class="cd-box comp"><div class="cd-h">Flock</div><div class="cd-m"><small>registers with all children</small></div></div>
+      </div>
+      <div class="cd-arr">notifies ▼</div>
+      <div class="cd-box obs">
+        <div class="cd-h">Quackologist<small>Observer</small></div>
+        <div class="cd-m">+ update(QuackObservable)</div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="cd-box" style="display:inline-block">
+          <div class="cd-h">Observable<small>Helper</small></div>
+          <div class="cd-b">ArrayList observers</div>
+          <div class="cd-m">+ register / notify</div>
+        </div>
+      </div>`
+  },
+  callout: ["success", "<strong>Pattern count: 6!</strong> The clever part: when you register with a <em>Flock</em>, it cascades your registration to every child — including sub-Flocks! The Observable helper class prevents duplicating observer code in every duck."]
+},
+
+// ============================================================
+// STEP 12: COMPLETE OUTPUT
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-green", "Integration"],
+  title: "The Grand Duck Finale!",
+  subtitle: "All six patterns working in harmony. Let's see the final output.",
+  panels: "dual",
+  left: {
+    label: ["code", "Final Simulator"],
+    code: `void simulate(AbstractDuckFactory factory) {
+  <span class="cm">// Create ducks via factory (auto-decorated)</span>
+  Quackable red   = factory.createRedheadDuck();
+  Quackable call  = factory.createDuckCall();
+  Quackable rub   = factory.createRubberDuck();
+  Quackable goose = <span class="hi-y">new GooseAdapter(new Goose())</span>;
+
+  <span class="cm">// Build composite flocks</span>
+  Flock mainFlock    = new Flock();
+  Flock mallardFlock = new Flock();
+  mallardFlock.add(factory.createMallardDuck());
+  mallardFlock.add(factory.createMallardDuck());
+  mallardFlock.add(factory.createMallardDuck());
+  mallardFlock.add(factory.createMallardDuck());
+
+  mainFlock.add(red);
+  mainFlock.add(call);
+  mainFlock.add(rub);
+  mainFlock.add(goose);
+  <span class="hi-g">mainFlock.add(mallardFlock);</span>
+
+  <span class="cm">// Register observer with entire flock</span>
+  Quackologist quackologist = new Quackologist();
+  <span class="hi-g">mainFlock.registerObserver(quackologist);</span>
+
+  <span class="cm">// Simulate everything with one call!</span>
+  <span class="hi-g">simulate(mainFlock);</span>
+
+  System.out.println("Quacked "
+      + QuackCounter.getQuacks() + " times");
+}`
+  },
+  right: {
+    label: ["", "Output"],
+    diagram: `
+      <div class="output-box" style="font-size:0.7rem">
+<span class="prompt">% java DuckSimulator</span>
+Duck Simulator: With Observer
+Quack
+<span class="hi-g">Quackologist: Redhead Duck just quacked.</span>
+Kwak
+<span class="hi-g">Quackologist: Duck Call just quacked.</span>
+Squeak
+<span class="hi-g">Quackologist: Rubber Duck just quacked.</span>
+Honk
+<span class="hi-g">Quackologist: Goose pretending to be a Duck just quacked.</span>
+Quack
+<span class="hi-g">Quackologist: Mallard Duck just quacked.</span>
+Quack
+<span class="hi-g">Quackologist: Mallard Duck just quacked.</span>
+Quack
+<span class="hi-g">Quackologist: Mallard Duck just quacked.</span>
+Quack
+<span class="hi-g">Quackologist: Mallard Duck just quacked.</span>
+The ducks quacked 7 times.
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:0.75rem;color:var(--text-success);font-weight:600">
+        ✓ Every quack observed · ✓ All quacks counted · ✓ Goose not counted
+      </div>`
+  },
+  callout: ["purple", "Six patterns working in concert! <strong>Adapter</strong> (Goose→Quackable), <strong>Decorator</strong> (QuackCounter), <strong>Abstract Factory</strong> (CountingDuckFactory), <strong>Composite</strong> (Flock), <strong>Iterator</strong> (traversal), and <strong>Observer</strong> (Quackologist). But this is NOT a compound pattern — just patterns working together. The <em>real</em> compound pattern is coming..."]
+},
+
+// ============================================================
+// STEP 13: FULL DUCK CLASS DIAGRAM
+// ============================================================
+{
+  part: "Part 1 · Patterns Working Together",
+  pill: ["pill-purple", "Duck's Eye View"],
+  title: "The Complete Duck Simulator Architecture",
+  subtitle: "Six patterns, one unified design. Study this diagram — every pattern has a role.",
+  panels: "full",
+  left: {
+    label: ["diagram", "Complete Class Diagram — All 6 Patterns"],
+    diagram: `
+      <div class="cd-row" style="margin-bottom:6px">
+        <div class="cd-box iface" style="min-width:170px">
+          <div class="cd-h">«interface» QuackObservable</div>
+          <div class="cd-m">+ registerObserver(Observer)<br>+ notifyObservers()</div>
+        </div>
+      </div>
+      <div class="cd-arr">△ extends</div>
+      <div class="cd-row" style="margin-bottom:6px">
+        <div class="cd-box iface" style="min-width:140px">
+          <div class="cd-h">«interface» Quackable</div>
+          <div class="cd-m">+ quack()</div>
+        </div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row" style="gap:8px;margin-bottom:8px">
+        <div class="cd-box good" style="min-width:100px">
+          <div class="cd-h" style="font-size:0.62rem">MallardDuck</div>
+          <div class="cd-m" style="font-size:0.58rem">+ quack()<br>+ register/notify</div>
+        </div>
+        <div class="cd-box good" style="min-width:100px">
+          <div class="cd-h" style="font-size:0.62rem">RedheadDuck</div>
+          <div class="cd-m" style="font-size:0.58rem">+ quack()<br>+ register/notify</div>
+        </div>
+        <div class="cd-box good" style="min-width:100px">
+          <div class="cd-h" style="font-size:0.62rem">DuckCall</div>
+          <div class="cd-m" style="font-size:0.58rem">+ quack()<br>+ register/notify</div>
+        </div>
+        <div class="cd-box good" style="min-width:100px">
+          <div class="cd-h" style="font-size:0.62rem">RubberDuck</div>
+          <div class="cd-m" style="font-size:0.58rem">+ quack()<br>+ register/notify</div>
+        </div>
+      </div>
+      <div class="cd-row" style="gap:8px;margin-bottom:8px">
+        <div class="cd-box obs" style="min-width:120px">
+          <div class="cd-h" style="font-size:0.62rem">GooseAdapter<small>Adapter</small></div>
+          <div class="cd-b" style="font-size:0.58rem">Goose goose</div>
+          <div class="cd-m" style="font-size:0.58rem">+ quack()→honk()</div>
+        </div>
+        <div class="cd-box dec" style="min-width:120px">
+          <div class="cd-h" style="font-size:0.62rem">QuackCounter<small>Decorator</small></div>
+          <div class="cd-b" style="font-size:0.58rem">Quackable duck</div>
+          <div class="cd-m" style="font-size:0.58rem">+ quack() + count</div>
+        </div>
+        <div class="cd-box comp" style="min-width:120px">
+          <div class="cd-h" style="font-size:0.62rem">Flock<small>Composite</small></div>
+          <div class="cd-b" style="font-size:0.58rem">ArrayList ducks</div>
+          <div class="cd-m" style="font-size:0.58rem">+ add() + quack()</div>
+        </div>
+      </div>
+      <div class="cd-row" style="gap:8px">
+        <div class="cd-box" style="min-width:120px">
+          <div class="cd-h" style="font-size:0.62rem">Observable<small>Helper</small></div>
+          <div class="cd-b" style="font-size:0.58rem">ArrayList observers</div>
+          <div class="cd-m" style="font-size:0.58rem">+ register/notify</div>
+        </div>
+        <div class="cd-box factory" style="min-width:140px">
+          <div class="cd-h" style="font-size:0.62rem">CountingDuckFactory<small>Abstract Factory</small></div>
+          <div class="cd-m" style="font-size:0.58rem">+ createMallardDuck()<br>+ createRedheadDuck()<br>+ createDuckCall()<br>+ createRubberDuck()</div>
+        </div>
+        <div class="cd-box obs" style="min-width:110px">
+          <div class="cd-h" style="font-size:0.62rem">Quackologist<small>Observer</small></div>
+          <div class="cd-m" style="font-size:0.58rem">+ update()</div>
+        </div>
+      </div>`
+  },
+  callout: ["purple", "This was a workout! But remember: this is <strong>NOT</strong> a compound pattern — it's just patterns working together. A true compound pattern is a <strong>general-purpose combination</strong> that solves a recurring problem. Time to meet the king of compound patterns... <strong>Model-View-Controller!</strong>"]
+},
+
+// ============================================================
+// STEP 14: SECTION DIVIDER — MVC
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-purple", "Revelation"],
+  title: "The King of Compound Patterns: MVC",
+  subtitle: "Model-View-Controller isn't just a design pattern — it's a compound pattern made of patterns you already know!",
+  panels: "full",
+  left: {
+    label: ["diagram", "MVC — The Big Picture"],
+    diagram: `
+      <div style="text-align:center;margin-bottom:14px">
+        <em style="font-size:0.8rem;color:var(--text-secondary)">You interact with the View. The Controller translates your actions. The Model manages state.</em>
+      </div>
+      <div class="cd-row" style="gap:16px">
+        <div class="cd-box ctx" style="min-width:140px">
+          <div class="cd-h">View</div>
+          <div class="cd-m">Your window to the model.<br>Displays state.<br>Sends user actions<br>to Controller.</div>
+        </div>
+        <div class="cd-box factory" style="min-width:140px">
+          <div class="cd-h">Controller</div>
+          <div class="cd-m">The "brains" of the UI.<br>Interprets user input.<br>Manipulates the Model.<br>Updates the View.</div>
+        </div>
+        <div class="cd-box obs" style="min-width:140px">
+          <div class="cd-h">Model</div>
+          <div class="cd-m">All data, state &amp;<br>application logic.<br>Notifies observers<br>of state changes.</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;text-align:center">
+        <div style="display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center">
+          <div style="padding:6px 12px;background:var(--bg-info);border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--text-info)">① You → View</div>
+          <div style="padding:6px 12px;background:var(--bg-warning);border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--text-warning)">② View → Controller</div>
+          <div style="padding:6px 12px;background:var(--bg-danger);border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--text-danger)">③ Controller → Model</div>
+          <div style="padding:6px 12px;background:var(--bg-success);border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--text-success)">④ Model notifies View</div>
+          <div style="padding:6px 12px;background:var(--bg-purple);border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--text-purple)">⑤ View updates display</div>
+        </div>
+      </div>`
+  },
+  callout: ["purple", "Here's the secret to learning MVC: <strong>it's just a few patterns put together!</strong> The Model uses <strong>Observer</strong>, the View uses <strong>Composite</strong>, and the Controller is the <strong>Strategy</strong> for the View. When you see it through pattern-colored glasses, MVC finally clicks."]
+},
+
+// ============================================================
+// STEP 15: MVC THROUGH PATTERN GLASSES
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-blue", "MVC Decomposed"],
+  title: "MVC Through Pattern-Colored Glasses",
+  subtitle: "Three patterns, three roles. Each pattern solves a specific problem within the MVC triad.",
+  panels: "full",
+  left: {
+    label: ["diagram", "The Three Patterns Inside MVC"],
+    diagram: `
+      <div class="cd-row" style="gap:14px;margin-bottom:16px">
+        <div style="flex:1;min-width:180px;background:var(--bg-info);border:2px solid var(--hi-b-border);border-radius:10px;padding:12px">
+          <div style="font-weight:700;font-size:0.78rem;color:var(--text-info);margin-bottom:6px">Observer Pattern</div>
+          <div style="font-size:0.72rem;color:var(--text-secondary);line-height:1.5">
+            <strong>Where:</strong> The Model<br>
+            <strong>How:</strong> Model is the Observable. Views &amp; Controllers are Observers.<br>
+            <strong>Why:</strong> Keeps Model independent. Multiple views can observe the same model.
+          </div>
+        </div>
+        <div style="flex:1;min-width:180px;background:var(--bg-purple);border:2px solid var(--hi-p-border);border-radius:10px;padding:12px">
+          <div style="font-weight:700;font-size:0.78rem;color:var(--text-purple);margin-bottom:6px">Strategy Pattern</div>
+          <div style="font-size:0.72rem;color:var(--text-secondary);line-height:1.5">
+            <strong>Where:</strong> View ↔ Controller<br>
+            <strong>How:</strong> Controller IS the strategy for the View. Swappable!<br>
+            <strong>Why:</strong> Different controllers = different behaviors for the same view.
+          </div>
+        </div>
+        <div style="flex:1;min-width:180px;background:var(--bg-teal);border:2px solid rgba(94,212,200,0.5);border-radius:10px;padding:12px">
+          <div style="font-weight:700;font-size:0.78rem;color:var(--text-teal);margin-bottom:6px">Composite Pattern</div>
+          <div style="font-size:0.72rem;color:var(--text-secondary);line-height:1.5">
+            <strong>Where:</strong> The View<br>
+            <strong>How:</strong> View is a nested tree of GUI components (panels, buttons, labels).<br>
+            <strong>Why:</strong> Controller tells top component to update; Composite handles the rest.
+          </div>
+        </div>
+      </div>
+      <div class="cd-row" style="gap:12px">
+        <div class="cd-box obs" style="min-width:130px">
+          <div class="cd-h">Model<small>Observable</small></div>
+          <div class="cd-m">notifyObservers()<br>getState()</div>
+        </div>
+        <div class="cd-box ctx" style="min-width:130px">
+          <div class="cd-h">View<small>Composite + Observer</small></div>
+          <div class="cd-m">update()<br>display()</div>
+        </div>
+        <div class="cd-box factory" style="min-width:130px">
+          <div class="cd-h">Controller<small>Strategy</small></div>
+          <div class="cd-m">handleInput()<br>updateModel()</div>
+        </div>
+      </div>`
+  },
+  callout: ["info", "This is the <strong>aha! moment</strong>: MVC isn't something new to memorize — it's patterns you already know, composed together! The Model doesn't know about the View. The View doesn't know about the Controller's implementation. Everything is <strong>loosely coupled</strong>."]
+},
+
+// ============================================================
+// STEP 16: THE MODEL (Observer)
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-blue", "Observer in MVC"],
+  title: "The Model — Observer Pattern at Work",
+  subtitle: "We're building a DJ Beat controller. The BeatModel manages the beat and notifies observers when state changes.",
+  panels: "dual",
+  left: {
+    label: ["code", "BeatModel — The Observable"],
+    code: `<span class="hi-b">public interface BeatModelInterface {</span>
+    void initialize();
+    void on();
+    void off();
+    void setBPM(int bpm);
+    int  getBPM();
+    <span class="hi-g">void registerObserver(BeatObserver o);</span>
+    <span class="hi-g">void removeObserver(BeatObserver o);</span>
+    <span class="hi-g">void registerObserver(BPMObserver o);</span>
+    <span class="hi-g">void removeObserver(BPMObserver o);</span>
+<span class="hi-b">}</span>
+
+public class BeatModel implements BeatModelInterface {
+    <span class="hi-y">ArrayList beatObservers = new ArrayList();</span>
+    <span class="hi-y">ArrayList bpmObservers  = new ArrayList();</span>
+    int bpm = 90;
+
+    public void setBPM(int bpm) {
+        this.bpm = bpm;
+        <span class="hi-g">notifyBPMObservers();</span>  <span class="cm">// Push!</span>
+    }
+
+    void beatEvent() {
+        <span class="hi-g">notifyBeatObservers();</span> <span class="cm">// Push!</span>
+    }
+    <span class="cm">// ... observer management methods</span>
+}`
+  },
+  right: {
+    label: ["diagram", "Model as Observable"],
+    diagram: `
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>BeatModelInterface</div>
+        <div class="cd-m">+ on() / off()<br>+ setBPM() / getBPM()<br>+ registerObserver()<br>+ removeObserver()</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-box obs">
+        <div class="cd-h">BeatModel<small>Observable</small></div>
+        <div class="cd-b">ArrayList beatObservers<br>ArrayList bpmObservers<br>int bpm</div>
+        <div class="cd-m">+ setBPM() → notify<br>+ beatEvent() → notify</div>
+      </div>
+      <div class="cd-arr">notifies ▼</div>
+      <div class="cd-row">
+        <div class="cd-box iface" style="min-width:110px">
+          <div class="cd-h" style="font-size:0.62rem">«interface»<br>BeatObserver</div>
+          <div class="cd-m" style="font-size:0.58rem">+ updateBeat()</div>
+        </div>
+        <div class="cd-box iface" style="min-width:110px">
+          <div class="cd-h" style="font-size:0.62rem">«interface»<br>BPMObserver</div>
+          <div class="cd-m" style="font-size:0.58rem">+ updateBPM()</div>
+        </div>
+      </div>`
+  },
+  callout: ["info", "The Model is <strong>completely independent</strong> — it has no idea what the View or Controller look like. It just manages beat state and notifies observers. Two observer interfaces: one for the beat pulse, one for BPM value changes."]
+},
+
+// ============================================================
+// STEP 17: THE VIEW (Composite + Observer)
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-teal", "Composite in MVC"],
+  title: "The View — Composite + Observer",
+  subtitle: "DJView is both an Observer of the Model AND a Composite of nested Swing components.",
+  panels: "dual",
+  left: {
+    label: ["code", "DJView — Observer + Composite"],
+    code: `public class DJView implements
+        <span class="hi-g">BeatObserver, BPMObserver</span> {
+
+    BeatModelInterface model;
+    <span class="hi-b">ControllerInterface controller;</span>  <span class="cm">// Strategy!</span>
+
+    <span class="cm">// GUI components (Composite Pattern!)</span>
+    <span class="hi-p">JFrame viewFrame;</span>        <span class="cm">// Top-level composite</span>
+    <span class="hi-p">  JPanel viewPanel;</span>      <span class="cm">// Contains...</span>
+    <span class="hi-p">    BeatBar beatBar;</span>     <span class="cm">// ...leaf</span>
+    <span class="hi-p">    JLabel bpmLabel;</span>     <span class="cm">// ...leaf</span>
+
+    <span class="cm">// Observer methods — called by Model</span>
+    public void <span class="hi-g">updateBPM()</span> {
+        int bpm = model.getBPM();
+        bpmLabel.setText("BPM: " + bpm);
+    }
+    public void <span class="hi-g">updateBeat()</span> {
+        beatBar.setValue(100);  <span class="cm">// Pulse!</span>
+    }
+
+    <span class="cm">// User actions delegate to Controller</span>
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == setBPMButton) {
+            <span class="hi-b">controller.setBPM(...);</span> <span class="cm">// Strategy!</span>
+        }
+    }
+}`
+  },
+  right: {
+    label: ["diagram", "View Architecture"],
+    diagram: `
+      <div class="cd-box ctx" style="min-width:200px">
+        <div class="cd-h">DJView<small>Observer + Composite root</small></div>
+        <div class="cd-b">BeatModelInterface model<br>ControllerInterface controller</div>
+        <div class="cd-m">+ updateBPM() ← Observer<br>+ updateBeat() ← Observer<br>+ actionPerformed() → Strategy</div>
+      </div>
+      <div class="cd-arr">contains (Composite) ▼</div>
+      <div class="cd-row">
+        <div class="cd-box comp" style="min-width:90px">
+          <div class="cd-h" style="font-size:0.62rem">JFrame</div>
+          <div class="cd-m" style="font-size:0.58rem">composite</div>
+        </div>
+        <div class="cd-box comp" style="min-width:90px">
+          <div class="cd-h" style="font-size:0.62rem">JPanel</div>
+          <div class="cd-m" style="font-size:0.58rem">composite</div>
+        </div>
+        <div class="cd-box good" style="min-width:90px">
+          <div class="cd-h" style="font-size:0.62rem">BeatBar</div>
+          <div class="cd-m" style="font-size:0.58rem">leaf</div>
+        </div>
+        <div class="cd-box good" style="min-width:90px">
+          <div class="cd-h" style="font-size:0.62rem">JButton</div>
+          <div class="cd-m" style="font-size:0.58rem">leaf</div>
+        </div>
+      </div>`
+  },
+  callout: ["teal", "The View plays <strong>two pattern roles</strong>: it's an <strong>Observer</strong> of the Model (gets notified of state changes) and it's a <strong>Composite</strong> of nested GUI components. When the controller says \"update,\" it only tells the top-level component — the Composite handles the rest."]
+},
+
+// ============================================================
+// STEP 18: THE CONTROLLER (Strategy)
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-purple", "Strategy in MVC"],
+  title: "The Controller — Strategy Pattern at Work",
+  subtitle: "The Controller IS the behavior strategy for the View. Swap in a different controller = different behavior, same view.",
+  panels: "dual",
+  left: {
+    label: ["code", "BeatController — The Strategy"],
+    code: `<span class="hi-b">public interface ControllerInterface {</span>
+    void start();
+    void stop();
+    void increaseBPM();
+    void decreaseBPM();
+    void setBPM(int bpm);
+<span class="hi-b">}</span>
+
+public class <span class="hi-g">BeatController</span>
+        implements ControllerInterface {
+    BeatModelInterface model;
+    DJView view;
+
+    public BeatController(BeatModelInterface model) {
+        this.model = model;
+        <span class="hi-y">view = new DJView(this, model);</span>
+        view.createView();
+        view.createControls();
+    }
+
+    <span class="cm">// The Controller decides what user</span>
+    <span class="cm">// actions MEAN for the Model:</span>
+    public void start() {
+        <span class="hi-g">model.on();</span>
+        view.disableStartMenuItem();
+        view.enableStopMenuItem();
+    }
+
+    public void increaseBPM() {
+        int bpm = model.getBPM();
+        <span class="hi-g">model.setBPM(bpm + 1);</span>
+    }
+
+    public void setBPM(int bpm) {
+        <span class="hi-g">model.setBPM(bpm);</span>
+    }
+}`
+  },
+  right: {
+    label: ["diagram", "Strategy — Swappable Controllers"],
+    diagram: `
+      <div class="cd-box iface">
+        <div class="cd-h">«interface»<br>ControllerInterface</div>
+        <div class="cd-m">+ start() / stop()<br>+ increaseBPM()<br>+ decreaseBPM()<br>+ setBPM(int)</div>
+      </div>
+      <div class="cd-arr">△ implements</div>
+      <div class="cd-row">
+        <div class="cd-box factory">
+          <div class="cd-h">BeatController<small>Strategy A</small></div>
+          <div class="cd-m">Controls the beat<br>model directly</div>
+        </div>
+        <div class="cd-box obs">
+          <div class="cd-h">HeartController<small>Strategy B</small></div>
+          <div class="cd-m">Controls the heart<br>model (read-only)</div>
+        </div>
+      </div>
+      <div class="cd-arr">◇ composed with</div>
+      <div class="cd-box ctx">
+        <div class="cd-h">DJView</div>
+        <div class="cd-b">ControllerInterface controller</div>
+        <div class="cd-m">Delegates user actions<br>to whatever controller<br>is plugged in</div>
+      </div>`
+  },
+  callout: ["purple", "The View doesn't know <em>how</em> user actions get translated into model changes — that's the Controller's job! And because Controller is a <strong>Strategy</strong>, we can swap in different controllers. <strong>Same view, different behavior.</strong> This is exactly how we'll reuse the DJView for a heart monitor..."]
+},
+
+// ============================================================
+// STEP 19: MVC INTEGRATION
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-green", "Integration"],
+  title: "Putting MVC Together — The DJ View",
+  subtitle: "Three lines of code wire up the entire MVC. The patterns do all the heavy lifting.",
+  panels: "dual",
+  left: {
+    label: ["code", "The Wiring — Just 3 Lines!"],
+    code: `public class DJTestDrive {
+    public static void main(String[] args) {
+        <span class="cm">// 1. Create the Model</span>
+        <span class="hi-g">BeatModelInterface model = new BeatModel();</span>
+
+        <span class="cm">// 2. Create Controller (it creates the View)</span>
+        <span class="hi-g">ControllerInterface ctrl = new BeatController(model);</span>
+
+        <span class="cm">// That's it! The Controller:</span>
+        <span class="cm">//   - creates the View, passing itself as strategy</span>
+        <span class="cm">//   - the View registers as Observer of Model</span>
+        <span class="cm">//   - user clicks → View → Controller → Model</span>
+        <span class="cm">//   - Model changes → notifies View → display updates</span>
+    }
+}
+
+<span class="cm">// The flow when user clicks "increase BPM":</span>
+<span class="cm">// ① User clicks button (View)</span>
+<span class="cm">// ② View calls controller.increaseBPM() (Strategy)</span>
+<span class="cm">// ③ Controller calls model.setBPM(bpm+1)</span>
+<span class="cm">// ④ Model updates state, calls notifyBPMObservers()</span>
+<span class="cm">// ⑤ View.updateBPM() is called (Observer)</span>
+<span class="cm">// ⑥ View updates its Composite display</span>`
+  },
+  right: {
+    label: ["diagram", "The Complete MVC Flow"],
+    diagram: `
+      <div style="text-align:center;margin-bottom:12px;font-size:0.72rem;color:var(--text-secondary)">
+        <em>The flow when the user clicks "increase BPM":</em>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="padding:8px 14px;background:var(--bg-info);border-radius:8px;font-size:0.72rem;font-weight:600;color:var(--text-info);width:70%;text-align:center">① You click the [+] button</div>
+        <div style="font-size:0.9rem;color:var(--text-tertiary)">↓</div>
+        <div style="padding:8px 14px;background:var(--bg-teal);border-radius:8px;font-size:0.72rem;font-weight:600;color:var(--text-teal);width:70%;text-align:center">② View calls controller.increaseBPM()</div>
+        <div style="font-size:0.9rem;color:var(--text-tertiary)">↓ <span style="font-size:0.6rem">(Strategy)</span></div>
+        <div style="padding:8px 14px;background:var(--bg-purple);border-radius:8px;font-size:0.72rem;font-weight:600;color:var(--text-purple);width:70%;text-align:center">③ Controller calls model.setBPM(bpm + 1)</div>
+        <div style="font-size:0.9rem;color:var(--text-tertiary)">↓</div>
+        <div style="padding:8px 14px;background:var(--bg-coral);border-radius:8px;font-size:0.72rem;font-weight:600;color:var(--text-coral);width:70%;text-align:center">④ Model updates, calls notifyObservers()</div>
+        <div style="font-size:0.9rem;color:var(--text-tertiary)">↓ <span style="font-size:0.6rem">(Observer)</span></div>
+        <div style="padding:8px 14px;background:var(--bg-success);border-radius:8px;font-size:0.72rem;font-weight:600;color:var(--text-success);width:70%;text-align:center">⑤ View.updateBPM() → display shows 120 BPM</div>
+      </div>`
+  },
+  callout: ["success", "Three lines of setup, and the patterns handle everything! The Model is blissfully ignorant of the View. The View is decoupled from the Controller via Strategy. And the Composite pattern manages the nested GUI components. <strong>This is the power of compound patterns.</strong>"]
+},
+
+// ============================================================
+// STEP 20: ADAPTER IN MVC
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-yellow", "Trade-off — Adapter"],
+  title: "Reuse with Adapter — Heart Monitor",
+  subtitle: "The HeartModel has getHeartRate() instead of getBPM(). Adapter bridges the gap — same View, different Model!",
+  panels: "dual",
+  left: {
+    label: ["code", "HeartAdapter — Adapting the Model"],
+    code: `<span class="cm">// HeartModel has different interface:</span>
+public interface HeartModelInterface {
+    int <span class="hi-r">getHeartRate()</span>;  <span class="cm">// Not getBPM()!</span>
+    void registerObserver(BeatObserver o);
+    void registerObserver(BPMObserver o);
+    <span class="cm">// No on()/off()/setBPM() — can't control a heart!</span>
+}
+
+<span class="cm">// Adapter translates BeatModel → HeartModel</span>
+<span class="hi-g">public class HeartAdapter implements BeatModelInterface {</span>
+    HeartModelInterface heart;
+
+    public HeartAdapter(HeartModelInterface heart) {
+        this.heart = heart;
+    }
+
+    public int getBPM() {
+        return <span class="hi-g">heart.getHeartRate();</span>  <span class="cm">// Translate!</span>
+    }
+
+    <span class="cm">// on/off/setBPM are no-ops for a heart</span>
+    public void on() {}
+    public void off() {}
+    public void setBPM(int bpm) {}
+
+    public void registerObserver(BeatObserver o) {
+        <span class="hi-y">heart.registerObserver(o);</span>
+    }
+    <span class="cm">// ... remaining delegation ...</span>
+<span class="hi-g">}</span>`
+  },
+  right: {
+    label: ["diagram", "Adapter Enables Reuse"],
+    diagram: `
+      <div class="cd-row" style="gap:12px;margin-bottom:8px">
+        <div class="cd-box iface" style="min-width:130px">
+          <div class="cd-h" style="font-size:0.62rem">BeatModelInterface</div>
+          <div class="cd-m" style="font-size:0.58rem">+ getBPM()<br>+ on() / off()</div>
+        </div>
+        <div class="cd-box iface" style="min-width:130px">
+          <div class="cd-h" style="font-size:0.62rem">HeartModelInterface</div>
+          <div class="cd-m" style="font-size:0.58rem">+ getHeartRate()</div>
+        </div>
+      </div>
+      <div class="cd-arr">HeartAdapter bridges ▼</div>
+      <div class="cd-box obs" style="min-width:180px">
+        <div class="cd-h">HeartAdapter<small>Adapter</small></div>
+        <div class="cd-b">HeartModelInterface heart</div>
+        <div class="cd-m">+ getBPM() → getHeartRate()<br>+ on/off/setBPM → no-op</div>
+      </div>
+      <div class="cd-arr" style="margin-top:10px">plugs into ▼</div>
+      <div class="cd-row">
+        <div class="cd-box ctx" style="min-width:120px">
+          <div class="cd-h" style="font-size:0.64rem">DJView<small>reused!</small></div>
+        </div>
+        <div class="cd-box factory" style="min-width:120px">
+          <div class="cd-h" style="font-size:0.64rem">HeartController<small>new strategy</small></div>
+        </div>
+      </div>`
+  },
+  callout: ["warning", "The Adapter Pattern shows up again! By adapting HeartModel to BeatModelInterface, we <strong>reuse the exact same DJView</strong> to display heartbeats. The HeartController is a new Strategy that disables start/stop (you can't stop a heart!). <strong>Four patterns working together in one design.</strong>"]
+},
+
+// ============================================================
+// STEP 21: MODEL 2 — WEB ADAPTATION
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-yellow", "Trade-off — Model 2"],
+  title: "Model 2 — MVC Adapted for the Web",
+  subtitle: "MVC doesn't look exactly the same on the web, but all the pattern roles are still there.",
+  panels: "dual",
+  left: {
+    label: ["", "Classic MVC vs. Model 2"],
+    diagram: `
+      <div style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:0.78rem;color:var(--text-info);margin-bottom:8px">Classic MVC (Desktop)</div>
+        <div style="font-size:0.72rem;color:var(--text-secondary);line-height:1.6">
+          • View directly observes Model (push notifications)<br>
+          • Controller composed with View via Strategy<br>
+          • GUI components form a Composite tree<br>
+          • Rich, real-time updates
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:0.78rem;color:var(--text-purple);margin-bottom:8px">Model 2 (Web)</div>
+        <div style="font-size:0.72rem;color:var(--text-secondary);line-height:1.6">
+          • <strong>Controller</strong> = Servlet (receives HTTP requests)<br>
+          • <strong>Model</strong> = Same as before (BeatModel)<br>
+          • <strong>View</strong> = JSP/HTML (generates the response page)<br>
+          • View doesn't directly observe — Controller passes state via a bean<br>
+          • HTML rendered by browser = still a Composite!
+        </div>
+      </div>`
+  },
+  right: {
+    label: ["diagram", "Model 2 Architecture"],
+    diagram: `
+      <div class="cd-row" style="gap:12px">
+        <div class="cd-box ctx" style="min-width:120px">
+          <div class="cd-h">Browser<small>renders View</small></div>
+          <div class="cd-m" style="font-size:0.58rem">HTML composite<br>User clicks form</div>
+        </div>
+      </div>
+      <div class="cd-arr">HTTP request ▼</div>
+      <div class="cd-box factory" style="min-width:160px">
+        <div class="cd-h">Servlet Controller</div>
+        <div class="cd-m" style="font-size:0.58rem">Parses user input<br>Updates Model<br>Passes bean to JSP</div>
+      </div>
+      <div class="cd-arr" style="display:flex;justify-content:space-around;width:80%">
+        <span>↓ changes</span>
+        <span>→ forwards</span>
+      </div>
+      <div class="cd-row" style="gap:12px">
+        <div class="cd-box obs" style="min-width:120px">
+          <div class="cd-h">BeatModel</div>
+          <div class="cd-m" style="font-size:0.58rem">setBPM()<br>getBPM()</div>
+        </div>
+        <div class="cd-box comp" style="min-width:120px">
+          <div class="cd-h">JSP/HTML View</div>
+          <div class="cd-m" style="font-size:0.58rem">Reads bean state<br>Generates HTML</div>
+        </div>
+      </div>
+      <div class="cd-arr">HTTP response ↑</div>`
+  },
+  callout: ["warning", "Model 2 adapts MVC for the web's request-response model. The patterns are still there — just <strong>adapted</strong>. Observer becomes indirect (controller passes state). Strategy is still present (servlet handles behavior). Composite is the HTML DOM. <strong>Patterns are flexible — they adapt to context!</strong>"]
+},
+
+// ============================================================
+// STEP 22: COMPOUND VS COLLECTION
+// ============================================================
+{
+  part: "Part 2 · The Real Compound Pattern",
+  pill: ["pill-purple", "Key Distinction"],
+  title: "Compound Pattern vs. Patterns Working Together",
+  subtitle: "This is the most important distinction in the chapter. Not every combination of patterns is a compound pattern.",
+  panels: "full",
+  left: {
+    label: ["", "The Critical Difference"],
+    diagram: `
+      <div class="two-col-text">
+        <div style="border-color:var(--cd-bad-border)">
+          <h4 style="color:var(--text-danger)">❌ Just Patterns Together</h4>
+          <p style="margin-bottom:8px"><strong>Duck Simulator</strong></p>
+          <p>We forced 6 patterns into one problem. Each pattern solved an <em>individual</em> problem. You'd never approach a real design this way — it was an exercise.</p>
+          <p style="margin-top:8px;font-size:0.72rem;color:var(--text-tertiary)">Adapter, Decorator, Abstract Factory, Composite, Iterator, Observer — each added independently to solve a new requirement.</p>
+        </div>
+        <div style="border-color:var(--cd-good-border)">
+          <h4 style="color:var(--text-success)">✓ True Compound Pattern</h4>
+          <p style="margin-bottom:8px"><strong>Model-View-Controller</strong></p>
+          <p>A <em>general-purpose solution</em> that solves a <em>recurring problem</em>. The patterns are <strong>interdependent</strong> — remove one and MVC falls apart.</p>
+          <p style="margin-top:8px;font-size:0.72rem;color:var(--text-teal)">Observer + Strategy + Composite work together as a unified solution that has been applied to thousands of designs.</p>
+        </div>
+      </div>`
+  },
+  callout: ["purple", "<strong>A Compound Pattern</strong> combines two or more patterns into a solution that solves a <strong>recurring or general problem</strong>. The patterns aren't just nearby — they're <em>interdependent</em>. MVC's Observer, Strategy, and Composite all depend on each other to create the separation of concerns. This is the definition to remember."]
+},
+
+// ============================================================
+// STEP 23: TOOLBOX UPDATE
+// ============================================================
+{
+  part: "Part 3 · Summary",
+  pill: ["pill-green", "Toolbox"],
+  title: "Your Complete Design Toolbox",
+  subtitle: "Chapter 12 adds Compound Patterns to your toolbox and reinforces that patterns work best together.",
+  panels: "full",
+  left: {
+    label: ["", "Complete Toolbox"],
+    diagram: `
+      <div class="toolbox-grid">
+        <div class="toolbox-col">
+          <h4>OO Principles</h4>
+          <div class="toolbox-item">• Encapsulate what varies</div>
+          <div class="toolbox-item">• Favor composition over inheritance</div>
+          <div class="toolbox-item">• Program to interfaces, not implementations</div>
+          <div class="toolbox-item">• Strive for loosely coupled designs</div>
+          <div class="toolbox-item">• Open for extension, closed for modification</div>
+          <div class="toolbox-item">• Depend on abstractions (DIP)</div>
+          <div class="toolbox-item">• Only talk to your friends (Law of Demeter)</div>
+          <div class="toolbox-item">• Don't call us, we'll call you (Hollywood)</div>
+          <div class="toolbox-item">• A class should have only one reason to change (SRP)</div>
+          <h4 style="margin-top:14px">OO Basics</h4>
+          <div class="toolbox-item">• Abstraction</div>
+          <div class="toolbox-item">• Encapsulation</div>
+          <div class="toolbox-item">• Polymorphism</div>
+          <div class="toolbox-item">• Inheritance</div>
+        </div>
+        <div class="toolbox-col">
+          <h4>Patterns Learned</h4>
+          <div class="toolbox-item">• Strategy — interchangeable algorithms</div>
+          <div class="toolbox-item">• Observer — one-to-many notifications</div>
+          <div class="toolbox-item">• Decorator — dynamic behavior wrapping</div>
+          <div class="toolbox-item">• Factory Method — subclass decides creation</div>
+          <div class="toolbox-item">• Abstract Factory — families of products</div>
+          <div class="toolbox-item">• Singleton — one instance, global access</div>
+          <div class="toolbox-item">• Command — encapsulate requests as objects</div>
+          <div class="toolbox-item">• Adapter — convert interfaces</div>
+          <div class="toolbox-item">• Facade — simplify complex subsystems</div>
+          <div class="toolbox-item">• Template Method — algorithm skeleton</div>
+          <div class="toolbox-item">• Iterator — traverse without exposing internals</div>
+          <div class="toolbox-item">• Composite — tree structures, uniform treatment</div>
+          <div class="toolbox-item">• State — behavior changes with state</div>
+          <div class="toolbox-item">• Proxy — placeholder/surrogate for access control</div>
+          <div class="toolbox-item new"><span class="star">★</span> Compound Patterns — patterns of patterns (MVC!)</div>
+        </div>
+      </div>`
+  },
+  callout: ["success", "<strong>The grand finale lesson:</strong> Patterns aren't meant to be used in isolation. The real power comes from understanding <em>how they fit together</em>. MVC proves it — Observer, Strategy, and Composite form something greater than the sum of its parts. And with Adapter, you can extend it even further. You now have a complete toolbox. Use it wisely — always apply patterns where they make sense, never just for the sake of it!"]
+}
+];
+
+let current = 0;
+
+function render() {
+  const s = steps[current];
+  const c = document.getElementById('stepContainer');
+  let html = '';
+
+  if (s.part) html += `<div class="part-label">${s.part}</div>`;
+
+  html += '<div class="step-header">';
+  if (s.pill) html += `<span class="pill ${s.pill[0]}">${s.pill[1]}</span>`;
+  html += `<span class="step-title">${s.title}</span>`;
+  html += '</div>';
+
+  if (s.subtitle) html += `<p class="step-subtitle">${s.subtitle}</p>`;
+  if (s.principle) {
+    html += `<div class="principle-box"><h3>🔑 ${s.principle.title}</h3><p>${s.principle.text}</p></div>`;
+  }
+  if (s.pattern) {
+    html += `<div class="pattern-box"><h3>💡 ${s.pattern.title}</h3><p>${s.pattern.text}</p></div>`;
+  }
+
+  const isFull = s.panels === 'full';
+  html += `<div class="panels ${isFull ? 'panel-full' : ''}">`;
+
+  // Left panel
+  if (s.left) {
+    html += '<div class="panel">';
+    if (s.left.label && s.left.label[1]) {
+      html += `<div class="panel-label ${s.left.label[0]}">${s.left.label[1]}</div>`;
+    }
+    if (s.left.code) {
+      html += `<div class="code-block">${s.left.code}</div>`;
+    }
+    if (s.left.diagram) {
+      html += `<div class="diagram-area">${s.left.diagram}</div>`;
+    }
+    html += '</div>';
+  }
+
+  // Right panel
+  if (s.right && !isFull) {
+    html += '<div class="panel">';
+    if (s.right.label && s.right.label[1]) {
+      html += `<div class="panel-label ${s.right.label[0]}">${s.right.label[1]}</div>`;
+    }
+    if (s.right.code) {
+      html += `<div class="code-block">${s.right.code}</div>`;
+    }
+    if (s.right.diagram) {
+      html += `<div class="diagram-area">${s.right.diagram}</div>`;
+    }
+    html += '</div>';
+  }
+
+  html += '</div>';
+
+  if (s.callout) {
+    html += `<div class="callout ${s.callout[0]}">${s.callout[1]}</div>`;
+  }
+
+  c.innerHTML = html;
+  c.style.animation = 'none';
+  c.offsetHeight;
+  c.style.animation = 'fadeSlide 0.35s ease';
+
+  // Update progress
+  const pct = ((current + 1) / steps.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('stepCounter').textContent = `${current + 1} / ${steps.length}`;
+
+  // Update buttons
+  document.getElementById('backBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === steps.length - 1;
+
+  // Update dots
+  const dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < steps.length; i++) {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === current ? ' active' : '');
+    d.onclick = () => { current = i; render(); };
+    d.title = `Step ${i + 1}`;
+    dotsEl.appendChild(d);
+  }
+}
+
+function go(dir) {
+  const next = current + dir;
+  if (next >= 0 && next < steps.length) {
+    current = next;
+    render();
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') go(1);
+  if (e.key === 'ArrowLeft') go(-1);
+});
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.querySelector('.theme-toggle').textContent = isDark ? '🌙' : '☀️';
+}
+
+render();
+</script>
+</body>
+</html>
