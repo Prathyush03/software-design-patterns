@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 26 — Custom Data Structures | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 26 — Custom Data Structures</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'LRU Cache',desc:'New chapter, new kind of task: the interviewer does not hand you an array to scan &mdash; they ask you to <strong>design the container itself</strong>. Build an <code>LRUCache</code> of fixed <code>capacity</code> with <code>get(key)</code> and <code>put(key, value)</code>, evicting the <strong>least-recently-used</strong> key when full &mdash; and <strong>every operation must run in O(1)</strong>.',
+code:{h:'The contract',b:`cache = LRUCache(capacity=2)
+cache.put(1, 1)          <span class="cm"># {1:1}</span>
+cache.put(2, 2)          <span class="cm"># {1:1, 2:2}</span>
+cache.get(1)      &rarr; 1     <span class="cm"># 1 is now most-recent</span>
+cache.put(3, 3)          <span class="cm"># full &rarr; evict 2 (the LRU key)</span>
+cache.get(2)      &rarr; -1    <span class="cm"># 2 was evicted</span>
+
+<span class="cm"># EVERY call &mdash; get AND put &mdash; must be O(1).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac dead">&mdash;</div>
+</div>
+<div class="av-cap">a bounded cache answers <b>two questions at once</b>: &ldquo;value of key k?&rdquo;<br>AND &ldquo;which key is least-recently used?&rdquo; &mdash; both in O(1). One array cannot do both.</div>`,
+callout:{type:'callout-ok',text:'Two demands fused into one container: fast lookup BY KEY and a live recency ORDER. Hold that double demand &mdash; it is the whole chapter.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force &mdash; one list, scan and shuffle',desc:'The obvious idea: keep a single list of <code>[key, value]</code> pairs ordered most-recent-first. <code>get</code> scans for the key, then moves it to the front. <code>put</code> scans too, and when full it pops the last element. Correct &mdash; it passes every sample.',
+code:{h:'lru_naive.py — the naive attempt',b:`class LRUCache:
+    def __init__(self, cap):
+        self.cap = cap
+        self.data = []                    <span class="cm"># [[k, v], ...] recent-first</span>
+
+    def get(self, key):
+        for i, (k, v) in enumerate(self.data):  <span class="cm"># O(n) scan</span>
+            if k == key:
+                self.data.pop(i)                <span class="cm"># O(n) shift</span>
+                self.data.insert(0, [k, v])     <span class="cm"># O(n) shift</span>
+                return v
+        return -1
+
+    def put(self, key, val):
+        ...                               <span class="cm"># scan, then pop self.data[-1]</span>
+
+<span class="cm"># O(n) PER OPERATION &mdash; the spec demanded O(1).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">7</div><div class="ac hot">4</div><div class="ac hot">9</div><div class="ac live">2</div><div class="ac">5</div>
+</div>
+<div class="av-cap">get(2): march left-to-right probing every entry until key <code>2</code> appears&hellip;</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac">7</div><div class="ac">4</div><div class="ac">9</div><div class="ac">5</div>
+</div>
+<div class="av-cap">&hellip;then shift it to the front. Both the search and the shift are O(n).<br>With n = 1e5 operations that is ~1e10 steps &rarr; TLE.</div>`,
+callout:{type:'callout-ok',text:'It is genuinely correct. But a single list can be ordered OR indexed &mdash; not both cheaply &mdash; so every call pays O(n). This time the hurt is a real big-O gap: O(n) where O(1) was required.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'The earlier chapters handed us three rules. This brute force is not subtly wrong &mdash; it is <strong>under-structured</strong>. Audit it: the failure is a missing second axis, and the rules point straight at it.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit &mdash; brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> One list is asked to hold TWO invariants at once &mdash; lookup-by-key and recency-order &mdash; but it can make only one of them O(1). The second axis is missing, so every query rebuilds it by scanning.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> &ldquo;Move the touched entry to the front&rdquo; is the right idea, but with one structure the splice costs an O(n) shift &mdash; the move cannot update &ldquo;where is key k&rdquo; and &ldquo;how recent is it&rdquo; cheaply at the same time.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> &ldquo;front = MRU, back = LRU&rdquo; is a correct place to read the answer &mdash; but reaching the right entry still costs O(n) because the lookup axis does not exist.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just runs them on ONE structure that can be fast along a single axis. We need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a CONJUNCTION of sub-structures',desc:'Stop forcing one container to do two jobs. <strong>Compose two structures</strong>: a hash map <code>key &rarr; node</code> for O(1) lookup, AND a doubly linked list holding the keys in recency order (MRU at the head, LRU at the tail). The invariant is that <strong>both sub-invariants hold at the same instant</strong>.',
+code:{h:'The promise — two structures, one invariant',b:`map:   key &rarr; the exact list node holding it   <span class="cm"># O(1) lookup axis</span>
+list:  head &harr; &hellip; &harr; tail                     <span class="cm"># O(1) order axis</span>
+       (most-recent) &hellip; (least-recent)
+
+<span class="hi-b"># INVARIANT — true after every operation:
+#   (1) map[k] points at k's node, for every live k
+#   (2) the list is in strict recency order.</span>
+
+<span class="cm"># Neither is ever true alone. They are true TOGETHER.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">k7</div><div class="ac live">k4</div><div class="ac live">k9</div>
+</div>
+<div class="av-cap">the doubly linked list: <b>head</b> (MRU) &rarr; k7 &rarr; k4 &rarr; k9 &rarr; <b>tail</b> (LRU)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">7&rarr;&#9679;</div><div class="ac hot">4&rarr;&#9679;</div><div class="ac hot">9&rarr;&#9679;</div>
+</div>
+<div class="av-cap">the map: each key points straight at its node &mdash; O(1) to find, no scan.<br>Ch.1&rsquo;s invariant described a single region (the discarded outside);<br>here it is a <b>conjunction</b> &mdash; two structures, each with its own invariant, both true at once.</div>`,
+callout:{type:'callout-info',text:'Same Rule #1 as always: name the property true after every step. What changed is that the property is now a PAIR of sub-invariants that must be preserved simultaneously.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a CONJUNCTION &mdash; a hash map (lookup) AND a doubly linked list (order), each with its own invariant, both held true at the same instant. Every extra axis you need becomes another component whose invariant joins the conjunction.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move updates every component atomically',desc:'A single operation never touches just one structure. On <code>get</code> or <code>put</code> you splice the node in the list AND fix the map <strong>in the same breath</strong> &mdash; so no caller ever observes one updated and the other stale. That atomic-across-parts update is the move.',
+code:{h:'The move — all parts, together',b:`def get(self, key):
+    n = self.map[key]              <span class="cm"># found via the map (O(1))</span>
+    <span class="hi-y">self._remove(n); self._add_front(n)</span>   <span class="cm"># unlink, relink at MRU</span>
+    return n.val
+    <span class="cm"># the map still points at n — untouched, still valid.</span>
+
+<span class="cm"># PROOF: each part is an O(1) update (a hash op +
+# a doubly-linked splice) and there is a CONSTANT number
+# of parts &rarr; O(1) per operation. Because they change
+# together, no sub-invariant is ever seen broken.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">k7</div><div class="ac hot">k4</div><div class="ac live">k9</div>
+</div>
+<div class="av-cap">get(k4): the map jumps straight to k4&rsquo;s node (no scan)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">k4</div><div class="ac live">k7</div><div class="ac live">k9</div>
+</div>
+<div class="av-cap">one atomic move: unlink k4, relink it at the head. The map entry for k4<br>never changed &mdash; both structures are consistent again in O(1).</div>`,
+callout:{type:'callout-info',text:'Ch.1&rsquo;s move retired one element per step; here nothing is retired &mdash; the move MIRRORS a change across every component so their invariants stay in lockstep. Its one-line proof (constant parts &times; O(1) each) is the O(1) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: one logical operation = a coordinated O(1) update of EVERY component. Irreversibility and safety come from atomicity &mdash; the parts move together, so no API call ever catches a half-updated structure.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest reads whichever component owns the answer',desc:'No search, ever. Each API call reads the ONE component built to answer it in O(1): a value query reads the <strong>map</strong>; an eviction reads the list&rsquo;s <strong>tail</strong> (the LRU). The harvest sits on the structure that already holds the answer.',
+code:{h:'The harvest — pick the right component',b:`<span class="cm"># value query &rarr; the MAP answers in O(1):</span>
+return <span class="hi-g">self.map[key].val</span>          <span class="cm"># HARVEST from map</span>
+
+<span class="cm"># eviction &rarr; the LIST TAIL answers in O(1):</span>
+lru = <span class="hi-g">self.tail.prev</span>              <span class="cm"># HARVEST from list</span>
+self._remove(lru)
+del self.map[lru.key]             <span class="cm"># read lru.key BEFORE deleting</span>
+
+<span class="cm"># One step too late: delete the map entry first and
+# lru.key is gone — you can no longer clean the other part.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">k4</div><div class="ac live">k7</div><div class="ac dead">k9</div>
+</div>
+<div class="av-cap">eviction reads the <b>tail</b> &mdash; k9 is the least-recently-used &mdash; in O(1).<br>Capture <code>k9</code>&rsquo;s key from the node while it is still linked, THEN delete from both.</div>`,
+callout:{type:'callout-info',text:'Ch.1 harvested when a value predicate fired; here the harvest is a POINTER READ from the component that owns the answer. Which structure you read &mdash; map for a value, tail for the victim &mdash; is the whole trick.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: route each query to the component that answers it in O(1) &mdash; map for a value, list tail for the LRU. Read the answer from a component BEFORE the move mutates it, or the evidence is gone.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the components together',desc:'The complete O(1) LRU cache: a dict for lookup, a sentinel-bounded doubly linked list for order. The O(1)-per-op constraint that killed the brute force is satisfied by construction &mdash; every call is a map hit plus a couple of pointer splices.',
+code:{h:'lru.py — final',b:`class Node:
+    __slots__ = ('key','val','prev','next')
+
+class LRUCache:
+    def __init__(self, cap):
+        self.cap, self.map = cap, {}          <span class="cm"># INVARIANT (1): key &rarr; node</span>
+        self.head, self.tail = Node(), Node() <span class="cm"># MRU sentinel .. LRU sentinel</span>
+        self.head.next, self.tail.prev = self.tail, self.head
+
+    def get(self, key):
+        if key not in self.map: return -1
+        n = self.map[key]
+        <span class="hi-y">self._remove(n); self._add_front(n)</span>   <span class="cm"># MOVE: both parts</span>
+        return <span class="hi-g">n.val</span>                          <span class="cm"># HARVEST: from map</span>
+
+    def put(self, key, val):
+        if key in self.map: self._remove(self.map[key])
+        n = Node(); n.key, n.val = key, val
+        self.map[key] = n; self._add_front(n)     <span class="cm"># MOVE: map + list together</span>
+        if len(self.map) &gt; self.cap:
+            lru = <span class="hi-g">self.tail.prev</span>              <span class="cm"># HARVEST: tail = LRU</span>
+            self._remove(lru); del self.map[lru.key]
+
+<span class="cm"># O(1) per op · O(capacity) space. _remove / _add_front are O(1) splices.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac dead">&mdash;</div>
+</div>
+<div class="av-cap">after put(1,1), put(2,2): list = head &rarr; 2 &rarr; 1 &rarr; tail</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1</div><div class="ac live">2</div><div class="ac dead">&mdash;</div>
+</div>
+<div class="av-cap">get(1): splice 1 to the head &rarr; order becomes 1 &rarr; 2. Now 2 is the LRU.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">3</div><div class="ac live">1</div><div class="ac bad2">2</div>
+</div>
+<div class="av-cap">put(3,3): capacity full &rarr; evict the tail (<code>2</code>) from list AND map, then add 3 at head.</div>`,
+callout:{type:'callout-ok',text:'The brute force scanned a lone list; this pairs a map with a list so each axis stays O(1). Same information &mdash; two structures instead of one &mdash; and O(n) per op collapses to O(1).'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Insert / Delete / GetRandom, all O(1)',desc:'Support <code>insert</code>, <code>remove</code>, and <code>getRandom</code> &mdash; every one O(1). Compose a <strong>dense array</strong> (so a random index is a uniform pick) with a <strong>map value &rarr; index</strong>. The trick is delete: swap the victim with the last element so the array stays gap-free.',
+code:{h:'randomized_set.py — array + map + swap-to-end',b:`class RandomizedSet:
+    def __init__(self):
+        self.arr = []                 <span class="cm"># dense &rarr; O(1) random pick</span>
+        self.pos = {}                 <span class="cm"># val &rarr; its index in arr</span>
+
+    def insert(self, val):
+        if val in self.pos: return False
+        self.pos[val] = len(self.arr); self.arr.append(val)
+        return True
+
+    def remove(self, val):
+        if val not in self.pos: return False
+        i, last = self.pos[val], self.arr[-1]
+        <span class="hi-y">self.arr[i] = last; self.pos[last] = i</span>   <span class="cm"># swap victim &harr; last</span>
+        self.arr.pop(); del self.pos[val]           <span class="cm"># both parts stay dense</span>
+        return True
+
+    def getRandom(self):
+        return <span class="hi-g">random.choice(self.arr)</span>       <span class="cm"># HARVEST: array</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">a</div><div class="ac bad2">b</div><div class="ac live">c</div><div class="ac hot">d</div>
+</div>
+<div class="av-cap">remove(b): b sits at index 1; the last element is <code>d</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">a</div><div class="ac win">d</div><div class="ac live">c</div>
+</div>
+<div class="av-cap">copy d into b&rsquo;s slot, fix pos[d]=1, pop the tail. The array is dense again &rarr; O(1) random still holds.</div>`,
+extra:()=>rulesCard('Rules card — insert/delete/getRandom',
+ 'Two components: a dense array (uniform random) AND a map val &rarr; index. Both true at once.',
+ 'The MOVE gained a swap-to-end: overwrite the victim with the last element so the array stays gap-free while the map is patched &mdash; both O(1).',
+ 'getRandom reads the ARRAY; membership reads the MAP. Each query hits the component built for it.'),
+callout:{type:'callout-ok',text:'Which rule shifted? The MOVE. Deleting from the middle of an array is normally O(n); swap-to-end keeps BOTH sub-invariants (dense array, accurate map) in O(1).'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Min Stack — store the invariant, do not compute it',desc:'A stack with <code>push</code>, <code>pop</code>, <code>top</code>, and <code>getMin</code> &mdash; all O(1). The naive <code>getMin</code> scans the stack (O(n)). Instead, make each entry <strong>carry the minimum-so-far</strong>: the answer is stored beside the data, never recomputed.',
+code:{h:'min_stack.py — the min rides along',b:`class MinStack:
+    def __init__(self):
+        self.st = []              <span class="cm"># each item: (val, min_so_far)</span>
+
+    def push(self, x):
+        m = x if not self.st else min(x, self.st[-1][1])
+        <span class="hi-b">self.st.append((x, m))</span>   <span class="cm"># INVARIANT stored: min up to here</span>
+
+    def pop(self):    self.st.pop()
+    def top(self):    return self.st[-1][0]
+    def getMin(self): return <span class="hi-g">self.st[-1][1]</span>   <span class="cm"># HARVEST: one read</span>
+
+<span class="cm"># Every op O(1). The min is never scanned — it is carried.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">5 | 5</div><div class="ac live">2 | 2</div><div class="ac live">7 | 2</div><div class="ac hot">1 | 1</div>
+</div>
+<div class="av-cap">each cell is <code>(val | min-so-far)</code>. Top of stack on the right.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">5 | 5</div><div class="ac live">2 | 2</div><div class="ac win">7 | 2</div>
+</div>
+<div class="av-cap">pop the <code>1</code>, and getMin instantly reads the new top&rsquo;s stored min: <code>2</code>. No scan.</div>`,
+extra:()=>rulesCard('Rules card — min stack',
+ 'A second value rides with each entry: (val, min_so_far). A stack&rsquo;s order invariant PLUS a running minimum, held together.',
+ 'push computes the new min from x and the previous top&rsquo;s min in O(1); pop just drops the pair &mdash; the min below is already stored.',
+ 'getMin reads the top pair&rsquo;s stored minimum &mdash; a single O(1) read, never a scan.'),
+callout:{type:'callout-ok',text:'Which rule shifted? The INVARIANT. Normally min is COMPUTED on demand; here it is PRECOMPUTED and stored per entry, so the harvest degenerates to a single read.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Time-Based Key-Value Store',desc:'<code>set(key, val, ts)</code> stores a stamped value; <code>get(key, ts)</code> returns the value with the <strong>largest timestamp &le; ts</strong>. Compose a <strong>map key &rarr; append-only list</strong> (kept sorted because timestamps arrive increasing) with a <strong>binary search</strong> for the harvest.',
+code:{h:'time_map.py — map of sorted lists + binary search',b:`class TimeMap:
+    def __init__(self):
+        self.store = defaultdict(list)   <span class="cm"># key &rarr; [(ts, val), ...] ascending</span>
+
+    def set(self, key, val, ts):
+        <span class="hi-y">self.store[key].append((ts, val))</span>   <span class="cm"># stays sorted (ts increases)</span>
+
+    def get(self, key, ts):
+        a = self.store[key]
+        lo, hi = 0, len(a)
+        while lo &lt; hi:                     <span class="hi-g"># HARVEST: binary search</span>
+            mid = (lo + hi) // 2
+            if a[mid][0] &lt;= ts: lo = mid + 1
+            else: hi = mid
+        return a[lo - 1][1] if lo else ""   <span class="cm"># largest ts &le; query</span>
+
+<span class="cm"># set O(1); get O(log n) — the price of a &ldquo;most recent &le; t&rdquo; query.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">t1</div><div class="ac live">t4</div><div class="ac hot">t7</div><div class="ac live">t9</div>
+</div>
+<div class="av-cap">store["k"] = values stamped at t1, t4, t7, t9 (append-only, sorted)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">t1</div><div class="ac dead">t4</div><div class="ac win">t7</div><div class="ac bad2">t9</div>
+</div>
+<div class="av-cap">get("k", ts=8): binary-search for the largest ts &le; 8 &rarr; <code>t7</code>. t9 is too late.</div>`,
+extra:()=>rulesCard('Rules card — time-based store',
+ 'A map key &rarr; per-key list, and each list kept sorted by timestamp. Lookup axis AND temporal order, together.',
+ 'set is an O(1) append &mdash; the append itself preserves sorted order because timestamps only ever increase.',
+ 'get binary-searches the key&rsquo;s list for the predecessor of ts &mdash; O(log n).'),
+callout:{type:'callout-ok',text:'Which rule shifted? The HARVEST. This query is not exact-match but &ldquo;most recent &le; t&rdquo;, so the harvest is an O(log n) binary search instead of an O(1) read &mdash; the honest cost of a range query on top of O(1) key lookup.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'LFU Cache — two orders at once',desc:'Evict the <strong>least-frequently-used</strong> key, breaking ties by <strong>least-recently-used</strong>. That is TWO orders held simultaneously: buckets by frequency, and within each bucket an LRU order. Compose a value map, a map <code>freq &rarr; ordered keys</code>, and a <code>min_freq</code> pointer.',
+code:{h:'lfu.py — frequency buckets + recency within',b:`class LFUCache:
+    def __init__(self, cap):
+        self.cap, self.min_freq = cap, 0
+        self.vals = {}                          <span class="cm"># key &rarr; (val, freq)</span>
+        self.buckets = defaultdict(OrderedDict) <span class="cm"># freq &rarr; keys, LRU-first</span>
+
+    def _bump(self, key):
+        val, f = self.vals[key]
+        del self.buckets[f][key]                <span class="cm"># leave bucket f...</span>
+        if not self.buckets[f] and self.min_freq == f: self.min_freq += 1
+        <span class="hi-y">self.buckets[f + 1][key] = None</span>         <span class="cm"># ...atomically join f+1</span>
+        self.vals[key] = (val, f + 1)
+
+    def get(self, key):
+        if key not in self.vals: return -1
+        self._bump(key); return <span class="hi-g">self.vals[key][0]</span>   <span class="cm"># HARVEST: value map</span>
+
+    def put(self, key, val):
+        if self.cap == 0: return
+        if key in self.vals: self.vals[key] = (val, self.vals[key][1]); self._bump(key); return
+        if len(self.vals) &gt;= self.cap:
+            k, _ = <span class="hi-g">self.buckets[self.min_freq].popitem(last=False)</span>  <span class="cm"># LFU+LRU</span>
+            del self.vals[k]
+        self.vals[key] = (val, 1); self.buckets[1][key] = None; self.min_freq = 1`},
+dia:()=>`<div class="av">
+  <div class="ac live">A:f1</div><div class="ac live">B:f1</div><div class="ac hot">C:f3</div>
+</div>
+<div class="av-cap">bucket f1 = {A, B} (A least-recent), bucket f3 = {C}. min_freq = 1.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac bad2">A:f1</div><div class="ac live">B:f1</div><div class="ac live">C:f3</div>
+</div>
+<div class="av-cap">evict: pop the LRU end of the min_freq bucket &rarr; <code>A</code> (freq 1, oldest). Two orders, one victim.</div>`,
+extra:()=>rulesCard('Rules card — LFU cache',
+ 'THREE components true at once: value map, freq &rarr; LRU-ordered bucket, and a min_freq pointer &mdash; frequency order AND recency order simultaneously.',
+ 'Every access _bumps the key from bucket f to f+1 atomically and repairs min_freq &mdash; all O(1).',
+ 'Evict from the min_freq bucket&rsquo;s LRU end (popitem front); read a value from the value map. Each answer comes from its own component.'),
+callout:{type:'callout-ok',text:'Which rule shifted? The INVARIANT again &mdash; it now carries TWO nested orders (frequency across buckets, recency within a bucket). More axes = more components in the conjunction, still O(1) per op.'}
+},
+{phase:'pill-pattern',phaseTxt:'Two axes beat one',title:'Custom Structures vs. Two Pointers vs. Sliding Window',desc:'Chapters back, the invariant was a single region. Here it fractures into <strong>several sub-structures held true at once</strong> &mdash; but it is the very same three rules underneath.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Custom Data Structures (Ch.26)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: &ldquo;the answer is not out there&rdquo;</td><td>The living <strong>inside</strong> the window + O(1) aux state</td><td>A <strong>conjunction of sub-invariants</strong>: e.g. a map (lookup) AND a list (order), both true at once</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Update <strong>every component atomically</strong> &mdash; no sub-invariant ever seen broken</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink / count per step</td><td>Read whichever <strong>component owns the answer</strong> in O(1) (map, list tail, &hellip;)</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n &mdash; one retired per step</td><td>&le; 2n &mdash; both pointers monotone</td><td>O(1) per op &times; constant parts; O(size) space</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are the constant, the IMPLEMENTATION is the variable. Custom structures just run the three rules over SEVERAL components at once &mdash; one per axis the problem demands.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 26',desc:'Add the composed-structure implementations to the running lists &mdash; and, above all, the <strong>recognition signal</strong> that says &ldquo;design a container&rdquo;.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every operation.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">a CONJUNCTION of sub-invariants —
+               one component per axis (map+list,
+               array+map, buckets+recency)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast+2 / slow+1,
+               <span class="hi-y">update EVERY component atomically
+               (constant parts &times; O(1) = O(1)/op)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision,
+               <span class="hi-g">read the component that owns it
+               (map for a value, list tail for LRU,
+               binary-search a sorted list)</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Custom Data Structures when:</span>
+  &ldquo;Design a structure supporting X, Y, Z —
+   all in O(1)&rdquo; · one container cannot serve
+   every query fast · so COMPOSE one component
+   per axis and keep their invariants in lockstep.`},
+dia:null,
+callout:{type:'callout-purple',text:'When one structure cannot answer every required query in O(1), stop hunting for a cleverer single structure. Ask: which components, one per axis, can I keep in lockstep so each API reads the one built for it? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

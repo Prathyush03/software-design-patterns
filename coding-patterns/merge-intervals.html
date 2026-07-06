@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 4 — Merge Intervals | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 4 — Merge Intervals</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Merge Overlapping Intervals',desc:'A new shape of data: a list of <code>[start, end]</code> intervals — meetings, ranges, bookings. Return the same set with every pair that <strong>overlaps</strong> fused into one. The structural gift hiding in the problem: <strong>once you sort by start, an overlap can only ever be with the interval immediately before.</strong>',
+code:{h:'The problem',b:`intervals = [[1,3], [2,6], [8,10], [15,18]]
+
+merge(intervals) = [[1,6], [8,10], [15,18]]
+
+<span class="cm"># [1,3] and [2,6] touch &rarr; fuse to [1,6]
+# [8,10] and [15,18] stand alone</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1,3</div><div class="ac live">2,6</div><div class="ac">8,10</div><div class="ac">15,18</div>
+</div>
+<div class="av-cap">four intervals on the number line &mdash; each cell is one <code>[start,end]</code>.<br><code>[1,3]</code> and <code>[2,6]</code> overlap.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1,6</div><div class="ac">8,10</div><div class="ac">15,18</div>
+</div>
+<div class="av-cap">merged output: disjoint and sorted. <code>[1,6]</code> swallowed the first two.</div>`,
+callout:{type:'callout-ok',text:'No pointer to chase, no window to grow — just a pile of ranges. Hold onto the gift: after sorting by start, an overlap can only be with the interval right before. That locality is the whole pattern.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — hunt every overlapping pair, then restart',desc:'The obvious idea, no sorting: scan all pairs; the moment two overlap, fuse them and <strong>start the scan over</strong>, because the new bigger interval might now overlap something you already passed. Repeat until a full scan finds nothing to merge. Correct — and painfully quadratic.',
+code:{h:'merge_brute.py — the naive attempt',b:`def merge_brute(intervals):
+    ivs = [list(x) for x in intervals]
+    changed = True
+    while changed:                    <span class="cm"># restart after each merge</span>
+        changed = False
+        for i in range(len(ivs)):
+            for j in range(i + 1, len(ivs)):
+                a, b = ivs[i], ivs[j]
+                if a[0] &lt;= b[1] and b[0] &lt;= a[1]:   <span class="cm"># overlap?</span>
+                    a[0] = min(a[0], b[0])
+                    a[1] = max(a[1], b[1])
+                    ivs.pop(j); changed = True
+                    break
+            if changed: break
+    return ivs
+
+<span class="cm"># O(n&sup2;) pairs, rescanned on every merge &rarr; up to
+# O(n&sup3;). n = 1e5 &rarr; ~1e10+ ops &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">1,3</div><div class="ac hot">2,6</div><div class="ac">8,10</div><div class="ac">15,18</div>
+</div>
+<div class="av-cap">compare every pair: <code>[1,3]</code> vs <code>[2,6]</code>, vs <code>[8,10]</code>&hellip;</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac bad2">1,6</div><div class="ac">8,10</div><div class="ac">15,18</div>
+</div>
+<div class="av-cap">fused <code>[1,6]</code> &mdash; now throw away all progress and rescan from the top.</div>`,
+callout:{type:'callout-ok',text:'It is genuinely correct. But every single merge triggers a full rescan, and no invariant stops the same intervals being compared again and again. The hurt here is a real big-O gap, not just clutter.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Chapters 1&ndash;3 gave us three rules. Audit the brute force against them: the failure is speed, and the rules point straight at the reason — nothing is ever <em>settled</em>, so everything is re-examined.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> There is no maintained "the output so far is disjoint and sorted" property. The list is an unordered soup, so a merge anywhere can affect anything &mdash; forcing a full rescan.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> A merge is not irreversible progress: it pops an element and <em>restarts</em>, re-doing work already done. Nothing bounds how many times a pair is compared.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> The overlap test <code>a.start &le; b.end and b.start &le; a.end</code> is correct &mdash; but it is only meaningful after another O(n) rescan, so the right answer costs far too much.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just never SETTLES anything, so it keeps re-scanning. We do not need a new idea — we need an implementation of the same three rules that finalises intervals in order and never looks back.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant moves to the output you are building',desc:'Stop mutating the input in place. Keep an <strong>output list <code>out</code></strong> and maintain one property: <strong>after processing each input interval, <code>out</code> is sorted and pairwise-disjoint</strong> — no two intervals in it overlap. To make that cheap to preserve, first <strong>sort the input by start</strong>.',
+code:{h:'The promise — a settled output',b:`intervals.sort(key=lambda x: x[0])
+
+<span class="cm"># INVARIANT — true after every step:</span>
+<span class="hi-b">#  out is SORTED and PAIRWISE-DISJOINT.
+#  No two intervals in out overlap, and
+#  out[-1] carries the largest end so far.</span>
+
+<span class="cm"># So a new interval need only be checked
+# against out[-1] — never the whole list.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">1,6</div><div class="ac win">8,10</div><div class="ac live">15,18</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>out[-1]</b></div></div>
+<div class="av-cap">out is always disjoint &amp; sorted; <code>out[-1]</code> holds the largest end.<br>Ch.1's invariant named the discarded OUTSIDE; Ch.2's the living INSIDE;<br>here it names the <b>settled OUTPUT built so far</b>.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter: name the property that survives each step. New implementation: the property is about the ACCUMULATED OUTPUT, and sorting the input is what lets a single comparison preserve it.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new body: the invariant is "<code>out</code> stays sorted and disjoint." Because input is sorted by start, <code>out[-1]</code> always holds the largest end, so the invariant is preserved by looking at ONE interval, not all of them.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: consume one interval, compare with the last merged',desc:'Walk the sorted intervals left to right. Each step consumes <strong>exactly one</strong> interval and compares it to <code>out[-1]</code>: if it <strong>overlaps</strong>, stretch <code>out[-1]</code>\'s end; if there is a <strong>gap</strong>, append it as a new settled interval. One interval per step, never revisited.',
+code:{h:'The move — extend or append',b:`for s, e in intervals[1:]:
+    if s &lt;= out[-1][1]:            <span class="cm"># overlap &rarr; extend</span>
+        out[-1][1] = max(out[-1][1], e)
+    else:                          <span class="cm"># gap &rarr; append</span>
+        out.append([s, e])
+
+<span class="cm"># PROOF: sort is O(n log n); the pass touches
+# each interval once and only ever reads out[-1]
+# &rarr; O(n). Total O(n log n), and irreversible:
+# a settled interval is never compared again.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">1,6</div><div class="ac live">8,10</div><div class="ac hot">9,12</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>out[-1]</b></div><div class="ptr"><b style="color:var(--text-warning)">next</b></div></div>
+<div class="av-cap"><code>9 &le; 10</code> &rarr; overlap &rarr; extend <code>out[-1]</code> to <code>[8,12]</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1,6</div><div class="ac win">8,12</div><div class="ac hot">15,18</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>out[-1]</b></div><div class="ptr"><b style="color:var(--text-warning)">next</b></div></div>
+<div class="av-cap"><code>15 &gt; 12</code> &rarr; gap &rarr; append <code>[15,18]</code> as a new settled interval</div>`,
+callout:{type:'callout-info',text:'Ch.1 retired an end each step; here we consume one interval each step. Irreversibility: once appended, an interval is never touched again — that single-pass bound is why the brute force\'s rescans vanish.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new body: sort by start, then consume ONE interval per step and compare only to <code>out[-1]</code> — overlap extends, gap appends. One-line proof: O(n log n) sort + O(n) single pass, each interval touched once.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest IS the extend-or-append decision',desc:'There is no separate "read the answer" step. <strong>The branch you take — extend or append — is the harvest.</strong> An <code>append</code> permanently settles the previous <code>out[-1]</code> (nothing can extend it again, since starts only grow). The answer is built <strong>one settled interval at a time</strong>, inside the loop.',
+code:{h:'The harvest — a decision, not a lookup',b:`if s &lt;= out[-1][1]:
+    out[-1][1] = max(out[-1][1], e)   <span class="hi-g"># harvest: grow current</span>
+else:
+    out.append([s, e])                <span class="hi-g"># harvest: settle prev,</span>
+                                      <span class="cm">#          start a new one</span>
+
+<span class="cm"># Placement: INSIDE the loop, per interval.
+# One step later is too late — the next interval
+# would already be comparing against the wrong
+# out[-1] if we had not settled it here.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.1 harvested when a value predicate fired; here the harvest is the control-flow branch itself. Each append finalises an interval forever — the output grows monotonically, one settled range per gap.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new body: the extend-or-append branch IS the harvest. The answer accumulates one settled interval at a time; an <code>append</code> makes the previous interval final. No end-of-loop collection step is needed.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete merge: sort once, then one pass maintaining a disjoint, sorted <code>out</code>. The quadratic rescans of the brute force are gone — replaced by an invariant that lets a single comparison do all the work.',
+code:{h:'merge.py — final',b:`def merge(intervals):
+    intervals.sort(key=lambda x: x[0])   <span class="cm"># MOVE: sort by start</span>
+    out = [list(intervals[0])]           <span class="cm"># INVARIANT: out stays</span>
+    for s, e in intervals[1:]:           <span class="cm">#   sorted + disjoint</span>
+        if <span class="hi-y">s &lt;= out[-1][1]</span>:            <span class="cm"># overlap</span>
+            <span class="hi-g">out[-1][1] = max(out[-1][1], e)</span>  <span class="cm"># extend</span>
+        else:
+            <span class="hi-g">out.append([s, e])</span>           <span class="cm"># append</span>
+    return out
+
+<span class="cm"># O(n log n) time (the sort dominates) · O(n) output.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1,3</div><div class="ac">2,6</div><div class="ac">8,10</div><div class="ac">15,18</div>
+</div>
+<div class="av-cap">start: sorted by start; <code>out = [[1,3]]</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1,6</div><div class="ac live">8,10</div><div class="ac">15,18</div>
+</div>
+<div class="av-cap"><code>[2,6]</code> overlapped &rarr; extended to <code>[1,6]</code>; <code>[8,10]</code> had a gap &rarr; appended</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1,6</div><div class="ac win">8,10</div><div class="ac win">15,18</div>
+</div>
+<div class="av-cap"><code>[15,18]</code> gap &rarr; appended. Final: <code>[[1,6],[8,10],[15,18]]</code></div>`,
+callout:{type:'callout-ok',text:'The brute force rescanned after every merge; this settles each interval once and never revisits it. Same correct answer — O(n&sup3;) worst case collapses to O(n log n), all because the invariant made overlaps local.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Insert Interval — the move splits into three phases',desc:'The input is <strong>already sorted and disjoint</strong>; insert one <code>new</code> interval and re-merge. Because it is pre-sorted, drop the sort — and the MOVE becomes a three-phase sweep: <strong>before</strong> (copy intervals ending before <code>new</code>), <strong>overlapping</strong> (fuse them all into <code>new</code>), <strong>after</strong> (copy the rest).',
+code:{h:'insert.py — three-phase move',b:`def insert(intervals, new):
+    out, i, n = [], 0, len(intervals)
+    while i &lt; n and intervals[i][1] &lt; new[0]:    <span class="cm"># 1) before</span>
+        out.append(intervals[i]); i += 1
+    while i &lt; n and intervals[i][0] &lt;= new[1]:   <span class="cm"># 2) overlap</span>
+        new = [min(new[0], intervals[i][0]),
+               max(new[1], intervals[i][1])]
+        i += 1
+    out.append(new)                             <span class="hi-g"># settle merged</span>
+    while i &lt; n:                                 <span class="cm"># 3) after</span>
+        out.append(intervals[i]); i += 1
+    return out
+
+<span class="cm"># already sorted &rarr; O(n), no sort needed.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">1,2</div><div class="ac hot">3,5</div><div class="ac hot">6,7</div><div class="ac hot">8,10</div>
+</div>
+<div class="ptr-row"><div class="ptr">before</div><div class="ptr"><b style="color:var(--text-warning)">ov</b></div><div class="ptr"><b style="color:var(--text-warning)">ov</b></div><div class="ptr"><b style="color:var(--text-warning)">ov</b></div></div>
+<div class="av-cap">insert <code>[4,8]</code>: <code>[1,2]</code> ends before 4; <code>[3,5]</code>,<code>[6,7]</code>,<code>[8,10]</code> all overlap</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">1,2</div><div class="ac win">3,10</div>
+</div>
+<div class="av-cap">overlapping block fused into <code>[3,10]</code>, sitting between before &amp; after</div>`,
+extra:()=>rulesCard('Rules card — insert interval',
+ 'Same: <code>out</code> stays sorted and disjoint.',
+ '<span class="viol">Shifted</span> to a three-phase sweep (before / overlap / after). The pre-sorted input is what buys us the right to drop the sort.',
+ 'Appending the fused middle block settles it; the before/after copies settle the rest.'),
+callout:{type:'callout-ok',text:'Same invariant, same harvest — only the MOVE changed shape, because the input arrived pre-sorted. The three phases are just the merge move specialised to a single inserted interval.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Interval List Intersections — two lists, Two Pointers move',desc:'Two <strong>already-sorted</strong> lists <code>A</code> and <code>B</code>; report every intersection. The MOVE borrows straight from Chapter 1: keep an index into each list, and after testing the current pair, <strong>advance the pointer whose interval ends first</strong> — it can meet nothing further ahead.',
+code:{h:'intersections.py — two-pointer move',b:`def intersections(A, B):
+    i = j = 0
+    out = []
+    while i &lt; len(A) and j &lt; len(B):
+        lo = max(A[i][0], B[j][0])    <span class="hi-b"># overlap =</span>
+        hi = min(A[i][1], B[j][1])    <span class="hi-b">#   [max start, min end]</span>
+        if lo &lt;= hi:
+            out.append([lo, hi])      <span class="hi-g"># a real intersection</span>
+        if A[i][1] &lt; B[j][1]:         <span class="hi-y"># retire the one</span>
+            i += 1                    <span class="hi-y">#   that ends first</span>
+        else:
+            j += 1
+    return out
+
+<span class="cm"># O(m + n): each pointer only moves forward.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1,5</div><div class="ac">9,12</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>A[i]</b></div><div class="ptr"></div></div>
+<div class="av-cap">list A</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">3,7</div><div class="ac">10,11</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">B[j]</b></div><div class="ptr"></div></div>
+<div class="av-cap">list B</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">3,5</div>
+</div>
+<div class="av-cap">overlap = <code>[max(1,3), min(5,7)] = [3,5]</code>. A[i] ends first (<code>5&lt;7</code>) &rarr; i++</div>`,
+extra:()=>rulesCard('Rules card — interval intersections',
+ '<span class="viol">Shifted</span>: the overlap of two live intervals is <code>[max(starts), min(ends)]</code>, valid iff <code>lo &le; hi</code>.',
+ '<span class="viol">Shifted</span> to a pure Two-Pointers move: advance whichever list\'s current interval ends first.',
+ 'Emit <code>[lo, hi]</code> whenever <code>lo &le; hi</code>, just before advancing.'),
+callout:{type:'callout-ok',text:'Two sorted lists instead of one, and the merge move becomes the Two-Pointers move from Chapter 1. The invariant here is "unseen overlaps still lie ahead" — the rules bend, the rulebook does not.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Meeting Rooms II — the invariant grows a min-heap',desc:'How many rooms are needed so no two meetings collide? The INVARIANT gains structure: a <strong>min-heap of end times</strong>, where <strong>the heap\'s size = meetings in progress = rooms in use</strong>. Sort by start; for each meeting, free a room if the earliest end is over, then take a room.',
+code:{h:'min_rooms.py — heap of end times',b:`import heapq
+def min_rooms(intervals):
+    intervals.sort(key=lambda x: x[0])   <span class="cm"># MOVE: sort by start</span>
+    heap = []                            <span class="hi-b"># INVARIANT: heap =</span>
+    for s, e in intervals:               <span class="hi-b">#   end times of live</span>
+        if heap and heap[0] &lt;= s:        <span class="hi-b">#   meetings; size =</span>
+            heapq.heappop(heap)          <span class="hi-b">#   rooms in use</span>
+        heapq.heappush(heap, e)
+    return <span class="hi-g">len(heap)</span>                  <span class="cm"># peak = answer</span>
+
+<span class="cm"># each step pops &le;1 and pushes 1 &rarr; heap size never
+# shrinks &rarr; final size IS the peak concurrency.
+# O(n log n): sort + n heap ops.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0,30</div><div class="ac">5,10</div><div class="ac">15,20</div>
+</div>
+<div class="av-cap">sorted by start</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">10</div><div class="ac hot">30</div>
+</div>
+<div class="av-cap">after <code>[5,10]</code>: <code>30 &gt; 5</code>, no room frees &rarr; heap = {10,30} &rarr; <b>2 rooms</b></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">20</div><div class="ac win">30</div>
+</div>
+<div class="av-cap"><code>[15,20]</code>: earliest end <code>10 &le; 15</code> &rarr; free one, take one &rarr; still 2</div>`,
+extra:()=>rulesCard('Rules card — meeting rooms II',
+ '<span class="viol">Shifted</span>: a min-heap of end times; its SIZE = rooms in use. "Disjoint" generalises to "how many overlap at once".',
+ 'Sort by start, then per meeting pop-if-free then push this end. Still one interval consumed per step.',
+ 'The heap size — and because it never shrinks, the final size is the peak concurrency = rooms needed.'),
+callout:{type:'callout-purple',text:'When the question is "how many overlap at once", the invariant grows a heap. That heap-of-ends is the seed of the Two Heaps pattern a few chapters on — same rulebook, a richer invariant.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Employee Free Time — harvest the GAPS, not the intervals',desc:'Given every employee\'s busy intervals, find the free time common to all. Flatten all intervals, run the exact merge move — then <strong>invert the harvest</strong>: instead of emitting the merged busy blocks, emit the <strong>gap between each pair of settled intervals</strong>.',
+code:{h:'free_time.py — harvest the holes',b:`def free_time(schedule):
+    ivs = sorted((iv for emp in schedule for iv in emp),
+                 key=lambda x: x[0])     <span class="cm"># flatten + sort</span>
+    out, end = [], ivs[0][1]             <span class="hi-b"># end = busy so far</span>
+    for s, e in ivs[1:]:
+        if s &gt; end:                      <span class="cm"># a GAP opened</span>
+            out.append([end, s])         <span class="hi-g"># harvest the HOLE</span>
+            end = e
+        else:
+            end = max(end, e)            <span class="cm"># still busy &rarr; extend</span>
+    return out
+
+<span class="cm"># O(N log N), N = total intervals.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">1,3</div><div class="ac bad2">gap</div><div class="ac win">5,6</div><div class="ac bad2">gap</div><div class="ac win">7,9</div>
+</div>
+<div class="av-cap">merged busy blocks in green; the answer is the <b>red gaps between them</b></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">3,5</div><div class="ac hot">6,7</div>
+</div>
+<div class="av-cap">free time = <code>[[3,5], [6,7]]</code> &mdash; harvested from the holes, not the blocks</div>`,
+extra:()=>rulesCard('Rules card — employee free time',
+ 'Same: the merged busy region is a sorted, disjoint cover of all occupied time.',
+ 'Identical merge move — flatten, sort by start, extend-or-append against the running <code>end</code>.',
+ '<span class="viol">Inverted</span>: emit the GAP <code>[end, s]</code> between consecutive settled intervals, not the intervals themselves.'),
+callout:{type:'callout-ok',text:'Same invariant, same move — only the harvest flips from "the merged blocks" to "the space between them". Merge the intervals, then read the negative space.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Two Pointers vs. Sliding Window vs. Merge Intervals',desc:'Four chapters, four patterns, still zero new rules. Where the earlier invariants lived in the pointers, Merge Intervals moves the invariant into the <strong>output you accumulate</strong> — and pays one sort up front to keep overlaps local.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Merge Intervals (Ch.4)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>The living <strong>inside</strong>: "the window is legal" + aux state</td><td>The settled <strong>output</strong>: "<code>out</code> stays sorted &amp; disjoint"</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Sort by start, then consume one interval: extend or append vs <code>out[-1]</code></td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink / count per step</td><td>The extend-or-append decision itself — one settled interval at a time</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; 2n — both pointers monotone</td><td>O(n log n) — the sort dominates, then one pass</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are the constant, the IMPLEMENTATION is the variable. Merge Intervals is the first pattern whose invariant lives in the OUTPUT — and the first that pays an O(n log n) sort to make its move legal.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 4',desc:'Four patterns down. Add Merge Intervals\' implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">output-sorted-&amp;-disjoint,
+               heap-of-ends (rooms in use)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast+2 / slow+1,
+               <span class="hi-y">sort then extend-or-append vs out[-1],
+               three-phase sweep, advance-earlier-end</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision / on-exhaustion,
+               <span class="hi-g">the extend-or-append decision,
+               the GAPS between settled intervals</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Merge Intervals when:</span>
+  the input is RANGES — meetings, schedules,
+  bookings, [start,end] pairs · the words
+  "overlap", "conflict", "free time", "insert",
+  "how many rooms" · answer built by fusing ranges.`},
+dia:null,
+callout:{type:'callout-purple',text:'When the data is a pile of ranges and the question mentions overlaps, conflicts, or free time, do not reach for a trick. Ask: if I SORT by start, does comparing each interval to the last settled one build the answer? Sort-then-sweep names the pattern.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

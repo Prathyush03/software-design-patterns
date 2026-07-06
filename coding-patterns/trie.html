@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 22 — Trie | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 22 — Trie</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Implement a Trie',desc:'New chapter, new shape of data: build a class supporting <code>insert(word)</code>, <code>search(word)</code> (exact word present?) and <code>startsWith(prefix)</code> (any stored word begins with this?). The structural gift the interviewer is dangling: you will store <strong>many words that share prefixes</strong>, and every query is a <strong>prefix question</strong>.',
+code:{h:'The problem',b:`t = Trie()
+t.insert("cat")
+t.insert("car")
+t.insert("card")
+
+t.search("car")       <span class="cm"># True  &mdash; exact word</span>
+t.search("ca")        <span class="cm"># False &mdash; prefix, not a word</span>
+t.startsWith("ca")    <span class="cm"># True  &mdash; "cat","car","card"</span>
+t.startsWith("dog")   <span class="cm"># False &mdash; nothing begins "dog"</span>`},
+dia:()=>`<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac win">t</div></div>
+<div class="av-cap">"cat"</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac win">r</div><div class="ac win">d</div></div>
+<div class="av-cap">"car" and "card"</div>
+<div class="av-cap">the blue cells <code>c&middot;a</code> are the SAME two nodes for all three words &mdash;<br>green cells carry an end-flag. Sharing the prefix is the whole point.</div>`,
+callout:{type:'callout-info',text:'Many strings, and every question is about a PREFIX. Hold that — a structure that stores each shared prefix exactly once is the entire story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — a flat bag of words',desc:'The obvious idea: keep the words in a list. <code>insert</code> appends; <code>search</code> is <code>word in list</code>; <code>startsWith</code> scans every word asking "does it begin with the prefix?". Correct, trivial, passes every sample — and re-derives prefix membership from scratch on <strong>every single query</strong>.',
+code:{h:'wordbag.py — the naive attempt',b:`class WordBag:
+    def __init__(self):
+        self.words = []
+
+    def insert(self, w):
+        self.words.append(w)          <span class="cm"># O(1)</span>
+
+    def search(self, w):
+        return w in self.words        <span class="cm"># O(N&times;L) scan</span>
+
+    def startsWith(self, p):
+        return any(w.startswith(p)    <span class="cm"># O(N&times;L) again</span>
+                   for w in self.words)
+
+<span class="cm"># N=1e5 words, Q=1e5 queries, L=10 chars
+#   &rarr; ~1e11 char compares &rarr; TLE</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">cat</div><div class="ac live">car</div><div class="ac live">card</div><div class="ac live">cab</div><div class="ac live">dog</div>
+</div>
+<div class="av-cap">every query re-walks the ENTIRE list&hellip;</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">cat</div><div class="ac hot">car</div><div class="ac hot">card</div><div class="ac hot">cab</div><div class="ac dead">dog</div>
+</div>
+<div class="av-cap">startsWith("ca") re-checks the "ca" prefix against all four words &mdash;<br>the shared prefix is compared over and over, N times per query.</div>`,
+callout:{type:'callout-info',text:'It is correct and even O(1) to insert. But each query is O(N&times;L): the shared prefix "ca" is re-tested against every word. With N and Q at 1e5 that is ~1e11 comparisons &rarr; TLE.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Chapters 1&ndash;3 handed us three rules. This brute force is not subtle &mdash; it throws away the one thing the input keeps giving it: <strong>shared prefixes</strong>. Audit it against the rules and the culprit is obvious.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (no structure).</span> The bag holds every word independently. No prefix is ever factored out, so "which words share a prefix" is never known &mdash; it is recomputed from scratch on every query. There is no property carried BETWEEN queries.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> A query is a full linear scan of N words, not one step per query character. Work is O(N&times;L) when the query length L should have been the ONLY thing that mattered.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "any word starts with p" is correct &mdash; but the answer is smeared across the whole list. Nothing is localized to a single place you can read in O(L).',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just refuses to STORE the shared prefixes, so it re-earns them every query. We do not need a new idea &mdash; we need an implementation whose invariant is a persistent, shared structure.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a shared prefix tree',desc:'Stop storing whole words. Store a tree of characters where <strong>every root-to-node path spells exactly one stored prefix</strong>, and any prefix shared by many words lives on the <strong>same nodes</strong>. Build it once; every query reads it.',
+code:{h:'The promise — a tree of prefixes',b:`root
+ &#9500;&#9472; c &#9472; a &#9472; t*          <span class="cm"># "cat"</span>
+ &#9474;         &#9492;&#9472; r* &#9472; d*    <span class="cm"># "car","card" reuse c,a</span>
+ &#9492;&#9472; d &#9472; o &#9472; g*          <span class="cm"># "dog"</span>
+
+<span class="cm"># INVARIANT &mdash; true after every insert:</span>
+<span class="hi-b">#  each path from root spells one stored
+#  prefix, ONCE; shared prefixes = shared nodes.</span>
+<span class="cm"># * marks an end-flag (a full word ends here).</span>`},
+dia:()=>`<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac win">t</div></div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr">*</div></div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac win">r</div><div class="ac win">d</div></div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr">*</div><div class="ptr">*</div></div>
+<div class="av-cap">the two blue <code>c&middot;a</code> nodes are physically shared by all three words.<br>Ch.1 invariant lived in a discarded region; Ch.2 inside a window; Ch.3 in a<br>speed ratio &mdash; here it lives in a <b>persistent shared tree</b> you build once.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter: name the property true after every step. What changed is its lifetime &mdash; it is no longer a transient window but a STANDING data structure that many queries share.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a SHARED PREFIX TREE. Position is a path; identical prefixes collapse onto the same nodes; an end-flag marks where a full word finishes. Cost: one node per DISTINCT prefix character &mdash; never per word.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: walk (or create) one child per character',desc:'To insert or query a word, take the characters one at a time: step into the matching child, <strong>creating it if missing</strong> (insert) or <strong>bailing if absent</strong> (search). One character, one edge.',
+code:{h:'The move — one edge per character',b:`node = root
+for ch in word:
+    <span class="hi-y"># MOVE: descend one edge; make it on insert</span>
+    if ch not in node.children:
+        node.children[ch] = TrieNode()
+    node = node.children[ch]
+
+<span class="cm"># PROOF: each character consumes exactly ONE
+# edge &rarr; insert and search each take len(word)
+# steps &rarr; O(L) per op, INDEPENDENT of N.</span>`},
+dia:()=>`<div class="av"><div class="ac hot">c</div><div class="ac">a</div><div class="ac">r</div><div class="ac">d</div></div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">&darr;</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">consume 'c' &rarr; step to the c-node</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac hot">r</div><div class="ac">d</div></div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-warning)">&darr;</b></div><div class="ptr"></div></div>
+<div class="av-cap">'a' then 'r' &rarr; three edges, three steps for a 3-char query.<br>The number of stored words N never enters the count.</div>`,
+callout:{type:'callout-info',text:'Ch.1\'s move retired an end; Ch.3\'s advanced two pointers. Here the move descends exactly one edge per character. That one-to-one is the whole safety proof &mdash; and the O(L) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: consume one character, follow (or forge) one child edge. Irreversibility is the descent &mdash; you only ever go deeper. Exactly L descents per operation &rarr; O(L), free of N.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: read the end-flag, or the whole subtree',desc:'Two flavors, same walk. <strong>Exact word:</strong> after the last character, read <code>is_end</code> on the node you land on. <strong>Prefix:</strong> the node merely existing means <code>startsWith</code> is true; to LIST everything with that prefix, DFS its entire subtree.',
+code:{h:'The harvest — flag at the node, or its subtree',b:`node = walk(word)
+<span class="hi-g"># EXACT: read is_end on the landed node</span>
+return node is not None and node.is_end
+
+node = walk(prefix)
+<span class="hi-g"># PREFIX: the node existing = a match</span>
+return node is not None
+<span class="cm"># ...or DFS node's subtree to ENUMERATE every
+# word that carries this prefix.</span>
+
+<span class="cm"># Read it AT the landed node &mdash; one step further
+# down and you have left the flag behind.</span>`},
+dia:()=>`<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac win">r</div><div class="ac dead">d</div></div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-success)">is_end?</b></div><div class="ptr"></div></div>
+<div class="av-cap">search("car"): land on the r-node, read its flag &rarr; True.<br>search("ca"): land on the a-node, flag is False &rarr; not a word &mdash;<br>yet startsWith("ca") is True because the node EXISTS.</div>`,
+callout:{type:'callout-info',text:'Ch.1 harvested when a value predicate fired; here it fires by reading a boolean FLAG at the node you stopped on, or by fanning out over its subtree. Which of the two you read chooses "exact word" vs. "prefix".'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the candidate lives AT the node reached after the final character &mdash; its <code>is_end</code> flag (exact word) or its whole subtree (all words with the prefix). Harvest there, before any further descent.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete Trie: a node is a <code>children</code> map plus an <code>is_end</code> flag. Insert walks-and-creates; search walks-and-reads-flag; startsWith walks-and-tests-existence. Every operation is O(L) &mdash; the O(N&times;L) scan that killed the brute force is gone by construction.',
+code:{h:'trie.py — final',b:`class TrieNode:
+    def __init__(self):
+        self.children = {}          <span class="cm"># char -&gt; TrieNode</span>
+        self.is_end = False         <span class="cm"># end-flag</span>
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        node = self.root
+        for ch in word:                          <span class="cm"># MOVE</span>
+            node = node.children.setdefault(ch, TrieNode())
+        node.is_end = True                       <span class="cm"># plant flag</span>
+
+    def _walk(self, s):
+        node = self.root
+        for ch in s:
+            if ch not in node.children:
+                return None                      <span class="cm"># dead prefix</span>
+            node = node.children[ch]
+        return node
+
+    def search(self, word):
+        node = self._walk(word)
+        return <span class="hi-g">node is not None and node.is_end</span>   <span class="cm"># exact</span>
+
+    def startsWith(self, prefix):
+        return <span class="hi-g">self._walk(prefix) is not None</span>     <span class="cm"># prefix</span>`},
+dia:()=>`<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac win">t</div></div>
+<div class="av-cap">insert("cat"): create c, a, t; flag the t-node</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac">t</div><div class="ac win">r</div></div>
+<div class="av-cap">insert("car"): c, a already exist &rarr; reuse them, branch to r</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">c</div><div class="ac live">a</div><div class="ac win">r</div><div class="ac bad2">d</div></div>
+<div class="av-cap">search("car") &rarr; land on r, is_end True &rarr; found.<br>startsWith("card") &rarr; no d-child &rarr; None &rarr; False.</div>`,
+callout:{type:'callout-ok',text:'The bag re-scanned N words per query; the trie walks L edges, ever. O(N&times;L) per query collapses to O(L) &mdash; purely because the invariant became a SHARED structure built once. Space: O(total characters).'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Add & Search Word — the "." wildcard',desc:'Now <code>search</code> may contain <code>.</code>, matching any single letter. The invariant is untouched; only the <strong>move mutates</strong>: on a normal char you follow one edge, but on <code>.</code> the move <strong>fans out over every child</strong>. Trie composed with Backtracking.',
+code:{h:'word_dictionary.py — wildcard search',b:`def search(self, word):
+    def dfs(node, i):
+        if i == len(word):
+            return <span class="hi-g">node.is_end</span>          <span class="cm"># HARVEST at end</span>
+        ch = word[i]
+        <span class="hi-y">if ch == '.':                     # MOVE fans out</span>
+            return any(dfs(c, i + 1)
+                       for c in node.children.values())
+        if ch not in node.children:
+            return False
+        return dfs(node.children[ch], i + 1)  <span class="cm"># one edge</span>
+    return dfs(self.root, 0)`},
+dia:()=>`<div class="av"><div class="ac live">b</div><div class="ac hot">a</div><div class="ac hot">o</div><div class="ac hot">e</div></div>
+<div class="av-cap">search("b.d"): 'b' &rarr; one edge; '.' &rarr; TRY every child a/o/e&hellip;</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">b</div><div class="ac live">a</div><div class="ac win">d</div></div>
+<div class="av-cap">&hellip;the 'a' branch reaches a d-child with is_end &rarr; True.<br>The dot turned a single descent into a backtracking fan-out.</div>`,
+extra:()=>rulesCard('Rules card — wildcard search',
+ 'Same shared prefix tree &mdash; nothing about storage changes.',
+ 'SHIFTED: a letter follows ONE edge; a <code>.</code> recurses into ALL children. O(L) with no dots; up to O(26^k) over k dotted positions.',
+ 'Same as base &mdash; <code>is_end</code> when the pattern is fully consumed.'),
+callout:{type:'callout-ok',text:'Trie &#8728; Backtracking. The invariant and harvest are the base Trie\'s; only the move learned to branch. One rule\'s implementation shifted &mdash; the pattern held.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Longest Word built letter by letter',desc:'Return the longest word that can be built one character at a time, where <strong>every intermediate prefix is itself a word</strong>. The <strong>invariant tightens</strong>: a legal path may only pass through nodes that are themselves complete words (<code>is_end</code> the whole way down).',
+code:{h:'longest_word.py — tightened invariant',b:`def longest_word(words):
+    t = Trie()
+    for w in words:
+        t.insert(w)
+    best = ""
+    def dfs(node, path):
+        nonlocal best
+        if len(path) &gt; len(best) or \\
+           (len(path) == len(best) and path &lt; best):
+            best = path                          <span class="cm"># HARVEST</span>
+        for ch, child in node.children.items():
+            <span class="hi-b">if child.is_end:            # INVARIANT: only step</span>
+                dfs(child, path + ch)   <span class="cm"># through full words</span>
+    dfs(t.root, "")
+    return <span class="hi-g">best</span>`},
+dia:()=>`<div class="av"><div class="ac win">a</div><div class="ac win">p</div><div class="ac win">p</div><div class="ac win">l</div><div class="ac win">e</div></div>
+<div class="av-cap">"apple": every prefix a, ap, app, appl, apple is a word (all flagged)</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">a</div><div class="ac win">p</div><div class="ac win">p</div><div class="ac bad2">l</div><div class="ac dead">y</div></div>
+<div class="av-cap">"apply": if "appl" is NOT a word, the red node blocks the path &mdash;<br>the tightened invariant prunes it. Answer: <code>apple</code>.</div>`,
+extra:()=>rulesCard('Rules card — longest word',
+ 'TIGHTENED: a legal path is not any prefix &mdash; EVERY node on it must carry <code>is_end</code>. Non-word dead-ends are cut from the invariant.',
+ 'Same edge-walk, but you may only descend into children that are complete words.',
+ 'The longest (ties broken lexicographically smallest) path satisfying the tightened invariant.'),
+callout:{type:'callout-ok',text:'Nothing about walking or harvesting changed &mdash; only the invariant got STRICTER, admitting a node only if it is a full word. Tighten the invariant, get a new problem.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Replace Words — stop at the shortest root',desc:'Given a dictionary of roots, replace each word in a sentence by the <strong>shortest root that is a prefix of it</strong>. The move and invariant are the plain trie; the <strong>harvest relocates</strong>: grab the answer at the <strong>first end-flag</strong> you hit while walking, not at the final node.',
+code:{h:'replace_words.py — harvest at first flag',b:`def replace_words(roots, sentence):
+    t = Trie()
+    for r in roots:
+        t.insert(r)
+    def shortest_root(word):
+        node = t.root
+        for i, ch in enumerate(word):
+            if ch not in node.children:
+                break                            <span class="cm"># no root fits</span>
+            node = node.children[ch]
+            <span class="hi-g">if node.is_end:            # HARVEST: FIRST flag</span>
+                return word[:i + 1]     <span class="cm"># = shortest root</span>
+        return word
+    return " ".join(shortest_root(w)
+                    for w in sentence.split())`},
+dia:()=>`<div class="av"><div class="ac live">b</div><div class="ac live">a</div><div class="ac win">t</div><div class="ac dead">t</div><div class="ac dead">e</div><div class="ac dead">r</div></div>
+<div class="av-cap">word "battery", roots include "bat": walk b, a, t&hellip;</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">b</div><div class="ac live">a</div><div class="ac win">t</div><div class="ac dead">t</div><div class="ac dead">e</div><div class="ac dead">r</div></div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-success)">stop</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">the t-node has is_end &rarr; harvest immediately &rarr; "battery" &rarr; "bat".<br>Stopping at the FIRST flag guarantees the shortest root.</div>`,
+extra:()=>rulesCard('Rules card — replace words',
+ 'Same shared prefix tree, built from the ROOTS.',
+ 'Same character-by-character descent through the trie.',
+ 'RELOCATED: harvest at the FIRST <code>is_end</code> met along the walk (shortest matching root), not the final node.'),
+callout:{type:'callout-ok',text:'Same walk as the base trie; the harvest just fires earlier &mdash; at the first end-flag. Move the harvest moment, and "is this a word?" becomes "what is the shortest root?".'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Word Search II — a trie that prunes a grid',desc:'Given a board and a word list, find every word present as a path of adjacent cells. Build a trie of the word list, then DFS the grid <strong>in lockstep with the trie</strong>: the trie\'s invariant <strong>kills dead prefixes early</strong> &mdash; the instant a grid path stops spelling a real trie prefix, the branch dies.',
+code:{h:'word_search_ii.py — trie prunes backtracking',b:`def find_words(board, words):
+    t = Trie()
+    for w in words:
+        t.insert(w)
+    R, C, found = len(board), len(board[0]), set()
+    def dfs(r, c, node, path):
+        ch = board[r][c]
+        <span class="hi-b">if ch not in node.children:    # INVARIANT prunes</span>
+            return                     <span class="cm"># dead prefix &rarr; stop</span>
+        nxt = node.children[ch]
+        if nxt.is_end:
+            found.add(<span class="hi-g">path + ch</span>)      <span class="cm"># HARVEST a word</span>
+        board[r][c] = '#'                        <span class="cm"># mark visited</span>
+        for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+            nr, nc = r + dr, c + dc
+            if 0 &lt;= nr &lt; R and 0 &lt;= nc &lt; C and board[nr][nc] != '#':
+                dfs(nr, nc, nxt, path + ch)
+        board[r][c] = ch                         <span class="cm"># unmark</span>
+    for r in range(R):
+        for c in range(C):
+            dfs(r, c, t.root, "")
+    return list(found)`},
+dia:()=>`<div class="av"><div class="ac live">o</div><div class="ac live">a</div><div class="ac win">t</div><div class="ac bad2">h</div></div>
+<div class="av-cap">grid path o&rarr;a&rarr;t spells a trie prefix; 't' is is_end &rarr; harvest "oat"</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">o</div><div class="ac live">a</div><div class="ac bad2">z</div></div>
+<div class="av-cap">but o&rarr;a&rarr;z has no z-child in the trie &rarr; the branch dies instantly.<br>The trie prunes millions of dead grid paths a per-word search would explore.</div>`,
+extra:()=>rulesCard('Rules card — word search II',
+ 'The trie\'s shared prefix tree becomes a PRUNER: a grid path survives only while it still spells a real trie prefix.',
+ 'Grid DFS and trie descent step in LOCKSTEP &mdash; one board cell chosen = one trie edge followed.',
+ '<code>is_end</code> reached in the trie &rarr; the current path is a found word; add it and keep going.'),
+callout:{type:'callout-ok',text:'Trie &#8728; Backtracking again. Without the trie you would run one grid search PER word; with it, a single DFS carries all words at once and the invariant amputates dead prefixes on contact.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Two Pointers vs. Sliding Window vs. Trie',desc:'Different chapters, different patterns, still zero new rules. Watch the invariant change LIFETIME here: it stops being a transient region and becomes a <strong>standing structure</strong> you build once and query forever.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Trie (Ch.22)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>The living <strong>inside</strong>: "the window is legal" + aux state</td><td>A <strong>shared prefix tree</strong>: each path spells one stored prefix; shared prefixes share nodes</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Walk (or create) <strong>one child per character</strong></td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink / count per step</td><td><code>is_end</code> at the landed node (exact) or DFS the subtree (all with prefix)</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n &mdash; one retired per step</td><td>&le; 2n &mdash; both pointers monotone</td><td><strong>O(L) per op</strong>, free of N; O(total chars) space</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one twist louder: the RULES are the constant, the IMPLEMENTATION is the variable. The Trie\'s move is per-CHARACTER, so its cost is O(query length) no matter how many words it holds &mdash; the invariant did the amortizing in advance.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 22',desc:'Add the Trie\'s implementations to the running lists &mdash; and, most importantly, its <strong>recognition signal</strong>: the sound a problem makes when a prefix tree is the answer.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">shared PREFIX TREE (path = prefix;
+               shared prefixes share nodes)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast +2 / slow +1,
+               <span class="hi-y">walk / create ONE child per char
+               (exactly L descents &rarr; O(L) per op)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision / on-exhaustion,
+               <span class="hi-g">is_end at the node (exact word) /
+               whole SUBTREE (all with prefix) /
+               first is_end (shortest root)</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for a Trie when:</span>
+  MANY strings + a PREFIX question ·
+  the words "startsWith", "autocomplete",
+  "dictionary", "word game / boggle" ·
+  one build, many queries.`},
+dia:null,
+callout:{type:'callout-purple',text:'When you see many strings and the queries are about shared prefixes, do not ask "which scan?" Ask: can I store every prefix ONCE in a tree, so a query costs only its own length? If yes, the Trie names itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 23 — Hash Maps | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 23 — Hash Maps</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Two Sum',desc:'A new shape of data: an <strong>unsorted</strong> array <code>nums</code> and a <code>target</code>. Return the indices of the two numbers that add up to <code>target</code> (exactly one such pair exists). The array is <strong>unsorted</strong> — so the tidy two-pointer converge trick from Chapter 1 is simply not available.',
+code:{h:'The problem',b:`nums   = [2, 7, 11, 15]
+target = 9
+
+two_sum(nums, 9) = [0, 1]
+<span class="cm"># nums[0] + nums[1] = 2 + 7 = 9</span>
+
+<span class="cm"># The data is UNSORTED, so we cannot sort
+# without destroying the original indices,
+# and converging pointers need order.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">2</div><div class="ac win">7</div><div class="ac">11</div><div class="ac">15</div>
+</div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div><div class="ptr">3</div></div>
+<div class="av-cap">unsorted array &mdash; we need the two green cells whose sum is <code>9</code>,<br>and we must report their original <b>indices</b>, not their values.</div>`,
+callout:{type:'callout-ok',text:'No order to lean on, and indices must be preserved. Hold that: "for each value, have I already seen its partner?" is the whole question.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — test every pair',desc:'The obvious idea: for each element, scan every later element and check whether the two sum to <code>target</code>. Correct, needs no cleverness, passes every small sample. The cost is the pain: every element re-interrogates the entire rest of the array.',
+code:{h:'two_sum.py — the naive attempt',b:`def two_sum(nums, target):
+    n = len(nums)
+    for i in range(n):              <span class="cm"># every i</span>
+        for j in range(i + 1, n):   <span class="cm"># every j &gt; i</span>
+            if nums[i] + nums[j] == target:
+                return [i, j]
+    return []
+
+<span class="cm"># O(n&sup2;) TIME. n = 1e5 &rarr; ~1e10 ops &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">2</div><div class="ac live">7</div><div class="ac live">11</div><div class="ac live">15</div>
+</div>
+<div class="av-cap">i = 0: compare <code>2</code> against 7, 11, 15 &mdash; three probes&hellip;</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">2</div><div class="ac hot">7</div><div class="ac live">11</div><div class="ac live">15</div>
+</div>
+<div class="av-cap">i = 1: compare <code>7</code> against 11, 15 &mdash; and so on.<br>Each element rescans all the rest: <b>n&sup2;/2</b> probes total.</div>`,
+callout:{type:'callout-ok',text:'It is correct. But at n = 1e5 the nested scan is ~1e10 operations and times out. This time the hurt is speed, and it comes from re-scanning the past over and over.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Three chapters gave us three rules. Audit the brute force against them: it re-derives "have I seen a partner?" from scratch on every step because it <strong>never records the past</strong>. There is no index carrying knowledge forward, so each element pays to re-read the array.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (missing).</span> There is no invariant at all. Nothing about the already-seen elements is remembered, so the fact "the partner is behind me" is thrown away and must be rediscovered by rescanning.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> The step is a full inner scan &mdash; O(n) work per element, not O(1). It advances, but it does so by re-reading everything it already walked past.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "<code>nums[i]+nums[j]==target</code> &rarr; answer" is correct &mdash; but it only ever fires because the inner loop brute-checks every pair.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just keeps NO record of the past and pays O(n) per step to rebuild it. We need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes an index of everything seen',desc:'Stop rescanning. Carry a hash map <code>seen</code> and maintain one fact: <strong>every element to the left of the cursor is stored in the map, keyed for O(1) lookup.</strong> The past is not re-read &mdash; it is <em>indexed</em>. That single property is the entire invariant.',
+code:{h:'The promise — the index of the past',b:`seen = {}          <span class="cm"># value &rarr; index</span>
+
+<span class="hi-b"># INVARIANT — true after every step:
+#  seen holds EVERY element to the LEFT
+#  of the cursor, keyed for O(1) lookup.</span>
+
+<span class="cm"># The past is never re-scanned; it is a
+# queryable INDEX. "Have I seen X?" is O(1).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">2</div><div class="ac dead">7</div><div class="ac live">11</div><div class="ac">15</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>i</b></div><div class="ptr"></div></div>
+<div class="av-cap">cursor at index 2; <code>seen = {2:0, 7:1}</code> indexes the whole past.<br>Ch.1's invariant named the DISCARDED outside; here it is the<br>opposite &mdash; a growing <b>index of everything already seen</b>.</div>`,
+callout:{type:'callout-info',text:'Same rule as Chapters 1–3: name the property that survives every step. What changed is its shape — from "the answer is not outside" to "the past is fully indexed and O(1)-queryable".'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a hash map that is a COMPLETE index of every element seen so far. In Two Pointers the invariant described what was discarded outside; here it accumulates the past into an O(1)-lookup table. Cost: O(n) space, O(1) per query.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: query the complement first, then insert self',desc:'For each new element <code>x</code>: compute its partner <code>need = target - x</code> and <strong>query the map first</strong>; only then insert <code>x</code> itself. One pass, strictly left to right, no lookback. That ordering is the whole move.',
+code:{h:'The move — query, then index',b:`need = target - x            <span class="cm"># the complement</span>
+if need in seen:             <span class="hi-y"># QUERY the past first</span>
+    ...
+seen[x] = i                  <span class="hi-y"># then INDEX self, move on</span>
+
+<span class="cm"># PROOF: each element does ONE O(1) query +
+# ONE O(1) insert &rarr; O(n) total, a single pass.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">2</div><div class="ac hot">7</div><div class="ac">11</div><div class="ac">15</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>i</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">at <code>7</code>: FIRST ask "is <code>need = 9-7 = 2</code> in seen?"<br><b>then</b> (only if unanswered) store <code>7</code>. Query precedes insert, always.</div>`,
+callout:{type:'callout-info',text:'Ch.1\'s move retired an end; the window\'s move expanded and repaired. Here the move is query-then-insert — one probe, one write, both O(1). That is the one-line proof AND the O(n) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: for each element, query for its complement/partner BEFORE inserting itself. Irreversibility is the forward-only cursor; the O(1) query + O(1) insert per element is exactly what bounds the work at O(n).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest fires the instant a lookup hits',desc:'No pair enumeration. The answer becomes visible the moment <code>need in seen</code> is true &mdash; because the partner was <strong>indexed by an earlier step</strong>. The check sits <em>before</em> the insert: one line later, <code>x</code> could match itself, and a value equal to <code>target/2</code> would return a bogus <code>[i, i]</code>.',
+code:{h:'The harvest — read it before you write',b:`if need in seen:             <span class="hi-g"># HARVEST: the partner</span>
+    return [seen[need], i]   <span class="hi-g">#   was indexed by an</span>
+                             <span class="hi-g">#   EARLIER step.</span>
+
+<span class="cm"># Placed BEFORE seen[x] = i, so x can never
+# pair with ITSELF. One line later would let
+# 2*x == target return a false [i, i].</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">2</div><div class="ac hot">7</div><div class="ac">11</div><div class="ac">15</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>seen</b></div><div class="ptr"><b>i</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">cursor at <code>7</code>, and <code>2</code> is already in the index &rarr; hit.<br>Harvest <code>[seen[2], i] = [0, 1]</code> the instant the lookup succeeds.</div>`,
+callout:{type:'callout-info',text:'Ch.1 harvested when a value predicate fired; Ch.3 on pointer collision. Here it fires on a LOOKUP HIT — proof that the partner passed by earlier and got indexed. Order matters: query before insert.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the answer is visible at the instant a lookup succeeds — the matching key was written by a previous step. Placement is the whole game: query BEFORE inserting self, or an element can illegally partner with itself.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete Two Sum: one pass, an index of the past, a query-then-insert move, a harvest on the first lookup hit. The O(n&sup2;) scan collapses to O(n) &mdash; not by a trick, but because the past is now indexed instead of re-scanned.',
+code:{h:'two_sum.py — final',b:`def two_sum(nums, target):
+    seen = {}                    <span class="cm"># value &rarr; index</span>
+    for i, x in enumerate(nums):
+        need = target - x        <span class="cm"># complement</span>
+        if <span class="hi-g">need in seen</span>:         <span class="cm"># HARVEST</span>
+            return [seen[need], i]
+        <span class="hi-b">seen[x] = i</span>              <span class="cm"># INDEX self, then move on</span>
+    return []
+
+<span class="cm"># O(n) time &middot; O(n) space &middot; ONE pass, no lookback.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">2</div><div class="ac">7</div><div class="ac">11</div><div class="ac">15</div>
+</div>
+<div class="av-cap">i = 0, x = 2: need = 7, not in seen &rarr; index it. <code>seen = {2:0}</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">2</div><div class="ac hot">7</div><div class="ac">11</div><div class="ac">15</div>
+</div>
+<div class="av-cap">i = 1, x = 7: need = 2 &mdash; and <code>2</code> IS in seen.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac win">7</div><div class="ac">11</div><div class="ac">15</div>
+</div>
+<div class="av-cap">HARVEST &rarr; <code>[seen[2], 1] = [0, 1]</code>. Done in one pass.</div>`,
+callout:{type:'callout-ok',text:'The brute force re-scanned the past n times; this indexes it once and queries in O(1). Same answer — O(n²) time collapses to O(n), purely because the invariant remembers.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Group Anagrams — the KEY is the insight',desc:'Group words that are anagrams of each other. The whole trick is the <strong>key function</strong>: reduce each word to a <em>canonical form</em> (its sorted letters, or a 26-count signature). Words sharing a canonical form land in the same bucket. The invariant\'s KEY changed from identity to a canonical map.',
+code:{h:'group_anagrams.py',b:`def group_anagrams(words):
+    groups = {}                      <span class="cm"># signature &rarr; bucket</span>
+    for w in words:
+        key = ''.join(sorted(w))     <span class="cm"># CANONICAL form</span>
+        groups.setdefault(key, []).append(w)
+    return list(groups.values())
+
+<span class="cm"># "eat","tea","ate" &rarr; key "aet" &rarr; one bucket.
+# O(n &middot; k log k) for length-k words.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">eat</div><div class="ac live">tea</div><div class="ac hot">bat</div><div class="ac live">ate</div>
+</div>
+<div class="av-cap">apply key = sorted(w):</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">aet</div><div class="ac win">aet</div><div class="ac hot">abt</div><div class="ac win">aet</div>
+</div>
+<div class="av-cap">three words collapse to key <code>"aet"</code> &rarr; one bucket; <code>"bat"</code>&rarr;<code>"abt"</code> its own.</div>`,
+extra:()=>rulesCard('Rules card — group anagrams',
+ 'The map indexes each CANONICAL signature &rarr; the bucket of words seen with it. (Rule #1\'s key function shifted: identity &rarr; sorted form.)',
+ 'For each word: compute its signature, then query-or-create its bucket and append. One O(k log k) pass per word.',
+ 'The buckets themselves are the answer, read out at the end as <code>groups.values()</code>.'),
+callout:{type:'callout-ok',text:'Same three rules — only the invariant\'s KEY changed. Choosing the right canonical key (sorted word, or a letter-count tuple) is the entire art of the anagram family.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Subarray Sum Equals K — prefix sums indexed',desc:'Count contiguous subarrays summing to <code>k</code>. Track a <strong>running prefix sum</strong> and index how many times each prefix value has occurred. A subarray sums to <code>k</code> exactly when some earlier prefix equals <code>running - k</code>. The invariant\'s value became a <em>count</em>, and the harvest counts instead of returning.',
+code:{h:'subarray_sum.py — prefix-sum map',b:`def subarray_sum(nums, k):
+    seen = {0: 1}                <span class="cm"># prefix_sum &rarr; count</span>
+    running = count = 0
+    for x in nums:
+        running += x
+        count += seen.get(running - k, 0)   <span class="cm"># HARVEST</span>
+        seen[running] = seen.get(running, 0) + 1
+    return count
+
+<span class="cm"># every earlier prefix P with running - P = k
+# is one valid subarray. O(n) time, O(n) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">1</div><div class="ac live">2</div><div class="ac live">3</div>
+</div>
+<div class="av-cap">nums = [1,2,3], k = 3. prefixes: 0, 1, 3, 6</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1</div><div class="ac win">2</div><div class="ac">3</div>
+</div>
+<div class="av-cap">at running = 3: look up <code>3 - 3 = 0</code> &rarr; seen once &rarr; +1 (subarray [1,2]).<br>at running = 6: look up <code>6 - 3 = 3</code> &rarr; seen once &rarr; +1 (subarray [3]). count = 2.</div>`,
+extra:()=>rulesCard('Rules card — subarray sum = k',
+ 'The map indexes every PREFIX SUM seen &rarr; how many times it occurred. (Rule #1\'s key = a running sum; its value = a count, not an index.)',
+ 'Extend the running sum by one element, then query <code>running - k</code>, then insert <code>running</code>. Query-before-insert, as ever.',
+ 'Every hit of <code>running - k</code> adds THAT MANY subarrays to the count. (Rule #3 counts, rather than returning a single pair.)'),
+callout:{type:'callout-ok',text:'Same rulebook: an index of the past, a query-then-insert move, a harvest on lookup. The twist is that the key is a running prefix sum and the harvest accumulates a count.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Isomorphic Strings — two maps for a bijection',desc:'Do <code>s</code> and <code>t</code> map onto each other character-for-character? A single map only enforces one direction; two characters of <code>s</code> could both map to the same character of <code>t</code>. The fix: <strong>two maps</strong> that together index a bijection &mdash; forward and backward must agree.',
+code:{h:'is_isomorphic.py — enforce a bijection',b:`def is_isomorphic(s, t):
+    fwd, bwd = {}, {}            <span class="cm"># s&rarr;t  and  t&rarr;s</span>
+    for a, b in zip(s, t):
+        if fwd.get(a, b) != b or bwd.get(b, a) != a:
+            return False         <span class="cm"># mapping conflict</span>
+        fwd[a], bwd[b] = b, a    <span class="cm"># record BOTH ways</span>
+    return True
+
+<span class="cm"># "egg" &harr; "add":  e&rarr;a, g&rarr;d (and back). OK.
+# "foo" &harr; "bar":  o&rarr;a then o&rarr;r &rarr; conflict.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">e</div><div class="ac live">g</div><div class="ac live">g</div>
+</div>
+<div class="ptr-row"><div class="ptr">&darr;</div><div class="ptr">&darr;</div><div class="ptr">&darr;</div></div>
+<div class="av">
+  <div class="ac win">a</div><div class="ac win">d</div><div class="ac win">d</div>
+</div>
+<div class="av-cap">e&rarr;a, g&rarr;d, g&rarr;d agrees &rarr; consistent both ways &rarr; <b>isomorphic</b>.<br>One map alone would miss "foo"&rarr;"bar": o would try a AND r.</div>`,
+extra:()=>rulesCard('Rules card — isomorphic strings',
+ 'TWO maps together index a bijection seen so far &mdash; each character\'s committed partner in both directions. (Rule #1 doubled to enforce injectivity.)',
+ 'For each aligned pair, query BOTH maps for consistency, then insert both directions.',
+ 'Survive every pair &rarr; isomorphic; the FIRST conflicting lookup &rarr; not. (Rule #3 harvests a boolean at the first violation, else at the end.)'),
+callout:{type:'callout-ok',text:'Same rules, doubled: when one index can only guard one direction, keep two. The pair of maps is still just "the past, made O(1)-queryable" — twice over.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Longest Consecutive Sequence — a set beats a sort',desc:'Find the longest run of consecutive integers, in any order. Sorting gives O(n log n). But a <strong>set</strong> gives O(1) membership &mdash; so we only start walking from a value whose predecessor is absent, and each element is visited O(1) times. The invariant shrinks to a presence-only set, and the scan drops to O(n).',
+code:{h:'longest_consecutive.py',b:`def longest_consecutive(nums):
+    s = set(nums)                <span class="cm"># O(1) membership index</span>
+    best = 0
+    for x in s:
+        if x - 1 not in s:       <span class="cm"># x STARTS a run</span>
+            y = x
+            while y + 1 in s:    <span class="cm"># walk the run upward</span>
+                y += 1
+            best = max(best, y - x + 1)
+    return best
+
+<span class="cm"># only run-STARTS spawn a walk &rarr; each element
+# visited O(1) times &rarr; O(n) total, no sorting.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">100</div><div class="ac live">4</div><div class="ac">200</div><div class="ac live">1</div><div class="ac live">3</div><div class="ac live">2</div>
+</div>
+<div class="av-cap">set = {100, 4, 200, 1, 3, 2}. Only <code>1</code> has no predecessor &rarr; it is a start.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">100</div><div class="ac win">4</div><div class="ac dead">200</div><div class="ac win">1</div><div class="ac win">3</div><div class="ac win">2</div>
+</div>
+<div class="av-cap">walk 1 &rarr; 2 &rarr; 3 &rarr; 4 via membership queries &rarr; length 4. best = 4.</div>`,
+extra:()=>rulesCard('Rules card — longest consecutive sequence',
+ 'A plain SET indexes presence of every value &mdash; membership queryable in O(1). (Rule #1 shrinks to presence-only, no value stored.)',
+ 'For each value, ask "is <code>x-1</code> present?"; only run-STARTS trigger a forward <code>x+1</code> walk. Each element touched O(1) times.',
+ 'The longest run length, read as each start\'s walk completes &mdash; max over all starts.'),
+callout:{type:'callout-ok',text:'Same rules: the set is the index of the past, membership is the query. Trading a sort for O(1) lookups turns O(n log n) into O(n) — the invariant did the work.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Two Pointers vs. Sliding Window vs. Hash Maps',desc:'Four chapters, four patterns, still zero new rules. Notice the invariant morph again &mdash; from a discarded region, to a living window, to a full <strong>index of the past</strong> that trades memory for O(1) recall.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Hash Maps (Ch.23)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>The living <strong>inside</strong>: "the window is legal" + O(1) aux</td><td>A complete <strong>index of the past</strong> &mdash; every element seen, queryable in O(1)</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Query the complement FIRST, then insert self &mdash; one pass, no lookback</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink / count per step</td><td>The instant a lookup hits &mdash; the partner was indexed by an earlier step</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n &mdash; one retired per step</td><td>&le; 2n &mdash; both pointers monotone</td><td>O(n) time, O(1) per op &mdash; <strong>trades O(n) space for recall</strong></td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are the constant, the IMPLEMENTATION is the variable. Where Fast & Slow spent O(1) memory, Hash Maps spends O(n) memory to buy O(1) recall — the exact opposite trade, same three rules.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 23',desc:'Add hash maps\' implementations to the running lists &mdash; and, most importantly, its <strong>recognition signal</strong>: the sound a problem makes when this pattern applies.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window,
+               two-pointer speed ratio,
+               <span class="hi-b">a hash INDEX of the past (O(1) lookup):
+               value&rarr;index, key&rarr;bucket, sum&rarr;count,
+               two-map bijection, presence-only set</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast +2 / slow +1,
+               <span class="hi-y">query-the-complement-then-insert-self
+               (one pass, O(1) probe + O(1) write)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision / on-exhaustion,
+               <span class="hi-g">on-lookup-HIT (partner was indexed
+               earlier) — query BEFORE you insert</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Hash Maps when:</span>
+  data is UNSORTED and the question is
+  "have I seen X — or f(X) — before?" &middot;
+  complement / pair / duplicate / group-by /
+  count-of &middot; and you want O(1) recall.`},
+dia:null,
+callout:{type:'callout-purple',text:'When the data is unsorted and you catch yourself asking "have I already seen this value, or some function of it?", do not reach for a nested scan. Ask: what KEY makes the past O(1)-queryable? Choose the key, and the pattern names itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

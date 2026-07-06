@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 19 — Graphs | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 19 — Graphs</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Number of Islands',desc:'New chapter, new SHAPE of data: a graph. You are given an <code>m &times; n</code> grid of <code>1</code> (land) and <code>0</code> (water). Count the <strong>islands</strong> — maximal blobs of land joined <strong>4-directionally</strong>. The structural gift hiding in plain sight: <strong>the grid already IS a graph</strong> — every cell is a node, wired to its up / down / left / right neighbor.',
+code:{h:'The problem',b:`grid = [
+  ['1','1','0','0'],
+  ['0','0','1','0'],
+  ['0','0','0','1'],
+]
+
+num_islands(grid) = 3
+<span class="cm"># three maximal 4-connected land blobs</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">1</div><div class="ac win">1</div><div class="ac dead">0</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac win">1</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac dead">0</div><div class="ac win">1</div>
+</div>
+<div class="av-cap">Each <code>1</code> is a node; edges join 4-adjacent land.<br>Three connected land regions &rarr; the answer is <b>3</b>.</div>`,
+callout:{type:'callout-ok',text:'No pointers to slide, no window to grow. But the same three rules are about to reappear — worn by a graph traversal instead of an array walk. Hold onto the phrase "each cell is a node".'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — relax labels until nothing changes',desc:'Skip traversal entirely. Give every land cell a unique id, then sweep the whole grid over and over: each cell copies the SMALLEST id among itself and its land neighbors. Keep sweeping until a full pass changes nothing. Cells that end up sharing an id form one island; count the distinct survivors. It is correct — and it re-touches every cell on every sweep.',
+code:{h:'num_islands_slow.py — the naive attempt',b:`def num_islands_slow(grid):
+    R, C = len(grid), len(grid[0])
+    lab = {(r,c): r*C+c for r in range(R)
+           for c in range(C) if grid[r][c]=='1'}
+    changed = True
+    while changed:                    <span class="cm"># sweep to a fixpoint</span>
+        changed = False
+        for (r,c), v in list(lab.items()):
+            for nr,nc in ((r+1,c),(r-1,c),(r,c+1),(r,c-1)):
+                if (nr,nc) in lab and lab[(nr,nc)] &lt; v:
+                    lab[(r,c)] = v = lab[(nr,nc)]
+                    changed = True
+    return len(set(lab.values()))     <span class="cm"># distinct ids = islands</span>
+
+<span class="cm"># each sweep O(mn); up to O(mn) sweeps for a snake
+# &rarr; O((mn)&sup2;).  300&times;300 grid &rarr; ~8e9 ops &rarr; TLE</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac live">1</div><div class="ac dead">&middot;</div><div class="ac dead">&middot;</div>
+</div>
+<div class="av-cap">pass 0: every land cell seeded with a unique id</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">0</div><div class="ac hot">0</div><div class="ac dead">&middot;</div><div class="ac dead">&middot;</div>
+</div>
+<div class="av-cap">pass 1: id <code>1</code> relaxes to its neighbor's <code>0</code> — one sweep of many.<br>A long snake needs O(mn) sweeps before it settles.</div>`,
+callout:{type:'callout-ok',text:'Correct on every example. But there is no notion of "done" — a settled cell gets re-examined on the next sweep, and the next, and the next. For a 300&times;300 grid that is ~8 billion touches. The pain here is a genuinely worse big-O.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is missing?',desc:'Chapters 1–3 gave us three rules. This brute force is slow for exactly one reason: it has no memory of what it has already finished. Audit it — the absent rule is obvious once you name it.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> There is NO partition of cells into unvisited / done. Nothing records that a cell is settled, so every sweep re-touches every cell. The whole cost flows from this missing invariant.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> A "step" is an entire O(mn) sweep, not a single O(1) cell visit — so there is no per-cell irreversible progress to bound the work.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES, late.</span> The answer is only readable after a GLOBAL fixpoint (a sweep with no change), which is precisely what forces the redundant passes.',
+ true),
+callout:{type:'callout-bad',text:'The grid never changed and neither did the rules. All we lack is a visited-invariant that says "this node is done, never look again." We need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a coloring of every node',desc:'Introduce a <code>visited</code> marker. Now, at every moment, three colors <strong>partition all nodes</strong>: <strong>unvisited</strong>, <strong>in-progress</strong> (on the current frontier / recursion stack), and <strong>done</strong>. For BFS there is a sharper form: <strong>every node at distance &lt; d is finalized before any node at distance d</strong>.',
+code:{h:'The promise — a 3-color partition',b:`<span class="cm"># INVARIANT — true after every step:</span>
+<span class="hi-b">#   every node is exactly one of
+#   UNVISITED / IN-PROGRESS / DONE.</span>
+
+<span class="cm"># DFS: the recursion stack IS the current path;
+#      IN-PROGRESS = the nodes on that stack.
+# BFS: all nodes at distance &lt; d are DONE
+#      before any node at distance d is touched.</span>
+
+<span class="cm"># A settled node is never revisited &rarr; O(1) per node.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">D</div><div class="ac hot">P</div><div class="ac">U</div><div class="ac">U</div>
+</div>
+<div class="av">
+  <div class="ac">U</div><div class="ac">U</div><div class="ac">U</div><div class="ac">U</div>
+</div>
+<div class="av-cap"><b>D</b> = done (green), <b>P</b> = in-progress frontier (amber), <b>U</b> = unvisited.<br>Ch.1 colored a region of ONE array; here we color EVERY node.</div>`,
+callout:{type:'callout-info',text:'Same Rule #1 as every prior chapter: name the property true after each step. Its implementation just grew from "a slice of an array" to "a color on every node of a graph".'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a COLORING that partitions the whole node set (unvisited / in-progress / done). In Two Pointers the invariant described a linear region of ONE array; here it describes the state of EVERY node in a graph. A done node is never re-entered — that single fact kills the brute-force cost.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: expand the frontier, or dive and backtrack',desc:'One irreversible step = visit one unvisited node and color it. Two shapes: <strong>BFS</strong> pops the frontier queue and pushes unvisited neighbors — expanding level by level; <strong>DFS</strong> dives into a neighbor, then backtracks. The one-line safety proof doubles as the bound: <strong>the visited-color forbids re-entry, so every node and edge is processed O(1) times &rarr; O(V + E)</strong>.',
+code:{h:'The move — BFS and DFS, one bound',b:`<span class="cm"># BFS: expand the frontier level by level</span>
+q = deque([start]); seen = {start}
+while q:
+    u = q.popleft()                   <span class="cm"># pop the frontier</span>
+    for v in neighbors(u):
+        if v not in seen:
+            seen.add(v)               <span class="hi-y"># MOVE: color + enqueue</span>
+            q.append(v)
+
+<span class="cm"># DFS: dive, then backtrack (stack = path)
+# PROOF: each node entered once, each edge scanned
+#   once &rarr; O(V + E) total.  Grid: O(mn).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">0</div><div class="ac live">1</div><div class="ac">&middot;</div>
+</div>
+<div class="av">
+  <div class="ac live">1</div><div class="ac">&middot;</div><div class="ac">&middot;</div>
+</div>
+<div class="av-cap">frontier at distance 1 (blue) around the start (green, distance 0)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac win">1</div><div class="ac live">2</div>
+</div>
+<div class="av">
+  <div class="ac win">1</div><div class="ac live">2</div><div class="ac">&middot;</div>
+</div>
+<div class="av-cap">the next move expands the frontier to distance 2 — each cell entered once</div>`,
+callout:{type:'callout-info',text:'Ch.2 expanded a window then repaired it; here the frontier only grows outward and never revisits. The coloring is what makes the move irreversible — and that irreversibility is the entire O(V + E) proof.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: the move consumes one unvisited node (BFS: dequeue + enqueue neighbors; DFS: recurse + backtrack). Irreversibility is the coloring — a done node is never re-entered — which is exactly the one-line proof that bounds total work at O(V + E).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest depends on WHICH moment you read',desc:'The answer is visible at a precise instant. <strong>BFS</strong>: the FIRST time you touch the goal, its distance is the shortest — read it now, later touches cannot beat it. <strong>DFS</strong>: harvest at <strong>discovery</strong> (a fresh unvisited root = a new connected component) or at <strong>finish</strong> (topological order; a cycle the instant you hit an IN-PROGRESS node).',
+code:{h:'The harvest — the moment names the problem',b:`<span class="cm"># components: harvest at DISCOVERY</span>
+for cell in grid:
+    if <span class="hi-g">cell is unvisited land</span>:   <span class="cm"># new component!</span>
+        count += 1                     <span class="cm"># grab BEFORE the flood</span>
+        flood(cell)
+
+<span class="cm"># shortest path (BFS): harvest at FIRST touch of goal
+# cycle (DFS): harvest on an edge into an IN-PROGRESS node
+# ordering (DFS): harvest at FINISH (all children done)</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.3 harvested on collision vs. exhaustion; here the dial is discovery vs. finish vs. first-touch. Move the harvest moment and the SAME traversal counts components, finds shortest paths, or detects a cycle.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the harvest is a graph EVENT — first-touch-of-goal (BFS shortest path), fresh-root-discovered (a new component), all-children-finished (ordering), or an edge into an in-progress node (a cycle). For Number of Islands it fires the instant the scan finds an unvisited land cell — one step later the flood has already swallowed it.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules: Number of Islands',desc:'Put them together as a DFS flood fill. The outer scan harvests each new component; the flood colors an entire island <code>done</code> so it is never counted twice. The O((mn)&sup2;) blow-up of the brute force is gone — every cell is touched exactly once.',
+code:{h:'num_islands.py — final (DFS flood)',b:`def num_islands(grid):
+    R, C = len(grid), len(grid[0])
+    count = 0
+    def flood(r, c):
+        if r &lt; 0 or r &gt;= R or c &lt; 0 or c &gt;= C:
+            return
+        if grid[r][c] != '1':          <span class="cm"># water or done</span>
+            return
+        <span class="hi-b">grid[r][c] = '#'</span>               <span class="cm"># INVARIANT: mark done</span>
+        <span class="hi-y">flood(r+1,c); flood(r-1,c)</span>       <span class="cm"># MOVE: dive to</span>
+        <span class="hi-y">flood(r,c+1); flood(r,c-1)</span>       <span class="cm">#   4 neighbors</span>
+    for r in range(R):
+        for c in range(C):
+            if <span class="hi-g">grid[r][c] == '1'</span>:       <span class="cm"># HARVEST: new island</span>
+                count += 1
+                flood(r, c)
+    return count
+<span class="cm"># O(mn) time &middot; O(mn) worst-case stack &middot; one touch per cell</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">1</div><div class="ac live">1</div><div class="ac dead">0</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac live">1</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac dead">0</div><div class="ac live">1</div>
+</div>
+<div class="av-cap">scan hits (0,0): a fresh unvisited <code>1</code> &rarr; count = 1, launch DFS</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">#</div><div class="ac win">#</div><div class="ac dead">0</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac hot">1</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac dead">0</div><div class="ac live">1</div>
+</div>
+<div class="av-cap">DFS sinks the whole region to <code>#</code>; the scan resumes, finds (1,2) &rarr; count = 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">#</div><div class="ac win">#</div><div class="ac dead">0</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac win">#</div><div class="ac dead">0</div>
+</div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">0</div><div class="ac dead">0</div><div class="ac hot">1</div>
+</div>
+<div class="av-cap">last region (2,3) &rarr; count = 3. Every cell visited exactly once.</div>`,
+callout:{type:'callout-ok',text:'Same answer as the brute force, but O(mn) instead of O((mn)&sup2;) — purely because the visited-color gave every cell a "done" state. Rule #1 did all the work.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Clone Graph — the visited-set carries the answer',desc:'Deep-copy a connected undirected graph. The trap is the cycles: a naive copy recurses forever. Fix: a hashmap <code>old &rarr; new</code> IS the visited invariant — and it also stores the clones. One rule, two jobs.',
+code:{h:'clone_graph.py — DFS + hashmap',b:`def clone_graph(node):
+    seen = {}                          <span class="hi-b"># INVARIANT: old &rarr; clone</span>
+    def dfs(cur):
+        if cur in seen:                <span class="cm"># already cloned</span>
+            return seen[cur]
+        copy = Node(cur.val)
+        seen[cur] = copy               <span class="cm"># mark BEFORE recursing</span>
+        for nb in cur.neighbors:       <span class="hi-y"># MOVE: dive to neighbors</span>
+            copy.neighbors.append(dfs(nb))
+        return <span class="hi-g">copy</span>                   <span class="cm"># HARVEST: finished clone</span>
+    return dfs(node) if node else None`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac live">4</div>
+</div>
+<div class="av-cap">edges: 1&mdash;2, 1&mdash;3, 2&mdash;4, 3&mdash;4 (a 4-cycle)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1'</div><div class="ac win">2'</div><div class="ac hot">3'</div><div class="ac dead">4'</div>
+</div>
+<div class="av-cap">seen = {1&rarr;1', 2&rarr;2', 3&rarr;3'}; visiting 4 next.<br>The hashmap stops the 4-cycle from cloning forever.</div>`,
+extra:()=>rulesCard('Rules card — clone graph',
+ 'The hashmap <code>seen</code> (old node &rarr; its clone) partitions nodes into cloned / not-yet; each old node is cloned exactly once.',
+ 'DFS dives into every neighbor edge; a hashmap lookup replaces the plain visited-array.',
+ 'At return — a clone is complete once all of its neighbor edges are wired in.'),
+callout:{type:'callout-ok',text:'The shift is in Rule #1: the visited invariant is no longer a boolean set, it is a hashmap that DOUBLES as the output. Move and harvest are textbook DFS.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Bipartite Check — the invariant gains a color rule',desc:'Can the graph be 2-colored so that no edge joins two same-colored nodes? Traverse and color each node the OPPOSITE of its parent. The invariant now carries a legality clause; the harvest fires the moment an edge violates it.',
+code:{h:'is_bipartite.py — BFS 2-coloring',b:`from collections import deque
+def is_bipartite(graph):
+    color = {}                         <span class="hi-b"># INVARIANT: no edge joins</span>
+    for s in range(len(graph)):        <span class="cm">#   two equal colors</span>
+        if s in color: continue
+        color[s] = 0; q = deque([s])
+        while q:
+            u = q.popleft()
+            for v in graph[u]:         <span class="hi-y"># MOVE: scan each edge</span>
+                if v not in color:
+                    color[v] = color[u] ^ 1
+                    q.append(v)
+                elif <span class="hi-g">color[v] == color[u]</span>:   <span class="cm"># HARVEST:</span>
+                    return False       <span class="cm">#   same-color edge</span>
+    return True`},
+dia:()=>`<div class="av">
+  <div class="ac live">A</div><div class="ac hot">B</div><div class="ac live">C</div><div class="ac hot">D</div>
+</div>
+<div class="av-cap">blue = 0, amber = 1. Edges A&mdash;B, B&mdash;C, C&mdash;D all join opposite colors &rarr; <b>bipartite</b></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">A</div><div class="ac hot">B</div><div class="ac bad2">C</div>
+</div>
+<div class="av-cap">add edge A&mdash;C (both blue) &rarr; a same-color edge &rarr; <b>not bipartite</b></div>`,
+extra:()=>rulesCard('Rules card — bipartite check',
+ 'A 2-coloring in which NO edge joins two same-colored nodes; every node holds 0 or 1.',
+ 'BFS pop, then push each uncolored neighbor with the OPPOSITE color; each edge inspected once.',
+ 'The first edge whose endpoints share a color &rarr; not bipartite; survive the whole scan &rarr; bipartite.'),
+callout:{type:'callout-ok',text:'The shift is again in Rule #1: the invariant grew a semantic clause (a legal 2-coloring), so the harvest now fires on an invariant VIOLATION rather than on completion.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Shortest Path in a Grid — the level count IS the answer',desc:'Fewest steps from top-left to bottom-right through open cells. Because BFS finalizes nodes in distance order, the FIRST time the goal leaves the queue its distance is optimal. The harvest moves to first-touch-of-goal; nothing else changes.',
+code:{h:'shortest_path.py — BFS levels',b:`from collections import deque
+def shortest_path(grid):
+    R, C = len(grid), len(grid[0])
+    q = deque([(0, 0, 1)])             <span class="hi-b"># INVARIANT: FIFO &rArr;</span>
+    seen = {(0, 0)}                    <span class="cm">#   dist grows by level</span>
+    while q:
+        r, c, d = q.popleft()
+        if <span class="hi-g">(r, c) == (R-1, C-1)</span>:      <span class="cm"># HARVEST: first touch</span>
+            return d                    <span class="cm">#   = shortest path</span>
+        for nr,nc in ((r+1,c),(r-1,c),(r,c+1),(r,c-1)):
+            ok = 0 &lt;= nr &lt; R and 0 &lt;= nc &lt; C
+            if ok and grid[nr][nc]==0 and (nr,nc) not in seen:
+                seen.add((nr,nc))      <span class="hi-y"># MOVE: expand frontier</span>
+                q.append((nr, nc, d+1))
+    return -1`},
+dia:()=>`<div class="av">
+  <div class="ac win">0</div><div class="ac live">1</div><div class="ac dead">#</div>
+</div>
+<div class="av">
+  <div class="ac dead">#</div><div class="ac live">2</div><div class="ac live">3</div>
+</div>
+<div class="av">
+  <div class="ac dead">#</div><div class="ac dead">#</div><div class="ac hot">4</div>
+</div>
+<div class="av-cap">BFS labels each open cell with its distance from the start (0).<br>The goal (bottom-right) is first touched at distance <b>4</b> &rarr; shortest.</div>`,
+extra:()=>rulesCard('Rules card — shortest path (BFS)',
+ 'BFS levels: every node at distance &lt; d is finalized before any at distance d (the queue is FIFO by level).',
+ 'Pop the front, push each unseen open neighbor at <code>d + 1</code>; each cell enqueued once.',
+ 'The FIRST time the goal is dequeued, <code>d</code> is its shortest distance — later touches cannot be shorter.'),
+callout:{type:'callout-ok',text:'The shift is in Rule #3: harvest at first-touch-of-goal. And the queue being FIFO is no longer incidental — it is what makes the distance-order invariant true.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Dijkstra — the queue becomes a min-heap',desc:'Add edge WEIGHTS and BFS breaks — the fewest-edges path is no longer the cheapest. Swap the FIFO queue for a min-heap keyed by cost. Same three rules; only the MOVE changes: expand cheapest-first instead of level-by-level.',
+code:{h:'dijkstra.py — weighted BFS',b:`import heapq
+def dijkstra(graph, src):              <span class="cm"># graph[u] = [(v, w), ...]</span>
+    dist = {src: 0}
+    pq = [(0, src)]                    <span class="cm"># min-heap frontier</span>
+    done = set()                       <span class="hi-b"># INVARIANT: a popped node</span>
+    while pq:                          <span class="cm">#   has its FINAL distance</span>
+        d, u = heapq.heappop(pq)       <span class="hi-y"># MOVE: cheapest first</span>
+        if u in done: continue
+        <span class="hi-g">done.add(u)</span>                    <span class="cm"># HARVEST: d is final for u</span>
+        for v, w in graph[u]:          <span class="cm"># relax each edge once</span>
+            nd = d + w
+            if nd &lt; dist.get(v, 1e18):
+                dist[v] = nd
+                heapq.heappush(pq, (nd, v))
+    return dist`},
+dia:()=>`<div class="av">
+  <div class="ac win">A:0</div><div class="ac live">B:2</div><div class="ac live">C:5</div><div class="ac dead">D:&infin;</div>
+</div>
+<div class="av-cap">the min-heap pops the cheapest frontier node first (B:2 before C:5)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">A:0</div><div class="ac win">B:2</div><div class="ac hot">C:3</div><div class="ac live">D:6</div>
+</div>
+<div class="av-cap">popping B relaxes C (5&rarr;3) &amp; D; each settled node keeps its final distance.</div>`,
+extra:()=>rulesCard('Rules card — Dijkstra',
+ 'The node popped from the min-heap has its FINAL shortest distance — every cheaper path is already settled.',
+ 'Pop the cheapest frontier node, relax its out-edges, push improved neighbors; the FIFO queue becomes a min-heap.',
+ 'At pop-time — <code>d</code> is the confirmed shortest distance to <code>u</code>.'),
+callout:{type:'callout-ok',text:'The shift is in Rule #2: the frontier is now ordered by cost, not by level. Weighted edges are the only reason BFS needed a heap — everything else is the same graph rulebook.'}
+},
+{phase:'pill-pattern',phaseTxt:'Nineteen chapters, one rulebook',title:'Two Pointers vs. Fast & Slow vs. Graphs',desc:'Four patterns compared, and the thesis holds: the RULES never change, only their bodies do. Watch the invariant go from a slice of one array, to a two-pointer ratio, to a color on every node of a graph.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Fast &amp; Slow (Ch.3)</th><th>Graphs (Ch.19)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong> of one array</td><td>A fixed <strong>speed ratio</strong> between two walkers — O(1)</td><td>A <strong>coloring</strong> of every node: unvisited / in-progress / done</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td><code>fast += 2</code>, <code>slow += 1</code></td><td>Expand the frontier (BFS) or dive + backtrack (DFS)</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>On collision (cycle) or exhaustion (middle)</td><td>First touch = shortest (BFS); discovery / finish (DFS)</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; n — gap closes 1/step</td><td>O(V + E) — each node &amp; edge once</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, biggest structure yet: a graph. The invariant just widened from "a region of one array" to "a coloring of an entire network" — but it is still Rule #1, doing the same job.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 19',desc:'Add the graph-traversal bodies to the running lists — and, most importantly, the <strong>recognition signal</strong> that tells you a problem is secretly a graph.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  prior: outside-the-pointers, inside-the-window,
+         two-pointer speed ratio,
+  <span class="hi-b">graph: a 3-color partition of ALL nodes
+         (unvisited / in-progress / done);
+         BFS finalizes nodes in distance order</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  prior: retire-an-end, expand-and-repair,
+         fast +2 / slow +1,
+  <span class="hi-y">graph: BFS expand-the-frontier /
+         DFS dive-then-backtrack;
+         each node &amp; edge O(1) once &rarr; O(V + E)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  prior: on-predicate, during-shrink,
+         on-collision / on-exhaustion,
+  <span class="hi-g">graph: BFS FIRST-touch-of-goal = shortest;
+         DFS at discovery (components) /
+         at finish (ordering, cycle via in-progress hit)</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Graphs when:</span>
+  networks, grids-as-graphs, reachability, or an
+  implicit "state &rarr; next states" web.
+  "shortest / fewest steps"  &rarr; BFS.
+  "exists / all / connected / detect a cycle"  &rarr; DFS.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem talks about connections, reachability, grids, or states that lead to other states, stop hunting for a clever trick. Ask: what are my nodes, what are my edges, and am I after SHORTEST (BFS) or EXISTENCE / ALL (DFS)? Name those and the pattern names itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

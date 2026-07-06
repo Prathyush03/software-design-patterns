@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 14 — Cyclic Sort | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 14 — Cyclic Sort</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Find the Missing Number',desc:'A fresh shape of problem: you are handed an array of <code>n</code> <strong>distinct</strong> integers drawn from the range <code>0..n</code> — so of those <code>n+1</code> possible values, exactly <strong>one</strong> is missing. Return it. And the interviewer nails the terms down: <strong>O(n) time AND O(1) extra space.</strong>',
+code:{h:'The problem',b:`nums = [3, 0, 1]        <span class="cm"># n = 3, indices 0..2</span>
+<span class="cm"># values are three of {0,1,2,3}; one is absent</span>
+
+missing_number(nums) = 2
+
+<span class="cm"># place value v in slot v; the slot that
+# ends up wrong names the missing value.</span>`},
+dia:()=>`<div class="av"><div class="ac">3</div><div class="ac">0</div><div class="ac">1</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div></div>
+<div class="av-cap">3 slots (indices 0..2); values are three of {0,1,2,3} &mdash; one is gone.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">0</div><div class="ac win">1</div><div class="ac bad2">3</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div></div>
+<div class="av-cap">Send each value v to slot v. Slot 2 can never hold a 2 (there is none) &mdash; it ends up holding the homeless 3, so <b>2</b> is the answer.</div>`,
+callout:{type:'callout-ok',text:'No sort budget. No side table. Just O(1) space on a bounded range of values — hold that constraint, it is the whole story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — remember which values you have seen',desc:'The obvious idea: dump every value into a hash set, then walk <code>0..n</code> and report the first one absent. Correct, simple, passes every sample. It even runs in O(n) time.',
+code:{h:'missing_number.py — the naive attempt',b:`def missing_number(nums):
+    n = len(nums)
+    seen = set(nums)              <span class="cm"># INVARIANT: every</span>
+                                  <span class="cm">#   value present</span>
+    for v in range(n + 1):        <span class="cm"># scan 0..n</span>
+        if v not in seen:
+            return v              <span class="cm"># the absent one</span>
+
+<span class="cm"># O(n) TIME — but O(n) SPACE for the set.
+# The interviewer said O(1).</span>`},
+dia:()=>`<div class="av"><div class="ac live">3</div><div class="ac live">0</div><div class="ac live">1</div></div>
+<div class="av-cap">seen = {3, 0, 1} &mdash; a full census of the array, O(n) memory</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">0</div><div class="ac win">1</div><div class="ac bad2">2</div><div class="ac">3</div></div>
+<div class="av-cap">scan 0,1,2,3: <code>2</code> is the one never inserted &rarr; missing.<br>Correct — but that set is O(n) space we were told we cannot have.</div>`,
+callout:{type:'callout-ok',text:'Honest accounting: this is O(n) time, same as the pattern will be. The win we are hunting is not speed — it is SPACE and generality. (Yes, a one-off sum trick solves THIS problem in O(1) space — but it shatters the moment values duplicate or you must return ALL that are missing. Cyclic sort is the idea that survives.)'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Chapters 1–3 handed us three rules. This brute force is not <em>slow</em> — it is <strong>fat</strong>. So audit it: the failure is memory, and the rules point straight at the culprit.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (space).</span> "seen = the set of every value present" is a <em>valid</em> invariant — but it costs O(n) memory. It builds a separate census when the array itself, rearranged, could BE the ledger.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> One insert per element is fine and irreversible — but it dumps its knowledge into O(n) side memory instead of into the array\'s own layout.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "the value never inserted is the missing one" is correct — but it is powered entirely by that O(n) set.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just parks an O(n) invariant in a side table when the array can host an O(1) one. We need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant: settled homes only ever grow',desc:'Throw away the census. Use the array as its own hash table: <strong>value <code>v</code> belongs in slot <code>v</code></strong>. Maintain a single fact — every value we have already swapped is sitting in its permanent home, and that set of settled slots only <strong>grows, never empties</strong>. Storage: the array itself, O(1) extra.',
+code:{h:'The promise — the array is the ledger',b:`<span class="cm"># home of value v is slot v.</span>
+
+<span class="hi-b"># INVARIANT — true after every swap:
+#   each value we placed sits in its
+#   home slot, and the count of
+#   home-correct slots only GROWS.</span>
+
+<span class="cm"># No side census. The only storage is the
+# array itself, rearranged in place — O(1).</span>`},
+dia:()=>`<div class="av"><div class="ac hot">3</div><div class="ac">0</div><div class="ac">1</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div></div>
+<div class="av-cap">home of value v is slot v. 0&rarr;slot0, 1&rarr;slot1; 3 = n has no slot here, so it is simply parked.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">0</div><div class="ac win">1</div><div class="ac">3</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div></div>
+<div class="av-cap">Settled homes (green) only ever fill, never empty &mdash; that monotone set is the whole invariant.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter so far: name the property that survives every step. What changed is only its footprint — from an O(n) set to the array holding itself, O(1).'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is no longer a region or a set of seen values — it is "value v lives in slot v for every settled slot," and settled slots only fill, never empty. The array is its own hash table; extra memory O(1).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: swap the value under the cursor home',desc:'At cursor <code>i</code>, while <code>nums[i]</code> has a home here and is not already in it, <strong>swap it into its home slot</strong>. Why it is irreversible progress: <strong>every such swap drops at least one value onto its permanent home, and a value never leaves home once placed</strong> — so at most <code>n</code> swaps can ever happen.',
+code:{h:'The move — swap-to-home',b:`i = 0
+while i &lt; n:
+    v = nums[i]
+    if v &lt; n and nums[v] != v:    <span class="cm"># slot v not filled yet</span>
+        nums[i], nums[v] = nums[v], nums[i]   <span class="hi-y"># send v home</span>
+    else:
+        i += 1                    <span class="cm"># home / no home &rarr; advance</span>
+
+<span class="cm"># PROOF: each swap lands &ge;1 value on its
+# home for good &rarr; &le; n swaps, then i marches
+# to n. O(n) time, O(1) space.</span>`},
+dia:()=>`<div class="av"><div class="ac live">3</div><div class="ac hot">0</div><div class="ac">1</div></div>
+<div class="ptr-row"><div class="ptr">home</div><div class="ptr"><b style="color:var(--text-warning)">i</b></div><div class="ptr"></div></div>
+<div class="av-cap">cursor i=1 holds 0; its home is slot 0. Swap them.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">0</div><div class="ac live">3</div><div class="ac">1</div></div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-success)">0&#10003;</b></div><div class="ptr"><b style="color:var(--text-warning)">i</b></div><div class="ptr"></div></div>
+<div class="av-cap">0 lands home for good (green). One swap &rarr; at least one value settled permanently &mdash; that is why &le; n swaps total.</div>`,
+callout:{type:'callout-info',text:'Ch.1\'s move retired one element per step; here nothing is retired — a swap settles one value forever. Same irreversibility, and its one-line proof (&le; n swaps) IS the complexity bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: while the value at the cursor is not in its home, swap it home. Every productive swap settles &ge;1 new value permanently &rarr; &le; n swaps total, O(1) space. That single count is the whole complexity proof.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: a second pass finds the wrong slot',desc:'When the move loop drains, every value that <em>has</em> a home is in it. Now a <strong>second pass</strong>: the first slot where <code>nums[i] != i</code> is the missing number (if none, it is <code>n</code>). Placement is everything — this read must sit <strong>after</strong> the loop finishes. Read it mid-sort and a slot that is merely not-yet-filled masquerades as missing.',
+code:{h:'The harvest — placement is the variant dial',b:`<span class="cm"># after the move loop, in a SECOND pass:</span>
+for i in range(n):
+    if <span class="hi-g">nums[i] != i</span>:      <span class="cm"># first wrong slot</span>
+        return i             <span class="cm"># &rarr; the missing value</span>
+return n                     <span class="cm"># every slot home &rarr; n is gone</span>
+
+<span class="cm"># WHERE you read picks the problem:
+#   first wrong slot   &rarr; the missing number
+#   collect ALL wrong  &rarr; every missing number
+#   the value with no home &rarr; the duplicate</span>`},
+dia:()=>`<div class="av"><div class="ac win">0</div><div class="ac win">1</div><div class="ac bad2">3</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr"><b>i</b></div></div>
+<div class="av-cap">after the move loop drains: scan for nums[i] != i. Slot 2 holds 3, not 2 &rarr; missing = <b>2</b>.<br>Read this one step too early &mdash; before sorting finished &mdash; and slot 2 might still be waiting for its value.</div>`,
+callout:{type:'callout-info',text:'Ch.1 harvested when a value predicate fired mid-loop; here the harvest is a whole separate pass. And WHICH wrong slot you read — first, all, or the occupied one — is the dial that selects the variation.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: scan once more after sorting; the first index with nums[i] != i exposes the answer. The harvest must wait until the move loop is fully drained — one step too early and a not-yet-filled slot lies to you.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete missing-number finder: in place, one move loop, one harvest pass. The O(1)-space constraint that killed the brute force is now satisfied <strong>by construction</strong> — not bolted on afterward.',
+code:{h:'missing_number.py — final',b:`def missing_number(nums):
+    n = len(nums)
+    i = 0
+    while i &lt; n:                    <span class="cm"># MOVE loop</span>
+        v = nums[i]
+        if v &lt; n and nums[v] != v:   <span class="hi-y"># swap v home</span>
+            nums[i], nums[v] = nums[v], nums[i]
+        else:
+            i += 1
+    for i in range(n):              <span class="cm"># HARVEST pass</span>
+        if <span class="hi-g">nums[i] != i</span>:
+            return i
+    return n
+
+<span class="cm"># O(n) time · O(1) space · in place.</span>`},
+dia:()=>`<div class="av"><div class="ac hot">3</div><div class="ac">0</div><div class="ac">1</div></div>
+<div class="ptr-row"><div class="ptr"><b>i</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">i=0: v=3=n has no home here &rarr; skip forward</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">0</div><div class="ac live">3</div><div class="ac">1</div></div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>i</b></div><div class="ptr"></div></div>
+<div class="av-cap">i=1: 0 swapped home to slot0 (settled). Then 3 has no home &rarr; skip.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">0</div><div class="ac win">1</div><div class="ac bad2">3</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr"><b>i</b></div></div>
+<div class="av-cap">sorted in place: [0,1,3]. Harvest scan &rarr; slot2 holds 3 &ne; 2 &rarr; <b>missing = 2</b>.</div>`,
+callout:{type:'callout-ok',text:'The brute force stored a whole set; this rearranges the array itself, storing nothing extra. Same O(n) time — but O(n) space collapses to O(1), purely because the invariant moved into the array.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Find All Missing Numbers',desc:'Now values live in <code>1..n</code>, length <code>n</code>, and some appear twice — so others are absent. Home of <code>v</code> is slot <code>v-1</code>. The move is untouched; only the <strong>harvest widens</strong>: collect <em>every</em> slot where <code>nums[i] != i+1</code>, each names one missing value.',
+code:{h:'find_disappeared.py — collect every gap',b:`def find_disappeared(nums):
+    n = len(nums)
+    i = 0
+    while i &lt; n:
+        v = nums[i]                 <span class="cm"># home of v is slot v-1</span>
+        if nums[v - 1] != v:        <span class="hi-y"># not home &rarr; swap</span>
+            nums[i], nums[v - 1] = nums[v - 1], nums[i]
+        else:
+            i += 1
+    return <span class="hi-g">[i + 1 for i in range(n) if nums[i] != i + 1]</span>
+                                    <span class="cm"># every wrong slot = a missing value</span>`},
+dia:()=>`<div class="av"><div class="ac">2</div><div class="ac">2</div><div class="ac">3</div><div class="ac">1</div></div>
+<div class="av-cap">values 1..4; home of v is slot v-1. The duplicate 2 will claim slot1 and block others.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">1</div><div class="ac win">2</div><div class="ac win">3</div><div class="ac bad2">2</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div><div class="ptr"><b>i</b></div></div>
+<div class="av-cap">sorted: slot3 wants 4 but holds a stray 2 &rarr; <b>4 is missing</b>. Collect ALL such slots for the full list.</div>`,
+extra:()=>rulesCard('Rules card — all missing numbers',
+ 'Same settled-homes invariant; home of v is now slot <code>v-1</code> (values 1..n).',
+ 'Identical swap-to-home. A duplicate simply refuses a second home and is left where it lands.',
+ 'Widened from FIRST wrong slot to <span class="viol">ALL</span> wrong slots — each collects one missing value.'),
+callout:{type:'callout-ok',text:'Only the harvest widened. The invariant and the move are byte-for-byte the base problem\'s — the family shares one skeleton.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Find the Duplicate Number',desc:'<code>n+1</code> integers each in <code>1..n</code>, exactly one value repeated. Swap each value toward home slot <code>v-1</code>; the value that arrives to find its home <strong>already occupied by an equal twin</strong> is the duplicate. (This same problem also yields to Ch.3\'s Fast &amp; Slow — read the array as a next-pointer function and the duplicate is a cycle entrance.)',
+code:{h:'find_duplicate.py — the value that will not settle',b:`def find_duplicate(nums):
+    i = 0
+    while i &lt; len(nums):
+        v = nums[i]
+        if v != i + 1:              <span class="cm"># v not home (slot v-1)</span>
+            if nums[v - 1] == v:    <span class="hi-g"># home taken by a twin</span>
+                return v            <span class="cm"># &rarr; the duplicate</span>
+            nums[i], nums[v - 1] = nums[v - 1], nums[i]  <span class="hi-y"># swap home</span>
+        else:
+            i += 1`},
+dia:()=>`<div class="av"><div class="ac">1</div><div class="ac win">2</div><div class="ac">3</div><div class="ac">4</div><div class="ac bad2">2</div></div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr">home</div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>i</b></div></div>
+<div class="av-cap">nums = [1,3,4,2,2] sorts to this. Cursor 2 wants slot1, but slot1 already holds a 2 &mdash;<br>the twin has nowhere to settle &rarr; <b>duplicate = 2</b>.</div>`,
+extra:()=>rulesCard('Rules card — find the duplicate',
+ 'Same settled-homes invariant; each value 1..n has home slot v-1.',
+ 'Same swap-to-home, but a value can arrive to find its home already holding an equal twin — that collision halts the swap.',
+ 'The value whose home is already occupied by its equal IS the answer — grabbed the instant the swap would be a no-op.'),
+callout:{type:'callout-ok',text:'The very same walk; the duplicate is simply the one value with nowhere left to settle. Two patterns, one answer — Ch.3\'s Fast &amp; Slow reaches it a different way.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'First Missing Positive',desc:'The array now holds <strong>any</strong> integers; find the smallest absent positive, which must lie in <code>1..n+1</code>. During the MOVE, simply <strong>ignore values with no home here</strong> — anything <code>&le; 0</code> or <code>&gt; n</code>. The invariant and harvest are exactly the base problem\'s; only the range guard widened.',
+code:{h:'first_missing_positive.py — ignore the out-of-range',b:`def first_missing_positive(nums):
+    n = len(nums)
+    i = 0
+    while i &lt; n:
+        v = nums[i]
+        if <span class="hi-y">1 &lt;= v &lt;= n</span> and nums[v - 1] != v:  <span class="cm"># has a home</span>
+            nums[i], nums[v - 1] = nums[v - 1], nums[i]
+        else:
+            i += 1                  <span class="cm"># &le;0 or &gt;n &rarr; no home, skip</span>
+    for i in range(n):
+        if <span class="hi-g">nums[i] != i + 1</span>:
+            return i + 1            <span class="cm"># first empty positive home</span>
+    return n + 1                    <span class="cm"># 1..n all present</span>`},
+dia:()=>`<div class="av"><div class="ac">3</div><div class="ac">4</div><div class="ac dead">-1</div><div class="ac">1</div></div>
+<div class="av-cap">nums = [3,4,-1,1]. Values &le;0 or &gt;n (the -1) have no home &mdash; the move steps right past them.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">1</div><div class="ac bad2">-1</div><div class="ac win">3</div><div class="ac win">4</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr"><b>i</b></div><div class="ptr">2</div><div class="ptr">3</div></div>
+<div class="av-cap">sorted in place; slot1 (wants 2) holds a homeless -1 &rarr; <b>first missing positive = 2</b>.</div>`,
+extra:()=>rulesCard('Rules card — first missing positive',
+ 'Same settled-homes invariant on the sub-range 1..n; junk values are ignored, not stored.',
+ 'Same swap-to-home, now fenced by <code>1 &le; v &le; n</code> — out-of-range values are skipped, never chased.',
+ 'First slot with <code>nums[i] != i+1</code> &rarr; the smallest absent positive (or <code>n+1</code> if all present).'),
+callout:{type:'callout-ok',text:'Negatives and giants have no home in 1..n, so the move steps straight past them. The invariant and harvest are unchanged — only the range fence moved.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Find the Corrupt Pair',desc:'An array that <em>should</em> be a permutation of <code>1..n</code>, but one value got duplicated in place of a missing one. Return <code>[duplicate, missing]</code>. A single harvest pass exposes <strong>both</strong>: the first slot where <code>nums[i] != i+1</code> holds the intruder (<code>nums[i]</code>) and its index names the absentee (<code>i+1</code>).',
+code:{h:'find_corrupt_pair.py — both in one pass',b:`def find_corrupt_pair(nums):
+    n = len(nums)
+    i = 0
+    while i &lt; n:
+        v = nums[i]
+        if nums[v - 1] != v:        <span class="hi-y"># swap toward home</span>
+            nums[i], nums[v - 1] = nums[v - 1], nums[i]
+        else:
+            i += 1
+    for i in range(n):
+        if nums[i] != i + 1:
+            return [<span class="hi-g">nums[i], i + 1</span>]  <span class="cm"># [duplicate, missing]</span>
+    return [-1, -1]`},
+dia:()=>`<div class="av"><div class="ac win">1</div><div class="ac win">2</div><div class="ac win">3</div><div class="ac bad2">2</div><div class="ac win">5</div></div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div><div class="ptr"><b>i</b></div><div class="ptr">4</div></div>
+<div class="av-cap">nums = [3,1,2,5,2] sorts to this. Slot3 wants 4 but holds 2 &rarr;<br><b>duplicate = 2</b> (its content), <b>missing = 4</b> (its index+1). One slot, both answers.</div>`,
+extra:()=>rulesCard('Rules card — corrupt pair',
+ 'Same settled-homes invariant; home of v is slot v-1.',
+ 'Same swap-to-home; the duplicate lands in the missing value\'s slot because the true owner never arrives.',
+ 'The single wrong slot is read TWICE: its occupant is the duplicate, its index+1 is the missing value.'),
+callout:{type:'callout-ok',text:'The one wrong slot is a two-for-one: its content is the intruder, its index+1 is the absentee. Same move and invariant as the base problem — only the harvest reads two facts instead of one.'}
+},
+{phase:'pill-pattern',phaseTxt:'Three index games, one rulebook',title:'Two Pointers vs. Fast &amp; Slow vs. Cyclic Sort',desc:'Three chapters of O(1)-space index games, still zero new rules. Watch the invariant migrate out of the pointers and into the array\'s own layout.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Fast &amp; Slow (Ch.3)</th><th>Cyclic Sort (Ch.14)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>A fixed <strong>speed ratio</strong> between two walkers — O(1), no memory</td><td><strong>Settled homes</strong>: value v sits in slot v, and settled slots only grow</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td><code>fast += 2</code>, <code>slow += 1</code> — the gap closes by one each step</td><td>While the cursor is not home, <strong>swap it home</strong></td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>On collision (cycle) or exhaustion (middle)</td><td>Second pass: first / every / occupied wrong slot exposes the answer</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; n — gap closes 1/step; O(1) space</td><td>&le; n swaps — each settles a value; <strong>O(1) space</strong></td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are the constant, the IMPLEMENTATION is the variable. Cyclic Sort is the first pattern to store its invariant INSIDE the input itself — the array is both the data and the ledger.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 14',desc:'Another pattern down. Add cyclic sort\'s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio, &hellip;,
+               <span class="hi-b">settled homes — value v in slot v,
+               settled slots only grow (in place, O(1))</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast +2 / slow +1, &hellip;,
+               <span class="hi-y">swap-to-home (each swap settles &ge;1
+               value &rarr; &le; n swaps total)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision / on-exhaustion, &hellip;,
+               <span class="hi-g">second pass: first / every /
+               occupied wrong slot</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Cyclic Sort when:</span>
+  the values are a bounded, permutation-ish
+  range 1..n (or 0..n) · you need a MISSING /
+  DUPLICATE / first-absent / corrupt value ·
+  and the limits demand O(n) time AND O(1) space.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem hands you values confined to 1..n (or 0..n) and forbids extra memory, do not ask "which trick?" Ask: if each value belonged in slot v, which slot would end up wrong? Sort them home in place and the misplaced slot names the answer. The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

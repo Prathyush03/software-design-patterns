@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 2 — Sliding Window | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 2 — Sliding Window</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Longest Substring Without Repeating Characters',desc:'New interview, new problem: given a string, find the length of the longest substring that contains no repeated character. You solved Chapter 1 — surely a string problem plays by different rules... right?',
+code:{h:'The problem',b:`s = "abcabcbb"
+
+<span class="cm"># Longest run with no repeats: "abc"</span>
+answer = 3
+
+<span class="cm"># "pwwkew" &rarr; "wke" &rarr; 3
+# "bbbbb"  &rarr; "b"   &rarr; 1</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">a</div><div class="ac win">b</div><div class="ac win">c</div><div class="ac">a</div><div class="ac">b</div><div class="ac">c</div><div class="ac">b</div><div class="ac">b</div>
+</div>
+<div class="av-cap">"abc" — the longest stretch with all-unique characters</div>`,
+callout:{type:'callout-ok',text:'Contiguous substring. An optimization target. Hold that thought.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — try every starting point',desc:'For each start <code>i</code>, extend <code>j</code> until a repeat appears. Correct, simple, passes the samples.',
+code:{h:'longest_unique.py — the naive attempt',b:`def longest_unique(s):
+    best = 0
+    <span class="hi-r">for i in range(len(s)):</span>
+        seen = set()               <span class="cm"># fresh every time!</span>
+        for j in range(i, len(s)):
+            if s[j] in seen: break
+            seen.add(s[j])
+            best = max(best, j - i + 1)
+    return best
+
+<span class="cm"># n = 10^5 &rarr; ~10^10 character visits. TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">a</div><div class="ac hot">b</div><div class="ac hot">c</div><div class="ac bad2">a</div><div class="ac dead">b</div><div class="ac dead">c</div><div class="ac dead">b</div><div class="ac dead">b</div>
+</div>
+<div class="av-cap">i = 0: scan until the repeat at index 3&hellip;</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">a</div><div class="ac hot">b</div><div class="ac hot">c</div><div class="ac hot">a</div><div class="ac bad2">b</div><div class="ac dead">c</div><div class="ac dead">b</div><div class="ac dead">b</div>
+</div>
+<div class="av-cap">i = 1: &hellip;and re-scan b, c, a all over again.<br>Everything learned at i = 0 was thrown away.</div>`,
+callout:{type:'callout-ok',text:'It works on "abcabcbb". Ship it? You already know how this story goes.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rules are violated?',desc:'Chapter 1 gave us three rules. Instead of guessing at a fix, <strong>audit the brute force against them</strong> — the violations tell us exactly what to build.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">✗ VIOLATED.</span> Nothing survives between outer iterations — <code>seen</code> is rebuilt from scratch, so every restart forgets everything already learned about the string.',
+ '<span class="viol">✗ VIOLATED.</span> <code>j</code> travels BACKWARD every time <code>i</code> advances. Progress is reversible — the same characters get visited O(n) times each &rarr; O(n&sup2;).',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES, barely.</span> The harvest line is fine — but it is fed by brute enumeration instead of by an invariant.',
+ true),
+callout:{type:'callout-bad',text:'The rules didn\'t change — the brute force just breaks two of them. So we don\'t need new rules. We need NEW IMPLEMENTATIONS of the same three.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant moves INSIDE the pointers',desc:'In Two Pointers the invariant described the discarded <strong>outside</strong> ("the answer is not out there"). Sliding Window flips it: the invariant describes the living <strong>inside</strong> — plus auxiliary state that makes checking it O(1).',
+code:{h:'The promise — window edition',b:`l = 0
+count = {}     <span class="cm"># chars currently inside the window</span>
+
+<span class="cm"># INVARIANT — restored after every step:</span>
+<span class="hi-b">#  "The window s[l..r] contains
+#   no repeated character."</span>
+
+<span class="cm"># The aux state (count) exists for ONE reason:
+# it makes the invariant checkable in O(1)
+# instead of re-scanning the whole window.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">a</div><div class="ac win">b</div><div class="ac win">c</div><div class="ac win">a</div><div class="ac">b</div><div class="ac">c</div><div class="ac">b</div><div class="ac">b</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"><b>r</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">Two Pointers: invariant about the OUTSIDE (grey = proven dead).<br>Sliding Window: invariant about the INSIDE (green = alive and legal).<br><b>Same rule. New home.</b></div>`,
+callout:{type:'callout-info',text:'Rule #1 unchanged: name the property that survives every step. What changed is only WHERE the property lives — between the pointers, not beyond them.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule as Chapter 1. New implementation: the invariant describes the region BETWEEN the pointers, and it earns an assistant — aux state that answers "is the invariant holding?" in O(1).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move becomes expand-and-repair',desc:'Two Pointers preserved the invariant by <em>never</em> breaking it. Sliding Window is bolder: <strong>break it on purpose, then repair it</strong>. Irreversibility survives — both pointers only ever move forward.',
+code:{h:'The move — two half-steps',b:`for r in range(len(s)):        <span class="cm"># EXPAND:
+                                # r never stops,
+                                # never goes back</span>
+    count[s[r]] = count.get(s[r], 0) + 1
+    <span class="cm"># ...which may BREAK the invariant</span>
+
+    while count[s[r]] > 1:      <span class="cm"># REPAIR:</span>
+        count[s[l]] -= 1
+        <span class="hi-y">l += 1</span>                  <span class="cm"># l never goes
+                                # back either</span>
+
+<span class="cm"># l moves &le; n times, r moves exactly n times
+# &rarr; &le; 2n pointer moves total &rarr; O(n)</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">a</div><div class="ac win">b</div><div class="ac win">c</div><div class="ac bad2">a</div><div class="ac">b</div><div class="ac">c</div><div class="ac">b</div><div class="ac">b</div>
+</div>
+<div class="av-cap">EXPAND: r reaches the second "a" — invariant broken (on purpose)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">a</div><div class="ac win">b</div><div class="ac win">c</div><div class="ac win">a</div><div class="ac">b</div><div class="ac">c</div><div class="ac">b</div><div class="ac">b</div>
+</div>
+<div class="av-cap">REPAIR: l steps forward until the window is legal again.<br>Nothing ever moves backward — that is the irreversibility.</div>`,
+callout:{type:'callout-info',text:'Rule #2 unchanged: irreversible progress, invariant preserved. New mechanics: Two Pointers preserved by PROOF before moving; Sliding Window preserves by REPAIR after moving. Same rule, opposite temperament.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule as Chapter 1. New implementation: the move splits into expand (always) and repair (as needed). Irreversibility now lives in "both pointers are monotone" — which is exactly what caps the work at 2n.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest relocates by variant',desc:'The moment of visibility: right after repair, the window is a <strong>legal candidate</strong>. And here is the chapter\'s big secret — <em>which line the harvest sits on</em> is the only difference between whole families of problems.',
+code:{h:'The harvest — placement is everything',b:`    <span class="hi-g">best = max(best, r - l + 1)</span>  <span class="cm"># HARVEST:
+                                  # window is legal
+                                  # RIGHT NOW</span>
+
+<span class="cm"># Same rule — three placements, three problems:</span>
+
+<span class="cm">LONGEST  window</span> &rarr; harvest AFTER repair
+<span class="cm">SHORTEST window</span> &rarr; harvest DURING the shrink,
+                   while the window is still valid
+<span class="cm">COUNT windows</span>   &rarr; harvest adds <span class="hi-g">(r - l + 1)</span>
+                   every single step`},
+dia:null,
+callout:{type:'callout-info',text:'In Chapter 1, relocating the harvest turned pair-sum into closest-pair and count-pairs. Here it turns "longest" into "shortest" into "count". Rule #3 is the variant dial.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule as Chapter 1. New implementation: the candidate becomes visible the instant the invariant is restored — and moving that one line up, down, or inside the shrink loop is what generates each variant.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete solution. Compare it line by line with Chapter 1\'s pair sum: every rule is present, every implementation is different.',
+code:{h:'longest_unique.py — final',b:`def longest_unique(s):
+    l, best = 0, 0
+    count = {}                       <span class="cm"># INVARIANT aux</span>
+    for r in range(len(s)):          <span class="cm"># MOVE: expand</span>
+        count[s[r]] = count.get(s[r], 0) + 1
+        while count[s[r]] > 1:       <span class="cm"># MOVE: repair</span>
+            count[s[l]] -= 1
+            <span class="hi-y">l += 1</span>
+        <span class="hi-g">best = max(best, r - l + 1)</span>  <span class="cm"># HARVEST</span>
+    return best
+
+<span class="cm"># O(n) time · O(k) space (alphabet) · every
+# character enters and leaves the window ONCE</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">a</div><div class="ac win">b</div><div class="ac win">c</div><div class="ac">a</div><div class="ac">b</div><div class="ac">c</div><div class="ac">b</div><div class="ac">b</div>
+</div>
+<div class="av-cap">r = 2: legal window "abc" &rarr; harvest 3</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">a</div><div class="ac dead">b</div><div class="ac win">c</div><div class="ac win">a</div><div class="ac win">b</div><div class="ac">c</div><div class="ac">b</div><div class="ac">b</div>
+</div>
+<div class="av-cap">r = 4: repaired to "cab" &rarr; harvest 3 (tie)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">a</div><div class="ac dead">b</div><div class="ac dead">c</div><div class="ac dead">a</div><div class="ac dead">b</div><div class="ac dead">c</div><div class="ac win">b</div><div class="ac dead">b</div>
+</div>
+<div class="av-cap">the window breathes across the string — 8 expands, &le;8 repairs, done</div>`,
+callout:{type:'callout-ok',text:'Every index enters the window once and leaves at most once. The brute force visited some characters 100,000 times; this visits each one twice, ever.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Fixed-size window — Maximum Average Subarray',desc:'When the window size is <strong>given</strong>, expand and repair fuse into one lockstep motion: add on the right, drop on the left, every step.',
+code:{h:'max_avg.py — window of exactly k',b:`def max_avg(nums, k):
+    win = sum(nums[:k])
+    best = win
+    for r in range(k, len(nums)):
+        <span class="hi-y">win += nums[r] - nums[r - k]</span>  <span class="cm"># MOVE:
+                                      # lockstep</span>
+        <span class="hi-g">best = max(best, win)</span>         <span class="cm"># HARVEST</span>
+    return best / k`},
+dia:null,
+extra:()=>rulesCard('Rules card — fixed-size window',
+ 'The window is always exactly <code>k</code> wide, and <code>win</code> always equals its sum — no repair ever needed because the move cannot break it.',
+ 'Add the right edge and drop the left edge in one motion. Repair is fused into the expand.',
+ 'Every step, the instant the window slides — each position is a candidate exactly once.'),
+callout:{type:'callout-ok',text:'The degenerate case: an invariant so strong the move can never violate it. Simplest member of the family.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Shortest window — Smallest Subarray with Sum &ge; S',desc:'Now everything inverts. Expand until the window becomes <strong>valid</strong> — then harvest <em>inside the shrink loop</em>, squeezing while validity lasts.',
+code:{h:'min_len.py — the inverted window',b:`def min_len_geq(nums, S):
+    l, win, best = 0, 0, float('inf')
+    for r, x in enumerate(nums):
+        win += x                    <span class="cm"># EXPAND
+                                    # toward validity</span>
+        while win >= S:             <span class="cm"># while VALID...</span>
+            <span class="hi-g">best = min(best, r - l + 1)</span> <span class="cm"># HARVEST
+                                    # inside the
+                                    # shrink loop!</span>
+            win -= nums[l]
+            <span class="hi-y">l += 1</span>                  <span class="cm"># shrink until
+                                    # it breaks</span>
+    return best if best != float('inf') else 0`},
+dia:null,
+extra:()=>rulesCard('Rules card — shortest-window inversion',
+ 'The window tracks its distance from validity (<code>win</code> vs <code>S</code>) — legality is now the thing we chase, not the thing we protect.',
+ 'Expand until valid, then shrink until invalid — the same two monotone half-steps, with their roles swapped.',
+ '<strong>During</strong> the shrink, while the window is still valid — each squeeze may reveal a shorter candidate.'),
+callout:{type:'callout-ok',text:'Longest vs. shortest is not two patterns — it is one pattern with the harvest line moved inside the while loop.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Counting windows — Subarrays with at most K distinct',desc:'The harvest changes shape again: instead of measuring the window, <strong>count everything it contains</strong>. Every legal window ending at <code>r</code> gets tallied in one line.',
+code:{h:'count_windows.py',b:`def at_most_k(s, k):
+    l, total = 0, 0
+    count = {}
+    for r, c in enumerate(s):
+        count[c] = count.get(c, 0) + 1
+        while len(count) > k:        <span class="cm"># REPAIR</span>
+            count[s[l]] -= 1
+            if count[s[l]] == 0: del count[s[l]]
+            <span class="hi-y">l += 1</span>
+        <span class="hi-g">total += r - l + 1</span>   <span class="cm"># HARVEST: every
+                             # legal window that
+                             # ENDS at r, at once</span>
+    return total
+
+<span class="cm"># and the classic closing trick:</span>
+exactly(K) = at_most(K) - at_most(K - 1)`},
+dia:null,
+extra:()=>rulesCard('Rules card — counting windows',
+ 'Window <code>[l..r]</code> is the LARGEST legal window ending at <code>r</code> — which means every sub-window ending at <code>r</code> is legal too.',
+ 'Identical expand-and-repair — untouched from the base solution.',
+ '<code>total += r &minus; l + 1</code> — the invariant guarantees all of those windows are valid, so one line counts them all.'),
+callout:{type:'callout-ok',text:'Notice how much the invariant is doing here: the harvest can count (r − l + 1) windows in O(1) ONLY because the invariant vouches for every one of them.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Window + monotonic deque — Sliding Window Maximum',desc:'The hardest variant: report the <strong>max</strong> of every window of size k. The window rules stay put — the invariant just gains a second clause, carried by a deque whose only job is to make the harvest O(1).',
+code:{h:'window_max.py',b:`from collections import deque
+
+def window_max(nums, k):
+    dq, out = deque(), []   <span class="cm"># dq: indices,
+                             # values DECREASING</span>
+    for r, x in enumerate(nums):
+        while dq and nums[dq[-1]] <= x:
+            <span class="hi-y">dq.pop()</span>         <span class="cm"># x outlives AND beats
+                             # them &rarr; they can never
+                             # be a window max again</span>
+        dq.append(r)
+        if dq[0] <= r - k:
+            dq.popleft()     <span class="cm"># left edge expired</span>
+        if r >= k - 1:
+            <span class="hi-g">out.append(nums[dq[0]])</span>  <span class="cm"># HARVEST:
+                             # front = max, O(1)</span>
+    return out`},
+dia:null,
+extra:()=>rulesCard('Rules card — window with an assistant structure',
+ 'Two clauses now: (1) the window spans the last <code>k</code> elements; (2) the deque holds window indices with strictly decreasing values — so its front is always the window max.',
+ 'Slide as usual, plus evict: anything the newcomer beats gets popped — with the same one-line proof style as Chapter 1 ("it can never win again").',
+ 'Read the deque front — O(1). The entire deque exists for no other reason than to make this harvest cheap.'),
+callout:{type:'callout-ok',text:'When a harvest gets expensive, the pattern hires an assistant structure whose invariant serves the harvest. That deque is a bridge straight into the Stacks pattern — same eviction proof, different container.'}
+},
+{phase:'pill-pattern',phaseTxt:'Two patterns, one rulebook',title:'Two Pointers vs. Sliding Window — side by side',desc:'Two chapters, two patterns, zero new rules. Only the implementations moved.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch. 1)</th><th>Sliding Window (Ch. 2)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>Describes the discarded <strong>outside</strong>: "the answer is not out there"</td><td>Describes the living <strong>inside</strong>: "the window is legal" — plus aux state for O(1) checks</td></tr>
+<tr><td class="col-mov">Move</td><td>Never break it: prove a discard safe, then retire one end</td><td>Break it on purpose, then repair: expand always, shrink to restore</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the predicate fires / every step (variant dial)</td><td>After repair / during shrink / count per step (variant dial)</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity proof</td><td>Each step retires one element &rarr; &le; n steps</td><td>Both pointers monotone &rarr; &le; 2n steps</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'This is the whole thesis: the RULES are the constant, the IMPLEMENTATION is the variable. Learn 3 rules once; re-derive 28 patterns forever.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 2',desc:'Two patterns down. But the same audit — invariant, move, harvest — maps onto <strong>every pattern in the Grokking course</strong>. The master table carries the rules across all 28.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, settled-prefix,
+               settled-suffix, deque-decreasing
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, reader/writer,
+               expand-and-repair, lockstep, evict
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, every-step,
+               after-repair, during-shrink,
+               count-per-step, read-the-front
+
+<span class="cm">Next: the master table — all 28 course patterns,
+audited against the same three rules.</span>`},
+dia:null,
+callout:{type:'callout-purple',text:'When you meet a new problem, don\'t ask "which trick do I know?" Ask: what invariant could hold here, what move preserves it irreversibly, and when is the answer visible? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next \u2192';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

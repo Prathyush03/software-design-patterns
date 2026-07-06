@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 21 — Tree Breadth-First Search | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 21 — Tree Breadth-First Search</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Binary Tree Level Order Traversal',desc:'New shape of data, same rulebook. Given the <code>root</code> of a binary tree, return its values <strong>level by level</strong> — top to bottom, left to right — with <strong>each level as its own list</strong>. A tree already comes in natural layers; the whole task is to keep those layers <strong>from bleeding into each other</strong>.',
+code:{h:'The problem',b:`        3            <span class="cm"># level 0</span>
+       / \\
+      9   20          <span class="cm"># level 1</span>
+         /  \\
+        15   7        <span class="cm"># level 2</span>
+
+level_order(root) = [[3], [9, 20], [15, 7]]
+
+<span class="cm"># NOT [3, 9, 20, 15, 7] — the grouping
+# into levels is the entire point.</span>`},
+dia:()=>`<div class="av"><div class="ac live">3</div></div>
+<div class="av-cap">level 0</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac">9</div><div class="ac">20</div></div>
+<div class="av-cap">level 1</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac">15</div><div class="ac">7</div></div>
+<div class="av-cap">level 2 &mdash; answer = <code>[[3], [9,20], [15,7]]</code></div>`,
+callout:{type:'callout-ok',text:'The gift: a tree is pre-sorted into layers. The trap: an ordinary walk visits every node but forgets which layer it came from. Holding the layer boundary is the whole story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — one full tree walk per level',desc:'The obvious idea without the pattern: first measure the tree\'s <code>height</code>, then for <strong>each depth</strong> <code>d</code>, walk the entire tree collecting only the nodes that sit at depth <code>d</code>. Correct, and it groups perfectly — because it rebuilds each level from scratch.',
+code:{h:'level_order.py — the naive attempt',b:`def collect(node, d, target, out):
+    if not node: return
+    if d == target:                  <span class="cm"># at the wanted depth</span>
+        out.append(node.val)
+    collect(node.left,  d+1, target, out)
+    collect(node.right, d+1, target, out)
+
+def level_order(root):
+    res = []
+    for d in range(height(root)):    <span class="cm"># one PASS per level</span>
+        row = []
+        collect(root, 0, d, row)     <span class="cm"># O(n) every time</span>
+        res.append(row)
+    return res
+
+<span class="cm"># height levels &times; O(n) each = O(n&sup2;)
+# skewed tree, n = 1e5 &rarr; ~1e10 ops &rarr; TLE.</span>`},
+dia:()=>`<div class="av"><div class="ac dead">3</div><div class="ac dead">9</div><div class="ac live">20</div><div class="ac dead">15</div><div class="ac dead">7</div></div>
+<div class="av-cap">pass for depth 1: re-walk ALL nodes, keep only <code>9, 20</code></div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">3</div><div class="ac dead">9</div><div class="ac dead">20</div><div class="ac live">15</div><div class="ac live">7</div></div>
+<div class="av-cap">pass for depth 2: re-walk ALL nodes AGAIN, keep only <code>15, 7</code>.<br>Every node is re-read once per level below it &mdash; that is the O(n&sup2;).</div>`,
+callout:{type:'callout-ok',text:'It is genuinely correct and groups by level. But it re-reads the whole tree once for every level. On a skewed tree that is O(n&sup2;) — and this time the hurt is speed, not memory.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Chapters 1–3 handed us three rules. This brute force is not fat — it is <strong>slow</strong>, because it never holds onto the level it just found. Audit it against the rules and the O(n&sup2;) points straight at rule #1.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> There is NO fact carried between passes. Each depth re-derives its own level membership by re-walking from the root. The current frontier is never named, so it must be rebuilt from scratch — <code>height</code> times.',
+ '<span style="color:var(--text-warning);font-weight:500">~ VIOLATED.</span> The "move" is a whole re-traversal per level. It re-reads nodes it has already seen instead of advancing once — the opposite of irreversible progress.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "append the depth-<code>d</code> nodes as one row" is correct grouping — but it is powered by that repeated O(n) walk, so each harvest costs a full pass.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just refuses to REMEMBER the level it is standing on. We need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant: a queue that holds exactly one level',desc:'Stop re-walking. Keep a <strong>queue</strong>, and maintain one fact: <strong>at the top of every round, the queue holds exactly one complete level — no more, no less.</strong> That frontier IS the pattern; you never rebuild it, you evolve it.',
+code:{h:'The promise — the queue is one level',b:`q = deque([root])
+
+<span class="cm"># INVARIANT — true at the top of each round:</span>
+<span class="hi-b">#  q contains EXACTLY the nodes of one
+#  complete level — nothing from the level
+#  above, nothing from the level below.</span>
+
+<span class="cm"># The frontier is remembered, not recomputed.
+# One round = process this level, breed the next.</span>`},
+dia:()=>`<div class="av"><div class="ac live">9</div><div class="ac live">20</div></div>
+<div class="av-cap">queue at the top of round 2 &mdash; EXACTLY level 1.<br>Ch.1's invariant lived OUTSIDE the pointers, Ch.2 INSIDE a window,<br>Ch.3 in a speed ratio; here it is the whole <b>frontier in the queue</b>.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter: name the property that survives each step. What changed is the carrier — from re-walked passes to a persistent queue that always equals one level.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a FRONTIER — the queue holds exactly one complete level at the start of each round. Grouping is free because the level is always sitting there, remembered, never recomputed.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: snapshot the size, drain exactly that many',desc:'Each round: read <code>k = len(q)</code> <strong>first</strong>, then dequeue <strong>exactly</strong> <code>k</code> nodes, enqueuing each one\'s children as you go. Why the boundary never blurs: you froze the count <em>before</em> the children arrived, so the <code>k</code> you drain are precisely this level and the children you added are precisely the next.',
+code:{h:'The move — freeze, then drain k',b:`k = len(q)                <span class="cm"># FREEZE the boundary</span>
+for _ in range(k):        <span class="cm"># drain EXACTLY this level</span>
+    node = q.popleft()
+    if node.left:  q.append(node.left)
+    if node.right: q.append(node.right)
+
+<span class="cm"># PROOF: every node is enqueued once and
+# dequeued once &rarr; O(n) total work, O(w) queue
+# (w = widest level). No node is re-read.</span>`},
+dia:()=>`<div class="av"><div class="ac live">9</div><div class="ac live">20</div></div>
+<div class="av-cap">freeze <code>k = len(q) = 2</code>, then drain exactly 2</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac hot">15</div><div class="ac hot">7</div></div>
+<div class="av-cap">their children <code>15, 7</code> are now the whole queue &mdash; exactly the next level.<br>Because <code>k</code> was frozen first, the boundary stayed crisp.</div>`,
+callout:{type:'callout-info',text:'Ch.2 expanded then repaired; here the move breeds the next frontier from the current one. The one-line proof — each node in once, out once — is exactly the O(n) bound the brute force could not reach.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: snapshot <code>k = len(q)</code>, drain exactly <code>k</code>, enqueue their children. Freezing the size before draining is what keeps level boundaries from ever bleeding together — and it guarantees O(n).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest fires once per level, at the boundary',desc:'The answer becomes visible the instant a level <strong>finishes draining</strong> — the moment the <code>for _ in range(k)</code> loop ends. Read it right there: <strong>collect the row / average it / take its last node / count it</strong>. Wait one step and it is too late — the queue now holds the next level, and the row you meant to grab is gone.',
+code:{h:'The harvest — where you read the level',b:`k = len(q); row = []
+for _ in range(k):
+    node = q.popleft()
+    row.append(node.val)      <span class="cm"># build the level</span>
+    ...children...
+<span class="hi-g">res.append(row)</span>               <span class="cm"># HARVEST: level done</span>
+
+<span class="cm"># The SAME boundary feeds every variant:
+#   collect  &rarr; level order
+#   average  &rarr; level averages
+#   row[-1]  &rarr; right-side view
+#   count    &rarr; max width
+# Which you read at the boundary picks the problem.</span>`},
+dia:()=>`<div class="av"><div class="ac win">9</div><div class="ac win">20</div></div>
+<div class="av-cap">the for-loop just ended &rarr; harvest <code>[9, 20]</code> NOW</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">15</div><div class="ac live">7</div></div>
+<div class="av-cap">one step later the queue is the NEXT level &mdash; the moment to read level 1 has passed.</div>`,
+callout:{type:'callout-info',text:'Ch.3 harvested on collision or exhaustion; here it fires at each level boundary. Placement is the variant dial: same walk, but WHAT you read when the level completes is the whole difference between the problems.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the harvest sits at the level boundary — the instant the drain loop ends. Collect, average, take-last, or count. Read it before the move breeds the next level, or the evidence is overwritten.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete level-order traversal: one queue, one pass, each node touched once. The O(n&sup2;) of the brute force collapses to <strong>O(n)</strong> — not by a trick, but because the frontier is now remembered instead of rebuilt.',
+code:{h:'level_order.py — final',b:`from collections import deque
+
+def level_order(root):
+    if not root: return []
+    q, res = deque([root]), []
+    while q:                          <span class="cm"># INVARIANT: q = one level</span>
+        k = len(q)                    <span class="cm"># MOVE: freeze the boundary</span>
+        row = []
+        for _ in range(k):            <span class="cm"># drain exactly k</span>
+            node = q.popleft()
+            row.append(node.val)
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+        <span class="hi-g">res.append(row)</span>               <span class="cm"># HARVEST: level done</span>
+    return res
+
+<span class="cm"># O(n) time · O(w) queue (w = widest level).</span>`},
+dia:()=>`<div class="av"><div class="ac win">3</div></div>
+<div class="av-cap">round 1: drain <code>[3]</code>, enqueue <code>9, 20</code> &rarr; row <code>[3]</code></div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">9</div><div class="ac win">20</div></div>
+<div class="av-cap">round 2: drain <code>[9, 20]</code>, enqueue <code>15, 7</code> &rarr; row <code>[9, 20]</code></div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">15</div><div class="ac win">7</div></div>
+<div class="av-cap">round 3: drain <code>[15, 7]</code>, no children &rarr; row <code>[15, 7]</code>. Queue empty, done.</div>`,
+callout:{type:'callout-ok',text:'The brute force re-walked the tree once per level; this walks it once, total. Same grouping — but O(n&sup2;) drops to O(n) purely because the invariant now REMEMBERS the frontier.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Zigzag Level Order — flip the harvest order',desc:'Same walk, but rows alternate direction: level 0 left-to-right, level 1 right-to-left, and so on. The queue still breeds children left-to-right; only the <strong>order you record the row</strong> flips. The MOVE never reverses — the <strong>harvest</strong> does.',
+code:{h:'zigzag.py — alternating harvest',b:`def zigzag(root):
+    if not root: return []
+    q, res, ltr = deque([root]), [], True
+    while q:
+        k = len(q); row = deque()
+        for _ in range(k):
+            node = q.popleft()
+            if ltr: <span class="hi-g">row.append(node.val)</span>      <span class="cm"># L&rarr;R</span>
+            else:   <span class="hi-g">row.appendleft(node.val)</span>  <span class="cm"># R&rarr;L</span>
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+        res.append(list(row))
+        ltr = not ltr                <span class="cm"># flip per level</span>
+    return res`},
+dia:()=>`<div class="av"><div class="ac live">9</div><div class="ac live">20</div></div>
+<div class="av-cap">round 2, <code>ltr = False</code> &rarr; write the row right-to-left</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">20</div><div class="ac win">9</div></div>
+<div class="av-cap">row = <code>[20, 9]</code>. The queue stayed L&rarr;R; only the WRITE order flipped.<br>Answer = <code>[[3], [20,9], [15,7]]</code>.</div>`,
+extra:()=>rulesCard('Rules card — zigzag traversal',
+ 'Unchanged: the queue still holds exactly one complete level per round.',
+ 'Unchanged: freeze <code>k</code>, drain <code>k</code>, enqueue children left-to-right as always.',
+ 'CHANGED: a per-level flag decides whether the level is collected left-to-right or right-to-left.'),
+callout:{type:'callout-ok',text:'Nothing structural moved. The invariant and the move are byte-for-byte the level-order code; only the harvest ORDER alternates. One flag turns traversal into zigzag.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Binary Tree Right Side View — harvest the last node',desc:'Stand to the right of the tree; report the one node you see per level — the <strong>last node of each level</strong>. Same invariant, same move; the harvest simply keeps <code>row[-1]</code> instead of the whole row.',
+code:{h:'right_side_view.py — last per level',b:`def right_side_view(root):
+    if not root: return []
+    q, res = deque([root]), []
+    while q:
+        k = len(q)
+        for i in range(k):
+            node = q.popleft()
+            if i == k-1:             <span class="cm"># last in this level</span>
+                <span class="hi-g">res.append(node.val)</span>     <span class="cm"># HARVEST</span>
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+    return res
+
+<span class="cm"># [3, 20, 7] — the rightmost of each level.</span>`},
+dia:()=>`<div class="av"><div class="ac dead">9</div><div class="ac win">20</div></div>
+<div class="av-cap">level 1 drained; harvest only <code>i == k-1</code> &rarr; <code>20</code></div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">15</div><div class="ac win">7</div></div>
+<div class="av-cap">level 2 &rarr; <code>7</code>. Right-side view = <code>[3, 20, 7]</code>.</div>`,
+extra:()=>rulesCard('Rules card — right side view',
+ 'Unchanged: the queue holds exactly one complete level each round.',
+ 'Unchanged: freeze <code>k</code>, drain <code>k</code>, enqueue children.',
+ 'CHANGED: keep only the LAST node of each level (<code>i == k-1</code>), discard the interior.'),
+callout:{type:'callout-ok',text:'Left side view? Harvest <code>i == 0</code> instead. Bottom row? Keep overwriting a single variable and read it after the loop. Same boundary, a different node picked from it.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Minimum Depth of a Binary Tree — harvest the first leaf',desc:'Return the depth of the <strong>nearest</strong> leaf. Because BFS visits strictly by increasing depth, the <strong>first leaf you dequeue is provably the shallowest</strong> — so harvest EARLY and return the instant you meet one. This is the "nearest" signal made literal.',
+code:{h:'min_depth.py — harvest at the first leaf',b:`def min_depth(root):
+    if not root: return 0
+    q, depth = deque([root]), 1
+    while q:
+        k = len(q)
+        for _ in range(k):
+            node = q.popleft()
+            if not node.left and not node.right:
+                return <span class="hi-g">depth</span>        <span class="cm"># HARVEST: first
+                                     # leaf = shallowest</span>
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+        depth += 1                   <span class="cm"># finished a level</span>
+    return depth`},
+dia:()=>`<div class="av"><div class="ac win">9</div><div class="ac">20</div></div>
+<div class="av-cap">dequeue <code>9</code> at depth 2 &mdash; no children &rarr; first leaf</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">15</div><div class="ac dead">7</div></div>
+<div class="av-cap">deeper leaves are never examined. min depth = <code>2</code>, harvested EARLY.</div>`,
+extra:()=>rulesCard('Rules card — minimum depth',
+ 'Unchanged: the queue holds exactly one complete level each round.',
+ 'Unchanged: freeze <code>k</code>, drain <code>k</code>, enqueue children.',
+ 'CHANGED: fire the instant the FIRST leaf is dequeued — BFS\'s increasing-depth order proves it is the shallowest, so we stop.'),
+callout:{type:'callout-ok',text:'This is why BFS owns "shortest / nearest": it reaches every node in non-decreasing depth order, so the first qualifying node is optimal. DFS would have to explore a deep branch before it could be sure.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Connect Level Order Siblings — the move wires next-pointers',desc:'Give every node a <code>next</code> pointer to its right neighbor on the same level (last node &rarr; <code>None</code>). Here the twist is in the <strong>move</strong>: as we drain a level we thread <code>prev.next = node</code>, so the sibling links get built <em>during</em> the drain — the harvest is the wiring itself.',
+code:{h:'connect.py — wire while draining',b:`def connect(root):
+    if not root: return root
+    q = deque([root])
+    while q:
+        k = len(q); prev = None
+        for _ in range(k):
+            node = q.popleft()
+            if prev: <span class="hi-y">prev.next = node</span>    <span class="cm"># MOVE wires siblings</span>
+            prev = node
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+        <span class="cm"># prev.next stays None &rarr; level's last &rarr; null</span>
+    return root`},
+dia:()=>`<div class="av"><div class="ac live">9</div><div class="ac live">20</div></div>
+<div class="av-cap">draining level 1: as each node leaves, wire <code>9.next &rarr; 20</code></div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">9</div><div class="ac win">20</div><div class="ac dead">null</div></div>
+<div class="av-cap"><code>9 &rarr; 20 &rarr; null</code>. The MOVE itself threaded the siblings;<br>the level boundary (<code>prev.next = None</code>) is the harvest, by construction.</div>`,
+extra:()=>rulesCard('Rules card — connect siblings',
+ 'Unchanged: the queue holds exactly one complete level each round.',
+ 'CHANGED: while draining, keep a <code>prev</code> and set <code>prev.next = node</code> — the move now BUILDS the sibling chain.',
+ 'The wiring is the harvest: at the level\'s end <code>prev.next</code> stays <code>None</code>, marking the boundary automatically.'),
+callout:{type:'callout-ok',text:'The first variation where the MOVE, not the harvest, carries the change. Because we drain exactly one level, adjacent dequeues ARE same-level siblings — so threading them needs no extra structure.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Sliding Window vs. Fast & Slow vs. Tree BFS',desc:'Different data — a window, a linked list, a tree — still zero new rules. Watch the invariant change carrier each time: a range, a ratio, and now a <strong>frontier</strong>.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Sliding Window (Ch.2)</th><th>Fast &amp; Slow (Ch.3)</th><th>Tree BFS (Ch.21)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The living <strong>inside</strong>: "the window is legal" + O(1) aux</td><td>A fixed <strong>speed ratio</strong> between two walkers — O(1)</td><td>The queue holds <strong>exactly one complete level</strong> at each round's top</td></tr>
+<tr><td class="col-mov">Move</td><td>Expand always, repair to restore</td><td><code>fast += 2</code>, <code>slow += 1</code> — gap closes by one</td><td>Snapshot <code>k = len(q)</code>, drain exactly <code>k</code>, enqueue children</td></tr>
+<tr><td class="col-har">Harvest</td><td>After repair / during shrink / count per step</td><td>On collision (cycle) or exhaustion (middle)</td><td>Per level at the boundary: collect / average / last / count</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; 2n — both pointers monotone</td><td>&le; n — <strong>O(1) space</strong></td><td>O(n) time · O(w) queue (w = widest level)</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, new carrier: the RULES are the constant, the IMPLEMENTATION is the variable. Tree BFS just parks the invariant in a queue — one level at a time — and the layer-by-layer answer falls out for free.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 21',desc:'Another pattern down. Add Tree BFS\'s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>: the words that should make you reach for a queue and a size-snapshot loop.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">queue = exactly one level (a frontier)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast +2 / slow +1,
+               <span class="hi-y">snapshot k &rarr; drain k &rarr; enqueue children</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, after-repair,
+               on-collision / on-exhaustion,
+               <span class="hi-g">per level: collect / average / last / count / first-leaf</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Tree BFS when:</span>
+  a tree (or graph) and the words "level",
+  "depth", "layer by layer", "nearest" /
+  "shortest", "side / top / bottom view" —
+  anything that groups or ranks by DISTANCE
+  from the root.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a tree problem talks about levels, depth, or the NEAREST something, do not ask "which traversal?" Ask: can a queue that always holds one level, drained a snapshot at a time, turn this into a per-level harvest? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

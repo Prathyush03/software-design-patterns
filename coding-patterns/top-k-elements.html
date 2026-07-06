@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 8 — Top K Elements | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 8 — Top K Elements</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Kth Largest Element in an Array',desc:'New pattern, new shape of question. Given an array <code>nums</code> and an integer <code>k</code>, return the <strong>kth largest element</strong>. The clause that shapes everything: <strong>k is usually far smaller than n</strong> — you are asked about a tiny slice of the order, not the whole ranking.',
+code:{h:'The problem',b:`kth_largest([3,2,1,5,6,4], 2) = 5
+
+<span class="cm"># the 2nd largest value.
+# k = 2, n = 6.  In real inputs k can
+# be 10 while n is 10^7 — you want a
+# TINY slice of the order, not all of it.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">3</div><div class="ac">2</div><div class="ac">1</div><div class="ac">5</div><div class="ac">6</div><div class="ac">4</div>
+</div>
+<div class="av-cap">nums, k = 2. We want the <b>2nd largest</b> value &mdash; here <code>5</code>.<br>We do NOT need the whole array sorted; we need one fact about the top 2.</div>`,
+callout:{type:'callout-ok',text:'k is small; n is huge. Hold that gap — it is the whole story. Any work proportional to ordering all n is work we did not need to do.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — sort the whole array, then index',desc:'The obvious idea: sort everything, then read off the kth from the top. Correct, three lines, passes every sample. But it pays to <strong>fully order all n elements</strong> just to answer a question about <em>k</em> of them.',
+code:{h:'kth_largest.py — the naive attempt',b:`def kth_largest(nums, k):
+    nums.sort()                  <span class="cm"># full order: O(n log n)</span>
+    return nums[-k]              <span class="cm"># kth from the top</span>
+
+<span class="cm"># [3,2,1,5,6,4] &rarr; sort &rarr; [1,2,3,4,5,6]
+#   nums[-2] = 5   (correct)
+#
+# But n = 10^7 &rarr; ~2.3&times;10^8 compares
+# to answer a question about k = 10.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">1</div><div class="ac dead">2</div><div class="ac dead">3</div><div class="ac dead">4</div><div class="ac win">5</div><div class="ac dead">6</div>
+</div>
+<div class="av-cap">sort all 6 &rarr; [1,2,3,4,5,6], then read <code>[-2]</code> = <code>5</code>.<br>Every one of the faded cells was ordered for nothing.</div>`,
+callout:{type:'callout-ok',text:'It is correct — and O(n log n). Ship it? Not when k is 10 and n is ten million. Here the pain is not a wrong answer, it is doing an n-sized job to get a k-sized fact.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Chapters 1&ndash;3 handed us three rules. This brute force is not <em>wrong</em> — it is <strong>over-strong</strong>. So audit it: the failure is wasted work, and the rules point straight at the culprit.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (over-strong).</span> Sorting maintains "the entire array is fully ordered" — a far heavier invariant than the question needs. It ranks all n elements to expose just one.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> A comparison sort does O(n log n) work and <em>discards nothing</em> — every element is kept and ordered, even the n&minus;k that can never be the answer.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> <code>nums[-k]</code> is correct and O(1) — but it is powered entirely by having paid to sort all n.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just maintains a full-order invariant to answer a k-sized question. We need a new IMPLEMENTATION of the same three rules, not a new idea: keep only k, and gatekeep the rest.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant shrinks to a heap of exactly k',desc:'Stop ordering everything. Keep a <strong>min-heap capped at size k</strong>, holding the k largest values seen so far. Its root — the smallest of those k — is the <strong>weakest of the best: the gatekeeper</strong>. That one fact is the entire invariant, and it costs O(k), never O(n).',
+code:{h:'The promise — a size-k heap',b:`import heapq
+heap = []          <span class="cm"># a MIN-heap, capped at k</span>
+
+<span class="hi-b"># INVARIANT — true after every step:
+#  heap holds the k LARGEST values
+#  seen so far; heap[0] (the root) is
+#  the smallest of them — the gatekeeper.</span>
+
+<span class="cm"># Everything else is either already inside,
+# or provably too small to belong.
+# Cost: O(k) memory, never O(n).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">3</div><div class="ac live">5</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">root</b></div><div class="ptr"></div></div>
+<div class="av-cap">min-heap, size k=2: the two largest seen after 3,2,1,5 &rarr; {3,5}.<br>Root <code>3</code> = weakest of the best. Two Pointers' invariant lived OUTSIDE the pointers;<br>Fast &amp; Slow's was a speed ratio; here it lives in a <b>fixed-size heap whose root guards entry</b>.</div>`,
+callout:{type:'callout-info',text:'Same Rule #1 as every prior chapter: name the property that survives each step. What changed is only its footprint — from a full O(n) ordering down to k elements and one gatekeeper.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is no longer a region, a window, or a ratio — it is a SIZE-K HEAP of the best-so-far, whose root is the weakest kept. The answer is whatever that fixed-size collection reveals. Cost: O(k).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: every newcomer duels the root',desc:'Scan once. Each newcomer <code>x</code> duels the gatekeeper: if <strong>x beats the root</strong>, pop the root and push <code>x</code> (<code>log k</code>). If <strong>x loses</strong>, it is <strong>discarded forever</strong>. Why that discard is safe: there are already k values &ge; root &ge; x, so x can never be in the global top-k.',
+code:{h:'The move — duel the gatekeeper',b:`for x in nums:                   <span class="cm"># each newcomer</span>
+    if len(heap) &lt; k:
+        heapq.heappush(heap, x)  <span class="cm"># still seeding</span>
+    elif <span class="hi-y">x &gt; heap[0]</span>:          <span class="cm"># beat the root</span>
+        heapq.heapreplace(heap, x)   <span class="cm"># pop+push, log k</span>
+    <span class="cm"># else x &le; root &rarr; DISCARDED forever</span>
+
+<span class="cm"># PROOF: k elements already &ge; root &ge; x,
+# so x can't be top-k. Safe to drop.
+# n newcomers &times; log k &rarr; O(n log k).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">3</div><div class="ac live">5</div><div class="ac">6</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">root</b></div><div class="ptr"></div><div class="ptr"><b>new</b></div></div>
+<div class="av-cap">newcomer <code>6</code> duels gatekeeper <code>3</code>: 6 &gt; 3 &rarr; it wins.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">3</div><div class="ac live">5</div><div class="ac live">6</div>
+</div>
+<div class="av-cap">pop root <code>3</code>, push <code>6</code> (log k). Heap = {5,6}, new gatekeeper <code>5</code>.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">5</div><div class="ac live">6</div><div class="ac bad2">4</div>
+</div>
+<div class="av-cap">next newcomer <code>4</code> &le; root <code>5</code> &rarr; can never be top-2 &rarr; <b>discarded forever</b>.</div>`,
+callout:{type:'callout-info',text:'Ch.1\'s move retired a proven-useless END; here the move retires a proven-useless NEWCOMER. Same irreversibility — a losing duel is final — and its one-line proof (k already-larger values) is exactly the O(n log k) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: each element duels the root once. Win &rarr; pop+push (log k); lose &rarr; dropped forever, justified by k values already &ge; it. The irreversible step is the discard, and the log-k replace is what bounds the work.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest is the heap itself',desc:'No scanning, no sorting at the end. After the single pass the heap holds <strong>exactly the k largest values</strong>. Read the whole heap and you have the top-k; read just <strong>its root</strong> and you have the kth largest. Reading it one step earlier — mid-scan — is too soon: the heap is not yet final.',
+code:{h:'The harvest — the heap IS the answer',b:`return <span class="hi-g">heap[0]</span>   <span class="cm"># the kth largest</span>
+
+<span class="cm"># After the scan the heap holds exactly
+# the k largest values. Its root — the
+# smallest of those k — IS the kth largest.
+
+# Want the whole top-k? Return the heap.
+# Want only the kth?    Return its root.
+# Same walk; the harvest you read picks it.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.3 harvested on a pointer collision; here it harvests on scan completion. Where earlier patterns grabbed a moment, Top K grabs a container — the heap is both the working state AND the final answer.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the candidate is the heap after the scan. The whole heap = the top-k; its root alone = the kth element. Reading before the scan finishes is premature — a not-yet-seen giant could still evict the root.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete selector: one pass, a heap of size k, no full sort anywhere. When <strong>k &lt;&lt; n</strong> this is a real speed-up — the O(n log n) sort collapses to O(n log k), and the space drops to O(k).',
+code:{h:'kth_largest.py — final',b:`import heapq
+
+def kth_largest(nums, k):
+    heap = []                        <span class="cm"># min-heap, size &le; k</span>
+    for x in nums:
+        if len(heap) &lt; k:
+            heapq.heappush(heap, x)
+        elif <span class="hi-y">x &gt; heap[0]</span>:          <span class="cm"># MOVE: beat root</span>
+            heapq.heapreplace(heap, x)
+    return <span class="hi-g">heap[0]</span>                 <span class="cm"># HARVEST: kth largest</span>
+
+<span class="cm"># O(n log k) time · O(k) space.
+# k &lt;&lt; n &rarr; crushes the O(n log n) sort.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">2</div><div class="ac live">3</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">root</b></div><div class="ptr"></div></div>
+<div class="av-cap">seed: first k=2 elements fill the heap &rarr; {2,3}, root <code>2</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">5</div><div class="ac live">6</div>
+</div>
+<div class="av-cap">5 beats 2, 6 beats 3, then 1 &amp; 4 lose their duels &rarr; heap settles to {5,6}</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">5</div><div class="ac live">6</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-success)">kth</b></div><div class="ptr"></div></div>
+<div class="av-cap">HARVEST: after the scan the root <code>5</code> is the 2nd largest.</div>`,
+callout:{type:'callout-ok',text:'The brute force ordered all n; this keeps only k, ever. The three rules are untouched — only the invariant\'s footprint shrank from a full sort to a size-k heap.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'K Closest Points to Origin',desc:'Return the k points nearest the origin. Same engine — but "best" now means <strong>smallest distance</strong>, so the heap flips to a <strong>max-heap keyed by distance</strong>. Its root is the <em>farthest</em> of the k closest: the gatekeeper. Only Rule #1\'s polarity and key changed.',
+code:{h:'k_closest.py — max-heap, key = distance',b:`import heapq
+
+def k_closest(points, k):
+    heap = []                        <span class="cm"># MAX-heap: store -dist</span>
+    for x, y in points:
+        d = x*x + y*y                <span class="cm"># squared distance</span>
+        if len(heap) &lt; k:
+            heapq.heappush(heap, (-d, x, y))
+        elif <span class="hi-y">-d &gt; heap[0][0]</span>:      <span class="cm"># closer than farthest</span>
+            heapq.heapreplace(heap, (-d, x, y))
+    return <span class="hi-g">[(x, y) for _, x, y in heap]</span>
+
+<span class="cm"># root = FARTHEST kept point = gatekeeper.
+# O(n log k) time, O(k) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">d=10</div><div class="ac hot">d=25</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b style="color:var(--text-warning)">root</b></div></div>
+<div class="av-cap">max-heap of size 2 by distance; root <code>25</code> = FARTHEST kept.<br>newcomer d=5 &lt; 25 &rarr; closer &rarr; evict the far one.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">d=5</div><div class="ac hot">d=10</div>
+</div>
+<div class="av-cap">heap = {5, 10} &rarr; the 2 closest points. Same engine, key flipped to distance.</div>`,
+extra:()=>rulesCard('Rules card — k closest points',
+ 'Same size-k heap, but a MAX-heap now, keyed on distance: it holds the k CLOSEST so far; root = the farthest of them.',
+ 'Newcomer closer than the far gatekeeper &rarr; pop+push (log k); farther ones dropped forever. <strong>Rule #1\'s key &amp; polarity shifted.</strong>',
+ 'After the scan the whole heap IS the answer — all k closest points, not just one.'),
+callout:{type:'callout-ok',text:'"Kth largest" and "k closest" are the SAME machine. Only the invariant re-tuned: min&rarr;max heap, value&rarr;distance as the key. The move and harvest are untouched.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Top K Frequent Elements',desc:'Return the k most frequent values. The heap alone cannot see frequency — so <strong>compose</strong> it with a hash map: count first, then gatekeep on counts. The size-k min-heap is keyed on a <strong>computed frequency</strong>; its root is the least-frequent kept.',
+code:{h:'top_k_frequent.py — compose with a hash map',b:`import heapq
+from collections import Counter
+
+def top_k_frequent(nums, k):
+    freq = Counter(nums)             <span class="cm"># PASS 1: count</span>
+    heap = []                        <span class="cm"># min-heap on COUNT</span>
+    for val, c in freq.items():
+        if len(heap) &lt; k:
+            heapq.heappush(heap, (c, val))
+        elif <span class="hi-y">c &gt; heap[0][0]</span>:       <span class="cm"># beat weakest count</span>
+            heapq.heapreplace(heap, (c, val))
+    return <span class="hi-g">[val for c, val in heap]</span>
+
+<span class="cm"># count: O(n); gatekeep m distinct on log k.
+# O(n + m log k) time.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">1&times;3</div><div class="ac">2&times;2</div><div class="ac">3&times;1</div>
+</div>
+<div class="av-cap">step 1 (hash map): count &rarr; {1:3, 2:2, 3:1}</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">2:2</div><div class="ac live">1:3</div><div class="ac bad2">3:1</div>
+</div>
+<div class="av-cap">step 2: min-heap size 2 on COUNT. gatekeeper is min-count <code>2</code>;<br><code>3</code> (count 1) loses &rarr; heap = {1,2} = the top-2 frequent.</div>`,
+extra:()=>rulesCard('Rules card — top k frequent',
+ 'Same size-k min-heap, but keyed on a COMPUTED count: it holds the k highest-frequency items; root = the least frequent kept.',
+ 'Duel on count: a distinct value with higher frequency evicts the root (log k). <strong>A preceding hash-map pass feeds the key.</strong>',
+ 'The heap holds the k most frequent values — return them all.'),
+callout:{type:'callout-ok',text:'The shift is COMPOSITION: a hash-map pass computes the key the invariant sorts on, then the identical gatekeeping machine runs. Patterns stack — count, then Top K.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Reorganize String — the heap as a dispenser',desc:'Rearrange <code>s</code> so no two adjacent characters are equal. Here the heap stops being a gate and becomes a <strong>greedy dispenser</strong>: a max-heap by remaining count, and the <strong>move pops the most frequent character that is legally placeable</strong> (not the one just used). This is the variation where Rule #2 changes most.',
+code:{h:'reorganize.py — the heap as a greedy dispenser',b:`import heapq
+from collections import Counter
+
+def reorganize(s):
+    heap = [(-c, ch) for ch, c in Counter(s).items()]
+    heapq.heapify(heap)              <span class="cm"># max-heap by remaining count</span>
+    res, prev = [], None
+    while heap:
+        c, ch = <span class="hi-y">heapq.heappop(heap)</span>  <span class="cm"># MOVE: most frequent LEGAL char</span>
+        res.append(ch)
+        if prev: heapq.heappush(heap, prev)  <span class="cm"># release the cooldown char</span>
+        prev = (c + 1, ch) if c + 1 &lt; 0 else None
+    return <span class="hi-g">''.join(res)</span> if len(res) == len(s) else ''`},
+dia:()=>`<div class="av">
+  <div class="ac hot">a&times;2</div><div class="ac live">b&times;1</div>
+</div>
+<div class="av-cap">max-heap by remaining count; dispense the most frequent LEGAL char</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">a</div><div class="ac win">b</div><div class="ac win">a</div>
+</div>
+<div class="av-cap">emit <code>a</code> (now on cooldown), then <code>b</code> — releasing <code>a</code> back &rarr; emit <code>a</code>. Result "aba".</div>`,
+extra:()=>rulesCard('Rules card — reorganize string',
+ 'The heap holds every char still AVAILABLE to place, ordered by remaining count; root = the most frequent placeable char.',
+ '<strong>The move changed most:</strong> not a duel but a greedy DISPENSE — pop the most frequent char not on cooldown, emit it, then release the previous char back into the heap.',
+ 'The answer is the whole emitted sequence; if it ends up shorter than s, no valid arrangement exists.'),
+callout:{type:'callout-ok',text:'Same heap, inverted role: the root is no longer a gate to beat but the next thing to serve. Task Scheduler is the identical machine with an idle counter. Rule #2 is where this family diverges.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Kth Smallest Element — the mirror image',desc:'Return the kth <em>smallest</em>. Flip every polarity: a <strong>max-heap of size k</strong> holds the k smallest so far, and its root is the <strong>largest</strong> of them — the gatekeeper. A newcomer smaller than the root evicts it. Not one structural idea changes; only the direction of the comparison.',
+code:{h:'kth_smallest.py — symmetric max-heap',b:`import heapq
+
+def kth_smallest(nums, k):
+    heap = []                        <span class="cm"># MAX-heap: store -x</span>
+    for x in nums:
+        if len(heap) &lt; k:
+            heapq.heappush(heap, -x)
+        elif <span class="hi-y">x &lt; -heap[0]</span>:         <span class="cm"># smaller than largest kept</span>
+            heapq.heapreplace(heap, -x)
+    return <span class="hi-g">-heap[0]</span>                <span class="cm"># HARVEST: kth smallest</span>
+
+<span class="cm"># Mirror of kth-largest: flip every
+# comparison and the heap polarity. O(n log k).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">3</div><div class="ac live">2</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">root</b></div><div class="ptr"></div></div>
+<div class="av-cap">max-heap size 2; root <code>3</code> = LARGEST kept = gatekeeper.<br>newcomer 1 &lt; 3 &rarr; evict 3, push 1.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac live">1</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-success)">kth</b></div><div class="ptr"></div></div>
+<div class="av-cap">heap settles to {1,2}; root <code>2</code> = the 2nd smallest.</div>`,
+extra:()=>rulesCard('Rules card — kth smallest',
+ 'Mirror image: a size-k MAX-heap holds the k SMALLEST so far; root = the largest of them — the gatekeeper.',
+ 'A newcomer smaller than the root evicts it (log k); larger ones are discarded forever. <strong>Pure polarity flip of Rule #1.</strong>',
+ 'Root = the kth smallest; the whole heap = the k smallest.'),
+callout:{type:'callout-ok',text:'Largest and smallest are one machine seen in a mirror: swap min-heap for max-heap and flip the &gt; to &lt;. Nothing else in the rulebook moves.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Two Pointers vs. Fast & Slow vs. Top K Elements',desc:'Four chapters, four patterns, still zero new rules. Watch the invariant change its <strong>container</strong> — from pointers, to a ratio, to a fixed-size heap — while the move and harvest keep their shape.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Fast &amp; Slow (Ch.3)</th><th>Top K Elements (Ch.8)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>A fixed <strong>speed ratio</strong> between two walkers — O(1)</td><td>A <strong>size-k heap</strong> holds the best k so far; its root is the gatekeeper</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td><code>fast += 2</code>, <code>slow += 1</code></td><td>Newcomer duels the root: beat &rarr; pop+push (<code>log k</code>); lose &rarr; drop forever</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>On collision / exhaustion</td><td>After the scan the heap IS the answer; root = the kth</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n</td><td>&le; n &middot; O(1) space</td><td>O(n log k) &middot; O(k) space</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, new engine: a heap. Where earlier patterns kept O(1) state, Top K keeps exactly k — the smallest memory that can still answer a k-sized question. Sorting keeps all n; Top K keeps only what the question asks for.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 8',desc:'Four patterns down. Add Top K\'s heap implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm"># RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  prior: outside-the-pointers, inside-the-window,
+         settled-prefix, two-pointer speed ratio,
+  <span class="hi-b">new: a size-k heap of the best-so-far;
+       root = the weakest kept (the gatekeeper)</span>
+
+<span class="cm"># RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  prior: retire-an-end, fast+2/slow+1, evict,
+  <span class="hi-y">new: newcomer duels the root — beat &rarr; pop+push
+       (log k); lose &rarr; dropped forever (k already &ge; it)</span>
+
+<span class="cm"># RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  prior: on-predicate, on-collision, count-per-step,
+  <span class="hi-g">new: after the scan the heap IS the answer;
+       its root alone is the kth element</span>
+
+<span class="cm"># RECOGNITION SIGNAL — reach for Top K when:</span>
+  "top / kth / k closest / k most frequent"
+  and k &lt;&lt; n · you need a SLICE of the order,
+  not the whole ranking · a stream you scan once.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem asks for the top / smallest / closest / most-frequent K — without needing everything sorted — do not reach for sort(). Ask: what fixed-size heap of the best-so-far, guarded by its root, turns this into one gatekeeping pass? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

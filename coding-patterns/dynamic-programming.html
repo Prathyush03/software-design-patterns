@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 13 — Dynamic Programming | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 13 — Dynamic Programming</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'0/1 Knapsack',desc:'A brand-new shape of problem. You are given <code>n</code> items, each with a weight and a value, and a knapsack of capacity <code>W</code>. Pick a subset whose total weight is <code>&le; W</code> to <strong>maximize total value</strong>. The catch that names the whole family: <strong>each item is either fully IN or fully OUT</strong> — and the subset choices overlap in ways a greedy pass cannot untangle.',
+code:{h:'The problem',b:`items:  (w=1, v=6)  (w=2, v=10)  (w=3, v=12)
+capacity  W = 5
+
+<span class="cm"># choose a subset with total weight &le; 5,
+# maximizing total value.</span>
+
+best = take items 2 &amp; 3
+     &rarr; weight 2+3 = 5, value 10+12 = 22`},
+dia:()=>`<div class="av">
+  <div class="ac hot">6</div><div class="ac hot">10</div><div class="ac hot">12</div>
+</div>
+<div class="ptr-row"><div class="ptr">w1</div><div class="ptr">w2</div><div class="ptr">w3</div></div>
+<div class="av-cap">three item VALUES (weights 1, 2, 3); capacity = 5.<br>Best subset that fits: items 2 + 3 (weight 5) &rarr; value <b>22</b>.</div>`,
+callout:{type:'callout-info',text:'Two features to hold onto: the choices OVERLAP (many subsets share the same sub-choices) and the problem has OPTIMAL SUBSTRUCTURE (the best answer over the first k items is built from best sub-answers). Those two words are the entire pattern.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — recurse take-or-skip over every item',desc:'The obvious idea: at each item try both worlds — TAKE it (if it fits) or SKIP it — and keep the better. Recurse to the last item. It is completely correct and reads like the problem statement.',
+code:{h:'knap.py — the naive recursion',b:`def knap(i, cap):
+    if i == n or cap == 0:
+        return 0
+    best = knap(i + 1, cap)              <span class="cm"># SKIP item i</span>
+    if wt[i] &lt;= cap:                      <span class="cm"># TAKE item i</span>
+        best = max(best,
+                   val[i] + knap(i + 1, cap - wt[i]))
+    return best
+
+knap(0, W)                               <span class="cm"># O(2^n): every item forks
+# n = 40 items &rarr; 2^40 &asymp; 1e12 calls &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac bad2">i,c</div><div class="ac bad2">i,c</div><div class="ac bad2">i,c</div><div class="ac bad2">i,c</div>
+</div>
+<div class="av-cap">the recursion tree revisits the SAME <code>(item, cap)</code> pair on many branches.<br>2^n leaves &mdash; and nothing remembers a subproblem already solved.</div>`,
+callout:{type:'callout-info',text:'Correct, but exponential — because it discards every sub-answer the instant it returns. The pain here is pure TIME: the same (i, cap) is recomputed over and over.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Chapters 1&ndash;3 handed us three rules. This brute force is not fat like the last chapter&rsquo;s — it is <strong>forgetful</strong>. Audit it against the rules and the exponential blow-up gets an exact address.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> There is NO invariant that persists. Each call re-derives its answer from scratch; no subproblem is ever recorded as "final". Because nothing settles, the same <code>(i, cap)</code> is recomputed on branch after branch.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> The take/skip move is correct and irreversible per branch — but with no memory behind it, it re-explores an exponential tree instead of touching each subproblem once.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> <code>max</code> at the root returns the right number — but it costs 2^n calls to reach it.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force simply refuses to remember what it has already proven. We do not need a new idea — we need an IMPLEMENTATION whose invariant makes every subproblem final exactly once.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a table of already-final subproblems',desc:'Give every subproblem a home. Let <code>dp[i][c]</code> = the best value using the first <code>i</code> items within capacity <code>c</code>. The invariant: <strong>every entry we write is FINAL and correct</strong> — computed only from entries already final. Once written, a cell is never revised.',
+code:{h:'The promise — a grid of settled answers',b:`dp[i][c] = best value using the first i items,
+           total weight &le; c
+
+<span class="hi-b"># INVARIANT — true of every filled cell:
+#   dp[i][c] is FINAL. It was computed only
+#   from cells already final (row i-1).</span>
+
+<span class="cm"># The overlapping subproblems from the tree
+# now each live in ONE cell — solved once,
+# read many times. Memory is the whole point.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac live">0</div><div class="ac live">0</div><div class="ac live">0</div><div class="ac live">0</div><div class="ac live">0</div>
+</div>
+<div class="av-cap">row 0 (no items): all zeros — already FINAL. columns are capacities c = 0..5.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">0</div><div class="ac win">6</div><div class="ac win">6</div><div class="ac">?</div><div class="ac">?</div><div class="ac">?</div>
+</div>
+<div class="av-cap">row 1 fills from row 0; each written cell is FINAL and never touched again.</div>`,
+callout:{type:'callout-info',text:'Contrast the footprint. Fast &amp; Slow shrank the invariant to two O(1) pointers; DP swings the other way — the invariant is a whole TABLE of proven-final subproblems. Remembering is not the sin here; it is the strategy.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a table where every filled state is FINAL — it depended only on states already final. Overlapping subproblems collapse into one cell each. In Two Pointers the invariant described the discarded OUTSIDE; here it is an accumulating grid of settled answers.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: fill one state in dependency order',desc:'One move fills one cell: <code>dp[i][c] = max(skip, take)</code>. The safety condition is that every cell it reads is <strong>already final</strong>. Since <code>dp[i][c]</code> only reads row <code>i-1</code>, sweeping rows top-to-bottom is a valid <strong>topological order</strong> over the subproblems.',
+code:{h:'The move — one cell from final neighbors',b:`<span class="cm"># the MOVE — fill dp[i][c] from row i-1:</span>
+<span class="hi-y">dp[i][c] = max(dp[i-1][c],
+               val[i] + dp[i-1][c-wt[i]])</span>
+
+<span class="cm"># dp[i-1][c]      = skip item i
+# val[i]+dp[..]   = take item i (if it fits)
+#
+# PROOF: each of the n&times;(W+1) cells is filled
+# EXACTLY ONCE, from O(1) already-final cells
+# &rarr; O(n&middot;W) time. That one line IS the bound.
+#
+# Memoization = the SAME move, found lazily.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac live">6</div><div class="ac live">6</div><div class="ac live">6</div><div class="ac live">6</div><div class="ac live">6</div>
+</div>
+<div class="av-cap">row 1 — every cell already final</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">0</div><div class="ac live">6</div><div class="ac hot">10</div><div class="ac">?</div><div class="ac">?</div><div class="ac">?</div>
+</div>
+<div class="av-cap">filling dp[2][2] = max( skip = dp[1][2] = 6 , take = 10 + dp[1][0] = 10 ) = <b>10</b>.<br>it reads only final cells above &rarr; the fill order is a valid topological sort.</div>`,
+callout:{type:'callout-warn',text:'Same rule as always: one irreversible step with a one-line proof — and here that proof IS the complexity. Cells filled once, each from O(1) finals &rarr; O(n&middot;W). Bottom-up tabulation and top-down memoization are the same move; one is eager, one lazy.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: advance the frontier of settled states by filling one cell from cells already final, in a topological order of the dependency graph. Irreversibility = a filled cell is never revised. Work = (number of states) &times; (cost per transition).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: read the target state at the very end',desc:'The answer is not any single move — it is a specific cell, read <strong>after the whole table is final</strong>. For knapsack that is <code>dp[n][W]</code>. Read it one sweep too early and the cell may not yet be final. Need the actual items? <strong>Walk parents backward</strong>, comparing <code>dp[i][c]</code> against <code>dp[i-1][c]</code> to see whether item <code>i</code> was taken.',
+code:{h:'The harvest — target cell, then reconstruct',b:`<span class="hi-g">answer = dp[n][W]</span>          <span class="cm"># the target state, final</span>
+
+<span class="cm"># Sometimes the answer is the BEST over all
+# final states (e.g. LIS below), not one cell.
+
+# RECONSTRUCT the chosen items — walk parents:</span>
+c = W
+for i in range(n, 0, -1):
+    if dp[i][c] != dp[i-1][c]:        <span class="cm"># item i was taken</span>
+        take(i); c -= wt[i-1]`},
+dia:null,
+callout:{type:'callout-warn',text:'Placement is deliberate: the harvest waits until every dependency is settled. Fast &amp; Slow harvested on a pointer collision mid-walk; DP harvests once the frontier of final states has swept PAST the target cell — one step earlier and the evidence is not in yet.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: read the target state after it becomes final — or take the best over all final states. To recover the choices (not just the score), walk parent pointers backward through the settled table.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete 0/1 knapsack: a table of final subproblems, filled in topological order, harvested at the target cell. The exponential recursion collapses to a double loop.',
+code:{h:'knapsack.py — final (tabulation)',b:`def knapsack(wt, val, W):
+    n = len(wt)
+    dp = [[0] * (W + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):            <span class="cm"># topological order</span>
+        for c in range(W + 1):
+            <span class="hi-y">dp[i][c] = dp[i-1][c]</span>        <span class="cm"># skip</span>
+            if wt[i-1] &lt;= c:             <span class="cm"># take, if it fits</span>
+                <span class="hi-y">dp[i][c] = max(dp[i][c],
+                    val[i-1] + dp[i-1][c-wt[i-1]])</span>
+    return <span class="hi-g">dp[n][W]</span>                   <span class="cm"># HARVEST the target</span>
+
+<span class="cm"># O(n&middot;W) time, O(n&middot;W) space (&rarr; O(W) with one row).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">6</div><div class="ac dead">6</div><div class="ac dead">6</div><div class="ac dead">6</div><div class="ac dead">6</div>
+</div>
+<div class="av-cap">row 1 settled (item 1)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">6</div><div class="ac live">10</div><div class="ac live">16</div><div class="ac live">16</div><div class="ac live">16</div>
+</div>
+<div class="av-cap">row 2 settled (items 1&ndash;2)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">0</div><div class="ac">6</div><div class="ac">10</div><div class="ac">16</div><div class="ac">18</div><div class="ac win">22</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-success)">&#9733;</b></div></div>
+<div class="av-cap">row 3 settled; <code>dp[3][5] = 22</code> is the HARVEST.</div>`,
+callout:{type:'callout-ok',text:'The 2^n tree is gone: n&times;(W+1) = 3&times;6 = 18 cells, each filled once. Exponential recursion &rarr; a double loop, purely because every subproblem is now recorded final exactly once.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Coin Change — unbounded knapsack',desc:'Same state, one twist: an item is <strong>reusable</strong>. Fewest coins to make amount <code>A</code> from a set of denominations. Because a coin can repeat, the transition reads the <strong>current</strong> row (<code>dp[a - coin]</code> may already include this coin) instead of the previous row. Only the MOVE loosens.',
+code:{h:'coin_change.py — item reusable',b:`def coin_change(coins, A):
+    INF = float('inf')
+    dp = [0] + [INF] * A             <span class="cm"># dp[a] = min coins for a</span>
+    for a in range(1, A + 1):        <span class="cm"># topological: small &rarr; large</span>
+        for c in coins:
+            if c &lt;= a:
+                <span class="hi-y">dp[a] = min(dp[a], dp[a-c] + 1)</span>
+    return <span class="hi-g">dp[A]</span> if dp[A] &lt; INF else -1
+
+<span class="cm"># O(A &middot; |coins|). dp[a-c] is the SAME row &rarr; reuse.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac live">1</div><div class="ac live">2</div><div class="ac live">1</div><div class="ac live">1</div><div class="ac live">2</div><div class="ac win">2</div>
+</div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr">1</div><div class="ptr">2</div><div class="ptr">3</div><div class="ptr">4</div><div class="ptr">5</div><div class="ptr">6</div></div>
+<div class="av-cap">coins {1, 3, 4}; dp[a] = fewest coins for amount a.<br>dp[6] = <b>2</b> (3 + 3) — a coin reused, because the transition reads its own row.</div>`,
+extra:()=>rulesCard('Rules card — coin change (unbounded)',
+ 'Same shape: <code>dp[a]</code> is FINAL — min coins for amount <code>a</code>, built from smaller final amounts.',
+ 'LOOSENED — reads the <em>current</em> row <code>dp[a - coin]</code>, so an item may be taken again. This is the only change.',
+ 'Read <code>dp[A]</code> at the end; return <code>-1</code> if it is still <code>INF</code> (unreachable).'),
+callout:{type:'callout-ok',text:'0/1 vs. unbounded is a one-word edit to the MOVE: read the previous row (each item once) or the current row (item reusable). Invariant and harvest do not budge.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Edit Distance — state over TWO sequences',desc:'Now the state indexes a <strong>pair</strong>. <code>dp[i][j]</code> = min edits (insert / delete / replace) to turn <code>a[:i]</code> into <code>b[:j]</code>. Each cell depends on three already-final neighbors. Same LCS-family skeleton; only the STATE gained a dimension.',
+code:{h:'edit_distance.py — 2-D state',b:`def edit_distance(a, b):
+    m, n = len(a), len(b)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1): dp[i][0] = i   <span class="cm"># delete all of a</span>
+    for j in range(n + 1): dp[0][j] = j   <span class="cm"># insert all of b</span>
+    for i in range(1, m + 1):             <span class="cm"># topological order</span>
+        for j in range(1, n + 1):
+            if a[i-1] == b[j-1]:
+                <span class="hi-y">dp[i][j] = dp[i-1][j-1]</span>       <span class="cm"># free match</span>
+            else:
+                <span class="hi-y">dp[i][j] = 1 + min(dp[i-1][j],
+                    dp[i][j-1], dp[i-1][j-1])</span>
+    return <span class="hi-g">dp[m][n]</span>                 <span class="cm"># HARVEST</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">base row: "" &rarr; a prefix of "cut" costs that many inserts</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">3</div><div class="ac">2</div><div class="ac">2</div><div class="ac win">1</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-success)">&#9733;</b></div></div>
+<div class="av-cap">last row (a = "cat"); <code>dp[3][3] = 1</code> &mdash; one replace: c<b>a</b>t &rarr; c<b>u</b>t.<br>each cell reads three final neighbors: up, left, diagonal.</div>`,
+extra:()=>rulesCard('Rules card — edit distance (2-D)',
+ 'GAINED A DIMENSION: <code>dp[i][j]</code> over prefixes of two strings is FINAL from three final neighbors.',
+ 'Fill row-major — a valid topological order because each cell reads only up, left, and diagonal.',
+ 'Read <code>dp[m][n]</code>: the cost to transform all of <code>a</code> into all of <code>b</code>.'),
+callout:{type:'callout-ok',text:'The entire LCS / edit-distance / sequence-alignment family is this: a 2-D table over two prefixes. The pattern is unchanged — the state just carries two indices instead of one.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Longest Increasing Subsequence — a smarter harvest',desc:'State = best run ENDING here: <code>dp[i]</code> = length of the longest increasing subsequence ending at index <code>i</code>. The plain fill is <code>O(n&sup2;)</code>. The famous <code>O(n log n)</code> version hires <strong>binary search</strong> to keep the answer readable — the HARVEST does the clever work.',
+code:{h:'lis.py — O(n log n), binary-searched harvest',b:`from bisect import bisect_left
+
+<span class="cm"># O(n&sup2;) baseline:
+#   dp[i] = 1 + max(dp[j] for j &lt; i if a[j] &lt; a[i])</span>
+
+def lis(a):                          <span class="cm"># patience sorting</span>
+    tails = []                       <span class="hi-b"># tails[k] = smallest tail of
+                                     #   an increasing run of length k+1</span>
+    for x in a:
+        i = bisect_left(tails, x)    <span class="cm"># binary search</span>
+        if i == len(tails):
+            tails.append(x)          <span class="cm"># extend the longest run</span>
+        else:
+            tails[i] = x             <span class="cm"># tighten a run's tail</span>
+    return <span class="hi-g">len(tails)</span>              <span class="cm"># HARVEST: the length. O(n log n)</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">10</div><div class="ac">9</div><div class="ac win">2</div><div class="ac">5</div><div class="ac win">3</div><div class="ac win">7</div><div class="ac">101</div><div class="ac win">18</div>
+</div>
+<div class="av-cap">nums; one LIS = [2, 3, 7, 18] &rarr; length 4</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">2</div><div class="ac live">3</div><div class="ac live">7</div><div class="ac live">18</div>
+</div>
+<div class="av-cap"><code>tails</code> after the sweep; each number was placed by binary search.<br><b>len(tails) = 4</b> is the harvest — the array's length, not any single cell.</div>`,
+extra:()=>rulesCard('Rules card — LIS (n log n)',
+ 'Reframed: <code>tails[k]</code> = smallest possible tail of a length-(k+1) run so far — still FINAL per step.',
+ 'Binary-search each element into <code>tails</code>: extend the array or tighten one slot. O(log n) per step.',
+ 'HARVEST relocated: the answer is <code>len(tails)</code>, kept readable by the binary search instead of a max-scan over all states.'),
+callout:{type:'callout-ok',text:'Same three rules — but the harvest went from "scan every final state for the max" (O(n&sup2;)) to "the maintained tails array already knows the answer" (O(n log n)). A smarter harvest, not a new idea.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Stock Trading — state-machine DP',desc:'The state is not a grid index but a small set of <strong>modes</strong>: <code>hold</code> (owning a share) and <code>free</code> (owning none). Transitions are buy / sell / rest. With only two modes the whole table collapses to <strong>two rolling variables</strong> — DP in O(1) space.',
+code:{h:'max_profit.py — modes, not a grid',b:`def max_profit(prices):              <span class="cm"># unlimited transactions</span>
+    hold, free = float('-inf'), 0    <span class="hi-b"># two states / modes</span>
+    for p in prices:
+        <span class="hi-y">hold = max(hold, free - p)</span>    <span class="cm"># rest, or BUY today</span>
+        <span class="hi-y">free = max(free, hold + p)</span>    <span class="cm"># rest, or SELL today</span>
+    return <span class="hi-g">free</span>                     <span class="cm"># HARVEST: end holding nothing</span>
+
+<span class="cm"># O(n) time, O(1) space — the whole DP is
+# two variables, one per mode.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">7</div><div class="ac live">1</div><div class="ac hot">5</div><div class="ac live">3</div><div class="ac hot">6</div><div class="ac">4</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr">buy</div><div class="ptr">sell</div><div class="ptr">buy</div><div class="ptr">sell</div><div class="ptr"></div></div>
+<div class="av-cap">prices; two modes evolve each day. buy@1 sell@5 (+4), buy@3 sell@6 (+3) &rarr; <b>7</b>.<br>no table at all — the invariant is two O(1) rolling states.</div>`,
+extra:()=>rulesCard('Rules card — stock (state machine)',
+ 'COLLAPSED to modes: <code>hold</code> / <code>free</code> are each FINAL given yesterday&rsquo;s two modes. O(1) memory.',
+ 'Advance every mode one day from yesterday&rsquo;s modes: buy, sell, or rest.',
+ 'Read the <code>free</code> mode after the last day — ending without a share is always &ge; ending holding one.'),
+callout:{type:'callout-ok',text:'When the state space is a tiny automaton, DP&rsquo;s "table" is just a few variables — echoing Fast &amp; Slow&rsquo;s O(1). The invariant shrank; the three rules held.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Dynamic Programming vs. Sliding Window',desc:'Four chapters, four patterns, still zero new rules. Here the invariant swings to its heaviest form yet — a whole table of proven-final subproblems — the mirror image of Sliding Window&rsquo;s O(1) frontier.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Sliding Window (Ch.2)</th><th>Dynamic Programming (Ch.13)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The living <strong>inside</strong>: "the window is legal" + O(1) aux state</td><td>Every filled <strong>state is FINAL</strong> — it read only already-final states. A whole TABLE, remembered on purpose</td></tr>
+<tr><td class="col-mov">Move</td><td>Expand always, repair to restore</td><td>Fill one state from final neighbors, in <strong>topological (dependency) order</strong>; each cell once</td></tr>
+<tr><td class="col-har">Harvest</td><td>After repair / during shrink / count per step</td><td>Read the <strong>target state</strong> at the end (or best over finals; walk parents to reconstruct)</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; 2n — both pointers monotone, O(1) space</td><td>states &times; transition — e.g. O(n&middot;W); space O(states), often one row</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, opposite extreme: Sliding Window keeps almost nothing, DP keeps everything. The RULES are the constant; the invariant&rsquo;s FOOTPRINT — from two pointers to a full table — is the variable.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 13',desc:'Add Dynamic Programming&rsquo;s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">a TABLE OF FINAL SUBPROBLEMS
+               (dp[state] is settled, never revised)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast +2 / slow +1,
+               <span class="hi-y">FILL ONE STATE IN TOPOLOGICAL ORDER
+               (each cell once &rarr; states &times; transition)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision / on-exhaustion,
+               <span class="hi-g">READ THE TARGET STATE AT THE END
+               (or best over finals; walk parents back)</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for DP when:</span>
+  overlapping subproblems + optimal
+  substructure &middot; "count / min / max number
+  of ways" over exponentially many choices &middot;
+  a brute-force recursion that recomputes the
+  same arguments again and again.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem asks for a count, a minimum, or a maximum over exponentially many choices — and a naive recursion keeps recomputing the same arguments — do not hunt for a trick. Ask: what is the state, which final states does it depend on, in what order do they settle? Name those three and the DP writes itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 24 — Knowing What to Track | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 24 — Knowing What to Track</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Majority Element',desc:'A new shape of problem: given an array <code>nums</code> of length <code>n</code>, return the value that appears <strong>more than &lfloor;n/2&rfloor; times</strong>. Assume such a majority always exists. Then the interviewer adds the twist that makes it interesting: <strong>do it in O(1) extra space.</strong>',
+code:{h:'The problem',b:`nums = [2, 2, 1, 1, 1, 2, 2]   <span class="cm"># n = 7</span>
+
+majority_element(nums) = 2
+<span class="cm"># 2 appears 4 times &gt; 7 / 2 = 3.5</span>
+
+<span class="cm"># Guaranteed: one value owns a
+# strict majority of the slots.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">2</div><div class="ac">2</div><div class="ac">1</div><div class="ac">1</div><div class="ac">1</div><div class="ac">2</div><div class="ac">2</div>
+</div>
+<div class="av-cap">seven slots, and one value (<code>2</code>) fills more than half of them.<br>Which value &mdash; without a tally big enough to store every count?</div>`,
+callout:{type:'callout-ok',text:'No cheap sort, no room for a full histogram. The gift is the phrase MORE THAN HALF &mdash; hold onto it, it is the whole trick.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — count everything in a hash map',desc:'The reflex: build a full histogram. Walk the array, tally every value in a dict, and return whichever key crosses <code>n/2</code>. Correct, one pass, passes every sample &mdash; but that dict can hold up to <code>n</code> distinct keys.',
+code:{h:'majority.py — the naive tally',b:`def majority_element(nums):
+    count = {}                       <span class="cm"># INVARIANT: exact</span>
+    for x in nums:                   <span class="cm">#  count of every</span>
+        count[x] = count.get(x, 0) + 1   <span class="cm"># value so far</span>
+        if count[x] &gt; len(nums) // 2:
+            return x
+
+<span class="cm"># O(n) TIME — but O(n) SPACE for the dict.
+# The interviewer asked for O(1).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">2</div><div class="ac live">2</div><div class="ac live">1</div><div class="ac live">1</div><div class="ac hot">1</div><div class="ac">2</div><div class="ac">2</div>
+</div>
+<div class="av-cap">dict after 5 elements = {2: 2, 1: 3}<br>correct &mdash; but the map can grow to hold <em>every distinct value</em>: O(n) memory.</div>`,
+callout:{type:'callout-ok',text:'It works, and it is even one pass. But a nested-count version is O(n&sup2;), and this histogram is O(n) space &mdash; with n = 1e5 that is a map of up to 1e5 keys where the problem asked for a handful of variables.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'This brute force is not <em>slow</em> &mdash; it is <strong>fat</strong>. The three rules from earlier chapters still apply; audit the tally against them and the culprit is obvious: we are tracking far more than the question needs.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (space).</span> "The exact count of every distinct value" is a <em>correct</em> summary &mdash; but it is O(n) wide. It tracks the whole histogram when the question asks about only ONE value: the majority.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> Each <code>count[x] += 1</code> is O(1) and one pass &mdash; fine &mdash; but the move keeps feeding a map that grows with the number of distinct values.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "count crosses n/2 &rarr; answer" is right, but it is powered by the fat O(n) map underneath.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. We simply tracked TOO MUCH. We do not need a new idea &mdash; we need to track the RIGHT, smaller thing: a leaner implementation of the same three rules.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant shrinks to one candidate and one count',desc:'Stop tracking every value. Track exactly two variables &mdash; a current <code>candidate</code> and a <code>count</code> &mdash; and maintain one fact: <strong>count is how many unmatched copies of candidate survive once every other value has cancelled one candidate copy.</strong> That net tally is the whole invariant, and it is O(1).',
+code:{h:'The promise — a two-variable summary',b:`candidate = None
+count = 0
+
+<span class="cm"># INVARIANT — true after every element:</span>
+<span class="hi-b">#  count = (copies of candidate so far)
+#        - (all other values so far),
+#  floored at 0, resetting candidate.</span>
+
+<span class="cm"># The past is compressed into two numbers.
+# No histogram is ever kept — O(1).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">2</div><div class="ac">2</div><div class="ac">1</div><div class="ac">1</div><div class="ac">1</div><div class="ac">2</div><div class="ac">2</div>
+</div>
+<div class="av-cap">candidate = 2, count = 1 &mdash; the entire past compressed into two numbers.<br>Ch.2&rsquo;s invariant was a whole live window; here it is a <b>net vote tally</b>.</div>`,
+callout:{type:'callout-info',text:'Same rule as before: name the property that survives every step. What changed is only its footprint &mdash; from an O(n) histogram to two O(1) counters. The art is choosing WHAT to track.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is no longer a region or a full map &mdash; it is a tiny running SUMMARY (candidate + net count) kept perfectly in sync with the stream. Pick the smallest thing that still answers the question. Cost: O(1).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: one O(1) counter update per element',desc:'Read each value once and adjust the summary in constant time. If <code>count == 0</code>, adopt the new value as candidate. Then <strong>+1 if it matches candidate, &minus;1 if it does not.</strong> Why it is safe: every non-candidate value cancels only one candidate copy, and the true majority has more copies than all others combined &mdash; so it can never be fully cancelled.',
+code:{h:'The move — vote and cancel',b:`for x in nums:                    <span class="cm"># one pass</span>
+    if count == 0:                <span class="cm"># no survivor &rarr;</span>
+        candidate = x             <span class="cm"># adopt x</span>
+    count += 1 if x == candidate else -1
+
+<span class="cm"># PROOF: each non-majority value removes at
+# most one majority vote. Majority &gt; n/2 &gt; all
+# others combined &rarr; it outlasts every cancel.
+# O(n) time, O(1) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">2</div><div class="ac dead">2</div><div class="ac dead">1</div><div class="ac hot">1</div><div class="ac">1</div><div class="ac">2</div><div class="ac">2</div>
+</div>
+<div class="av-cap">at index 3: candidate = 2, a <code>1</code> arrives &rarr; count drops 2 &rarr; 1.<br>every mismatch cancels exactly one vote &mdash; no more, no less.</div>`,
+callout:{type:'callout-info',text:'Ch.2&rsquo;s move expanded a window; here the move nudges a counter &plusmn;1. Irreversibility lives in the one-pass sweep &mdash; each element is consumed once and folded into the summary, which is exactly the O(n) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: consume one element, update the summary in O(1). The one-line safety proof &mdash; a majority out-votes all others combined &mdash; doubles as the single-pass, O(n)-time complexity bound.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: read the summary when the pass ends',desc:'No lookup, no scan. Because a majority is guaranteed, <strong>whatever candidate survives to the end IS the answer.</strong> The harvest is simply reading the summary variable. In other members of this family the harvest fires earlier &mdash; <em>the instant a tracked count crosses its threshold</em> &mdash; but the mechanism is identical: read the number you have been maintaining.',
+code:{h:'The harvest — read the survivor',b:`return <span class="hi-g">candidate</span>   <span class="cm"># HARVEST: the last
+                    #  survivor is the majority</span>
+
+<span class="cm"># TWIN harvest, same family:
+#   stop the MOMENT a tracked count
+#   crosses its threshold
+#   (first value to reach k copies, or
+#    a window whose freqs all match).
+# WHEN you read decides the problem.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.1 harvested when a value predicate fired; here it fires when the pass ENDS (read the summary) &mdash; or, in siblings, the moment a count crosses a line. Where you read the summary chooses the problem.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the answer is the value of the summary &mdash; read it at the end (majority survivor) or the instant a count crosses a threshold (first-to-k, window match). Moving that read re-targets the pattern.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete Boyer-Moore majority vote: two variables, one pass, no histogram. The O(1)-space constraint that killed the brute force is now satisfied by construction &mdash; because we chose to track the right, small thing.',
+code:{h:'majority.py — final',b:`def majority_element(nums):
+    candidate = None
+    count = 0
+    for x in nums:                   <span class="cm"># MOVE: one pass</span>
+        if count == 0:               <span class="cm">#  adopt on empty</span>
+            candidate = x
+        count += 1 if x == candidate else -1
+    return <span class="hi-g">candidate</span>            <span class="cm"># HARVEST: survivor</span>
+
+<span class="cm"># O(n) time &middot; O(1) space — two variables, ever.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">2</div><div class="ac">2</div><div class="ac">1</div><div class="ac">1</div><div class="ac">1</div><div class="ac">2</div><div class="ac">2</div>
+</div>
+<div class="av-cap">start: x = 2, count 0 &rarr; 1, candidate = 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">2</div><div class="ac dead">2</div><div class="ac dead">1</div><div class="ac dead">1</div><div class="ac hot">1</div><div class="ac">2</div><div class="ac">2</div>
+</div>
+<div class="av-cap">after index 4: 2&rsquo;s votes cancelled to 0, then <code>1</code> adopted (count 1)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">2</div><div class="ac dead">2</div><div class="ac dead">1</div><div class="ac dead">1</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac win">2</div>
+</div>
+<div class="av-cap">the tail flips candidate back to 2, count 1 &rarr; survivor = <b>2</b></div>`,
+callout:{type:'callout-ok',text:'The brute force stored a whole histogram; this stores two numbers, ever. Same O(n) time &mdash; but O(n) space collapses to O(1), purely because we tracked the right thing.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Permutation in String',desc:'Does <code>s</code> contain a permutation of <code>p</code> as a substring? Track a frequency summary and slide a <strong>fixed window of size len(p)</strong>; the summary rides the window, one char in and one char out per step. The harvest fires the moment the window&rsquo;s frequencies match p&rsquo;s exactly.',
+code:{h:'permutation.py — a freq summary in a window',b:`from collections import Counter
+
+def check_inclusion(p, s):
+    need = Counter(p)
+    window = Counter()
+    k = len(p)
+    for i, c in enumerate(s):
+        window[c] += 1              <span class="cm"># +1 entering char</span>
+        if i &gt;= k:
+            l = s[i - k]
+            window[l] -= 1          <span class="cm"># -1 leaving char</span>
+            if window[l] == 0: del window[l]
+        if <span class="hi-g">window == need</span>:        <span class="cm"># HARVEST: match</span>
+            return True
+    return False`},
+dia:()=>`<div class="av">
+  <div class="ac">e</div><div class="ac live">i</div><div class="ac live">d</div><div class="ac live">b</div><div class="ac">a</div><div class="ac">o</div><div class="ac">o</div>
+</div>
+<div class="av-cap">p = "abd", window size 3 sliding over s.<br>window {i, d, b} &ne; {a, b, d}</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">e</div><div class="ac">i</div><div class="ac win">d</div><div class="ac win">b</div><div class="ac win">a</div><div class="ac">o</div><div class="ac">o</div>
+</div>
+<div class="av-cap">slide one step: window {d, b, a} = {a, b, d} &rarr; <b>permutation found</b></div>`,
+extra:()=>rulesCard('Rules card — permutation in string',
+ 'The summary is a FREQUENCY MAP of the current window, kept equal to the true window contents at all times.',
+ 'Fixed window: +1 the entering char, &minus;1 the leaving char &mdash; two O(1) updates per step, one pass.',
+ 'Relocated to a THRESHOLD crossing: the instant <code>window == need</code>, a permutation is present.'),
+callout:{type:'callout-ok',text:'Majority tracked ONE candidate; here we track a whole frequency map &mdash; but it stays O(k) (k = alphabet) and it rides a window. Same rules; the summary just got structured.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'First Unique Character',desc:'Return the index of the first non-repeating character in a string. Here the summary is a full frequency count &mdash; but the harvest needs TWO passes: <strong>pass 1 builds the counts, pass 2 scans left to right for the first char whose count is 1.</strong> The tracked thing is built once, then read.',
+code:{h:'first_unique.py — count then scan',b:`from collections import Counter
+
+def first_uniq_char(s):
+    freq = Counter(s)               <span class="cm"># pass 1: the summary</span>
+    for i, c in enumerate(s):       <span class="cm"># pass 2: scan</span>
+        if <span class="hi-g">freq[c] == 1</span>:          <span class="cm"># HARVEST: first
+                                    #  count-1 char</span>
+            return i
+    return -1
+
+<span class="cm"># O(n) time &middot; O(k) space (k = alphabet &le; 26).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">l</div><div class="ac hot">e</div><div class="ac">e</div><div class="ac">t</div><div class="ac">c</div><div class="ac">o</div><div class="ac">d</div><div class="ac hot">e</div>
+</div>
+<div class="av-cap">pass 1 counts: {l:1, e:3, t:1, c:1, o:1, d:1}</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">l</div><div class="ac">e</div><div class="ac">e</div><div class="ac">t</div><div class="ac">c</div><div class="ac">o</div><div class="ac">d</div><div class="ac">e</div>
+</div>
+<div class="av-cap">pass 2: <code>l</code> has count 1 &rarr; first unique, index <b>0</b></div>`,
+extra:()=>rulesCard('Rules card — first unique character',
+ 'The summary is the exact frequency of every character &mdash; built in one full pass, then frozen.',
+ 'Pass 1: +1 per char (O(1) each). Pass 2 re-reads the string but never re-reads the counts.',
+ 'Deferred to a SECOND scan: the first character whose tracked count is exactly 1.'),
+callout:{type:'callout-ok',text:'Sometimes the harvest cannot ride the same pass &mdash; you must finish counting before "unique" can be trusted. Two passes, still O(n): count, then read.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Tic-Tac-Toe Win Detection',desc:'A game engine calls <code>move(r, c, player)</code> thousands of times. Instead of re-scanning the whole board after each move, <strong>track running sums for every row, every column, and the two diagonals.</strong> Player 1 adds +1, player 2 adds &minus;1; a sum reaching &plusmn;n means that line is full of one player &mdash; O(1) per move.',
+code:{h:'ttt.py — track lines, not the board',b:`class TicTacToe:
+    def __init__(self, n):
+        self.n = n
+        self.rows = [0] * n
+        self.cols = [0] * n
+        self.diag = 0
+        self.anti = 0                <span class="cm"># the summary</span>
+
+    def move(self, r, c, player):
+        v = 1 if player == 1 else -1
+        self.rows[r] += v            <span class="cm"># O(1) per move,</span>
+        self.cols[c] += v            <span class="cm">#  no board scan</span>
+        if r == c: self.diag += v
+        if r + c == self.n - 1: self.anti += v
+        if <span class="hi-g">self.n in (abs(self.rows[r]), abs(self.cols[c]),
+                     abs(self.diag), abs(self.anti))</span>:
+            return player            <span class="cm"># HARVEST: full line</span>
+        return 0`},
+dia:()=>`<div class="av">
+  <div class="ac win">X</div><div class="ac">&middot;</div><div class="ac">&middot;</div>
+</div>
+<div class="av" style="margin-top:3px">
+  <div class="ac win">X</div><div class="ac hot">O</div><div class="ac">&middot;</div>
+</div>
+<div class="av" style="margin-top:3px">
+  <div class="ac win">X</div><div class="ac">&middot;</div><div class="ac hot">O</div>
+</div>
+<div class="av-cap">column 0 sum: +1, +1, +1 = 3 = n &rarr; X wins that column.<br>No board rescan &mdash; just one counter per move.</div>`,
+extra:()=>rulesCard('Rules card — tic-tac-toe',
+ 'The summary is 2n + 2 line sums (rows, cols, two diagonals), each the signed net of moves on that line.',
+ 'Each move touches at most 4 counters, +1 or &minus;1 &mdash; strictly O(1) per move, never a board scan.',
+ 'Fires the MOMENT any line sum hits &plusmn;n &mdash; a count crossing its threshold means that line is won.'),
+callout:{type:'callout-ok',text:'The board is the naive O(n&sup2;)-per-move state; the summary is 2n + 2 numbers updated in O(1). Track the lines, not the grid &mdash; the win reveals itself as a threshold crossing.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Contains Duplicate Within K',desc:'Return True if some value appears twice within a window of <code>k</code> indices. The summary is a <strong>rolling set of the last k values seen</strong>; as the window slides, evict the element that falls out of range. The harvest fires the instant an incoming value is already in the set.',
+code:{h:'dup_within_k.py — a rolling seen-set',b:`def contains_nearby_duplicate(nums, k):
+    seen = set()                    <span class="cm"># summary: last k values</span>
+    for i, x in enumerate(nums):
+        if <span class="hi-g">x in seen</span>:            <span class="cm"># HARVEST: dup in range</span>
+            return True
+        seen.add(x)
+        if len(seen) &gt; k:            <span class="cm"># evict the value now</span>
+            seen.discard(nums[i - k])   <span class="cm"># out of the window</span>
+    return False
+
+<span class="cm"># O(n) time &middot; O(k) space — the set never exceeds k.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac hot">1</div><div class="ac">4</div>
+</div>
+<div class="av-cap">k = 2: seen = {2, 3} (last two); the <code>1</code> at index 0 was evicted.<br>incoming <code>1</code> is NOT in seen &rarr; no duplicate within 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">1</div><div class="ac dead">2</div><div class="ac live">3</div><div class="ac bad2">3</div><div class="ac">4</div>
+</div>
+<div class="av-cap">a fresh case: a <code>3</code> arrives while <code>3</code> is still in the window (k = 2) &rarr; <b>duplicate found</b></div>`,
+extra:()=>rulesCard('Rules card — contains duplicate within k',
+ 'The summary is a SET of the most recent k values &mdash; always exactly the window&rsquo;s contents, no more.',
+ 'Add the entering value; once the set exceeds k, evict the value that just left the window &mdash; O(1) per step.',
+ 'Fires the instant an incoming value is already in the set &mdash; a near duplicate within k indices.'),
+callout:{type:'callout-ok',text:'The naive "check all pairs within k" is O(nk); the rolling set makes membership O(1) and caps memory at k. Track only the last k &mdash; the window decides what is worth remembering.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Sliding Window vs. Fast & Slow vs. Knowing What to Track',desc:'Another pattern, still zero new rules. This one&rsquo;s signature is the <strong>choice of what to track</strong> &mdash; pick the smallest summary that still answers the question, and one pass is enough.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Sliding Window (Ch.2)</th><th>Fast &amp; Slow (Ch.3)</th><th>Knowing What to Track (Ch.24)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The living <strong>inside</strong>: window legal + aux state</td><td>A fixed <strong>speed ratio</strong> between two walkers</td><td>A small <strong>summary</strong> (counter / freq map / set) kept in sync with the stream &mdash; the past never re-read</td></tr>
+<tr><td class="col-mov">Move</td><td>Expand always, repair to restore</td><td><code>fast += 2</code>, <code>slow += 1</code></td><td>One O(1) update per element &mdash; vote, slide, or evict &mdash; in a single pass</td></tr>
+<tr><td class="col-har">Harvest</td><td>After repair / during shrink / count per step</td><td>On collision or exhaustion</td><td>Read the summary when asked &mdash; or the moment a count crosses its threshold</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; 2n — both pointers monotone</td><td>&le; n — gap closes 1/step</td><td>&le; n time &middot; O(1) or O(k) space — one pass, tiny state</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, another chapter louder: the RULES are constant, the IMPLEMENTATION varies. Knowing What to Track is the pattern where the whole game is choosing the smallest summary that stays in sync &mdash; then one pass wins.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 24',desc:'Add "Knowing What to Track" to the running lists &mdash; and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  ...outside-pointers, inside-window,
+     speed-ratio,
+     <span class="hi-b">a small running SUMMARY in sync
+     with the stream (counter / freq / set)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  ...retire-an-end, expand-and-repair,
+     fast+2 / slow+1,
+     <span class="hi-y">one O(1) update per element, single pass
+     (vote &plusmn;1 / enter+leave / add+evict)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  ...on-predicate, during-shrink,
+     on-collision,
+     <span class="hi-g">read the summary when asked, OR the
+     moment a count crosses its threshold</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for this when:</span>
+  one pass + O(1)/O(k) memory should be
+  enough IF you pick the RIGHT thing to
+  count &middot; "majority", "first unique",
+  "does a permutation / duplicate exist",
+  running win / score checks.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem wants one pass and tiny memory over a stream, do not ask "which data structure?" Ask: what is the SMALLEST summary that, kept in sync, still answers the question? Choose that, and the pattern names itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

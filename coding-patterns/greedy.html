@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 11 — Greedy | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 11 — Greedy</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Non-overlapping Intervals',desc:'New chapter, new flavour of problem: given a list of intervals, remove the <strong>fewest</strong> of them so that none of the survivors overlap. Return that minimum count. The list can be up to <strong>n = 1e5</strong> long — so anything exponential is dead on arrival.',
+code:{h:'The problem',b:`intervals = [[1,2],[2,3],[3,4],[1,3]]
+
+<span class="cm"># remove the FEWEST so none overlap</span>
+erase_overlap_intervals(intervals) = 1
+
+<span class="cm"># drop [1,3]; the survivors — [1,2],[2,3],[3,4] —
+# are mutually compatible.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">[1,2]</div><div class="ac">[2,3]</div><div class="ac">[3,4]</div><div class="ac">[1,3]</div>
+</div>
+<div class="av-cap">four intervals on a line. <code>[1,3]</code> straddles both <code>[1,2]</code> and <code>[2,3]</code> &mdash;<br>cutting that one interval is the cheapest way to make the rest disjoint.</div>`,
+callout:{type:'callout-info',text:'Not "find A valid answer" — find the OPTIMAL one (fewest removals). Optimization with a hidden order lurking in it: that word "fewest" is the whole story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — try every subset',desc:'The idea with zero cleverness: for each interval, either <em>keep</em> it or <em>skip</em> it, and among all fully-compatible keep-sets take the largest. Everything not kept is removed. It is genuinely correct — and it is a branching search with two choices per interval.',
+code:{h:'brute.py — include / exclude each interval',b:`def erase_overlap_intervals(intervals):
+    intervals.sort()
+    best = 0
+
+    def search(i, last_end, kept):
+        nonlocal best
+        if i == len(intervals):
+            best = max(best, kept); return
+        s, e = intervals[i]
+        if s &gt;= last_end:            <span class="cm"># A) keep it</span>
+            search(i + 1, e, kept + 1)
+        search(i + 1, last_end, kept)   <span class="cm"># B) skip it</span>
+
+    search(0, float('-inf'), 0)
+    return len(intervals) - best
+
+<span class="cm"># two branches per interval &rarr; 2^n leaves.
+# n = 30 &rarr; ~1e9 calls; n = 1e5 &rarr; ~1e30000 &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">[1,2]?</div>
+</div>
+<div class="av-cap">interval 1: keep or skip &mdash; two branches</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">keep</div><div class="ac">skip</div>
+</div>
+<div class="av-cap">&hellip; and each of those branches AGAIN on interval 2, and again, and again</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac bad2">2</div><div class="ac bad2">&times;</div><div class="ac bad2">2</div><div class="ac bad2">&times;</div><div class="ac bad2">&hellip;</div><div class="ac bad2">= 2^n</div>
+</div>
+<div class="av-cap">every interval doubles the tree &rarr; 2^n leaves explored. Exponential.</div>`,
+callout:{type:'callout-info',text:'Every decision is REVERSIBLE — both branches get explored — so nothing is ever committed. That relentless doubling is the tax for never trusting a single choice.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is missing?',desc:'This brute force is not <em>fat</em> like Chapter 3\'s — it is <strong>slow</strong>, exponentially so. Audit it against the three rules the earlier chapters handed us, and the culprit is stark: it maintains <em>no invariant at all</em>, so every decision stays reversible and the tree keeps doubling.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> There is NO invariant. The search asserts nothing about a partial choice — it treats "keep" and "skip" as equally plausible forever, so it can never prune. All 2^n combinations must be built and checked.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> The "move" (decide interval i) is <em>reversible</em>: both branches are taken. With no safety proof to commit a choice, nothing is ever locked in — the recursion simply fans out.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "largest compatible keep-set &rarr; answer" is correct — but it is only reachable after the entire exponential tree has been walked.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just never commits to a choice, so it re-derives every combination from scratch. We need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant: the partial pick can still reach an optimal',desc:'Stop enumerating. First <strong>sort the intervals by their END time</strong>; then sweep once, keeping a running frontier <code>kept_end</code>. Maintain a single fact: <strong>the intervals committed so far are still consistent with SOME optimal (maximum-compatible) selection.</strong> In Two Pointers the invariant described the discarded outside, in Sliding Window the living window; here it is a <strong>promise about the future</strong> — that we have not yet ruled out an optimum.',
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is no longer a region or a ratio — it is a feasibility promise: "the choices committed so far are consistent with SOME optimal answer." An exchange argument — swapping toward the greedy pick never hurts — is what keeps the promise true after each commit.'},
+code:{h:'The promise — sort, then sweep',b:`intervals.sort(key=lambda iv: iv[1])   <span class="cm"># sort by END</span>
+kept_end = float('-inf')
+
+<span class="cm"># INVARIANT — true after every interval:</span>
+<span class="hi-b">#  the set committed so far can still extend to a
+#  MAXIMUM compatible selection; kept_end is the
+#  smallest end achievable for that set.</span>
+
+<span class="cm"># No subsets stored. State = one number, kept_end.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">[1,2]</div><div class="ac">[2,3]</div><div class="ac">[1,3]</div><div class="ac">[3,4]</div>
+</div>
+<div class="ptr-row"><div class="ptr">e=2</div><div class="ptr">e=3</div><div class="ptr">e=3</div><div class="ptr">e=4</div></div>
+<div class="av-cap">sorted by END time. The earliest-ending interval leaves the MOST room for whatever follows,<br>so committing it can never rule out an optimal selection.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter: name the property that survives every step. Here it is a claim about the FUTURE — sort by end, and the earliest-finishing interval is always safe to commit.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: commit the earliest-ending compatible interval, forever',desc:'One irreversible step per interval: if it starts at or after <code>kept_end</code>, <strong>commit it and never reconsider</strong> — advance <code>kept_end</code> to its end. Otherwise it overlaps a committed interval, so drop it. Two Pointers retired a proven-useless END each step; here the move COMMITS a proven-safe interval each step, and the licence to do so is the exchange argument.',
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: the move commits the locally-best option under the sort key — earliest end — and never undoes it. Irreversibility is licensed by the exchange argument, so a single O(n) sweep (after the O(n log n) sort) suffices: no branching, no backtracking.'},
+code:{h:'The move — commit, never reconsider',b:`for s, e in intervals:            <span class="cm"># end-sorted order</span>
+    if s &gt;= kept_end:            <span class="hi-y"># compatible &rarr; COMMIT</span>
+        kept_end = e              <span class="cm"># advance the frontier</span>
+    else:                         <span class="cm"># overlaps a committed one</span>
+        removed += 1              <span class="cm"># drop it, move on</span>
+
+<span class="cm"># PROOF (exchange): in any optimal selection, swap its
+# first interval for the globally earliest-ending one &rarr;
+# still feasible, same size. So the greedy pick is always
+# safe. One pass &rarr; O(n) after the O(n log n) sort.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">[1,2]</div><div class="ac win">[2,3]</div><div class="ac">[1,3]</div><div class="ac">[3,4]</div>
+</div>
+<div class="av-cap">commit [1,2] (kept_end=2); [2,3] starts at 2 &ge; 2 &rarr; commit (kept_end=3)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">[1,2]</div><div class="ac win">[2,3]</div><div class="ac bad2">[1,3]</div><div class="ac">[3,4]</div>
+</div>
+<div class="av-cap">[1,3] starts at 1 &lt; 3 &rarr; overlaps a committed one &rarr; DROP (removed=1). Never revisited.</div>`,
+callout:{type:'callout-warn',text:'Ch.1\'s move retired a useless END; here the move COMMITS a safe interval — permanently. The exchange argument is what licenses "never reconsider," and it is exactly the one line that bounds the sweep at O(n).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: the running count is already the answer',desc:'There is no separate "read the answer" moment. Every time the move drops an interval, <code>removed</code> ticks up — so when the sweep ends, <strong>removed already holds the minimum number of deletions.</strong> The answer accrues <em>inside</em> the move; reading it "one step later" is meaningless because there is no later — the final decision closes the answer.',
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the harvest is not a predicate firing or a pointer collision — it is the accumulator itself. Because every committed / dropped choice is final, the running tally IS the answer the instant the sweep completes. (Other greedy problems instead harvest a running extremum, step by step.)'},
+code:{h:'The harvest — it accumulates as you go',b:`removed = 0
+for s, e in intervals:
+    if s &gt;= kept_end:
+        kept_end = e
+    else:
+        removed += 1              <span class="cm"># answer grows right here</span>
+
+return <span class="hi-g">removed</span>                <span class="cm"># HARVEST: nothing to
+                                 # recompute — the sweep
+                                 # already built it.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.3 harvested on a pointer collision; here the harvest is simply the accumulator the move has been maintaining. Because greedy never backtracks, the running total is final the moment the sweep ends.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete solution: sort by end, sweep once, commit-or-drop, return the count. The exponential branching tree collapses to a sort plus a single linear pass — and the n = 1e5 constraint that killed the brute force is met with room to spare.',
+code:{h:'erase_overlap_intervals.py — final',b:`def erase_overlap_intervals(intervals):
+    intervals.sort(<span class="hi-b">key=lambda iv: iv[1]</span>)  <span class="cm"># INVARIANT: end-sorted</span>
+    kept_end = float('-inf')
+    removed = 0
+    for s, e in intervals:
+        if s &gt;= kept_end:           <span class="hi-y"># MOVE: commit</span>
+            kept_end = e
+        else:
+            removed += 1            <span class="cm"># drop overlap</span>
+    return <span class="hi-g">removed</span>               <span class="cm"># HARVEST: the tally</span>
+
+<span class="cm"># O(n log n) sort + O(n) sweep · O(1) extra space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">[1,2]</div><div class="ac">[2,3]</div><div class="ac">[1,3]</div><div class="ac">[3,4]</div>
+</div>
+<div class="av-cap">end-sorted; commit [1,2], kept_end = 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">[1,2]</div><div class="ac win">[2,3]</div><div class="ac bad2">[1,3]</div><div class="ac">[3,4]</div>
+</div>
+<div class="av-cap">[2,3] committed (kept_end=3); [1,3] starts at 1 &lt; 3 &rarr; drop (removed=1)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">[1,2]</div><div class="ac win">[2,3]</div><div class="ac dead">[1,3]</div><div class="ac win">[3,4]</div>
+</div>
+<div class="av-cap">[3,4] starts at 3 &ge; 3 &rarr; commit. Sweep ends &rarr; <b>removed = 1</b>.</div>`,
+callout:{type:'callout-ok',text:'The brute force explored 2^n subsets; this sorts once and sweeps once. Same correct answer — O(2^n) collapses to O(n log n), purely because a committed choice is never reconsidered.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Jump Game — the invariant becomes a frontier',desc:'<code>nums[i]</code> is the max jump length from index <code>i</code>; can you reach the last index? The greedy choice needs no sort at all — sweep left to right and keep one number, <code>reach</code> = the furthest index reachable so far. This time the invariant is a moving <strong>frontier</strong>.',
+code:{h:'can_jump.py — extend the frontier',b:`def can_jump(nums):
+    reach, n = 0, len(nums)
+    for i, jump in enumerate(nums):
+        if i &gt; reach:               <span class="cm"># a gap we can't cross</span>
+            return False
+        <span class="hi-y">reach = max(reach, i + jump)</span>  <span class="cm"># MOVE: extend</span>
+        if <span class="hi-g">reach &gt;= n - 1</span>:          <span class="cm"># HARVEST: end covered</span>
+            return True
+    return True
+
+<span class="cm"># INVARIANT: reach = furthest index reachable from
+# the prefix seen. One sweep &rarr; O(n), no sort.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">2</div><div class="ac">3</div><div class="ac">1</div><div class="ac">1</div><div class="ac">4</div>
+</div>
+<div class="av-cap">i=0, jump=2 &rarr; reach = 2 (covers indices 0..2)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">2</div><div class="ac hot">3</div><div class="ac live">1</div><div class="ac live">1</div><div class="ac win">4</div>
+</div>
+<div class="av-cap">i=1, jump=3 &rarr; reach = max(2, 1+3) = 4 &ge; last index &rarr; reachable</div>`,
+extra:()=>rulesCard('Rules card — jump game',
+ 'The invariant is a FRONTIER: <code>reach</code> = the furthest index reachable from everything seen so far.',
+ 'Extend it: <code>reach = max(reach, i + nums[i])</code>, left to right; if <code>i &gt; reach</code> the frontier has stalled.',
+ 'The instant <code>reach</code> covers the last index &rarr; True; a stalled frontier &rarr; False.'),
+callout:{type:'callout-ok',text:'The INVARIANT shifted: from a feasibility promise to a running frontier number, and the sort key vanished entirely. The greedy "choice" is just to always push the frontier as far as possible. O(n).'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Gas Station — a failed stretch can never hold the start',desc:'A circular route of stations; <code>gas[i]</code> fills your tank and <code>cost[i]</code> is the fuel to reach the next station. Find the unique start that lets you complete the loop, or <code>-1</code>. The greedy invariant is a pruning claim: <strong>if the tank goes negative anywhere in <code>[start..i]</code>, no station in that stretch can be the start</strong> — so restart just past it.',
+code:{h:'can_complete_circuit.py — restart past failure',b:`def can_complete_circuit(gas, cost):
+    if sum(gas) &lt; sum(cost):
+        return -1                    <span class="cm"># impossible overall</span>
+    start, tank = 0, 0
+    for i in range(len(gas)):
+        tank += gas[i] - cost[i]
+        if <span class="hi-b">tank &lt; 0</span>:               <span class="cm"># stretch [start..i] fails</span>
+            <span class="hi-y">start = i + 1</span>            <span class="cm"># MOVE: skip past it</span>
+            tank = 0
+    return <span class="hi-g">start</span>                  <span class="cm"># HARVEST: the survivor</span>`},
+dia:()=>`<div class="av">
+  <div class="ac bad2">-2</div><div class="ac bad2">-2</div><div class="ac live">+3</div><div class="ac live">+1</div><div class="ac live">+2</div>
+</div>
+<div class="av-cap">net = gas &minus; cost per station. The tank goes negative across the first stretch&hellip;</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">-2</div><div class="ac dead">-2</div><div class="ac win">+3</div><div class="ac live">+1</div><div class="ac live">+2</div>
+</div>
+<div class="av-cap">&hellip;so NO station inside it can start a full loop &rarr; restart at the next one.<br>Total net &ge; 0, so the surviving start completes the circuit.</div>`,
+extra:()=>rulesCard('Rules card — gas station',
+ 'INVARIANT: no station in the currently-failed stretch <code>[start..i]</code> can be a valid start.',
+ 'MOVE: when <code>tank &lt; 0</code>, jump <code>start</code> to <code>i+1</code> and reset the tank — the whole stretch is discarded at once.',
+ 'HARVEST: if total gas &ge; total cost, the last surviving <code>start</code> completes the circuit.'),
+callout:{type:'callout-ok',text:'The MOVE shifted: it is a batch RESTART that discards a whole failed prefix in one step, licensed by "a failed stretch holds no valid start." Still a single sweep — O(n), O(1) space.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Two City Scheduling — the sort key IS the exchange argument',desc:'<code>2N</code> people; <code>costs[i] = [to_A, to_B]</code>. Send exactly <code>N</code> to each city, minimizing total cost. The trick: sort by the <strong>cost delta</strong> <code>to_A &minus; to_B</code>. That key literally encodes the exchange — the people who save the most by choosing A are sent to A.',
+code:{h:'two_city_cost.py — sort by delta',b:`def two_city_cost(costs):
+    <span class="hi-b">costs.sort(key=lambda c: c[0] - c[1])</span>  <span class="cm"># sort by DELTA</span>
+    n, total = len(costs) // 2, 0
+    for i, (a, b) in enumerate(costs):
+        total += <span class="hi-y">a if i &lt; n else b</span>       <span class="cm"># MOVE: first N &rarr; A</span>
+    return <span class="hi-g">total</span>                        <span class="cm"># HARVEST: running sum</span>
+
+<span class="cm"># PROOF (exchange): if an A-person has a larger delta
+# than a B-person, swapping them lowers the total &rarr;
+# so delta order is optimal. O(n log n).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">[10,20]</div><div class="ac">[30,200]</div><div class="ac">[400,50]</div><div class="ac">[30,20]</div>
+</div>
+<div class="av-cap">deltas (A &minus; B):  &minus;10,  &minus;170,  +350,  +10</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">[30,200]</div><div class="ac win">[10,20]</div><div class="ac live">[30,20]</div><div class="ac live">[400,50]</div>
+</div>
+<div class="av-cap">delta-sorted; first N=2 &rarr; city A (30+10), last 2 &rarr; city B (20+50) = <b>110</b></div>`,
+extra:()=>rulesCard('Rules card — two city scheduling',
+ 'INVARIANT: after sorting by delta, the first <code>i</code> assignments are consistent with an optimal split — the biggest A-savers are in A.',
+ 'MOVE: walk the delta-sorted list; send the first <code>N</code> to A, the rest to B. The comparator already baked in the exchange.',
+ 'HARVEST: the accumulated <code>total</code> is the minimum cost.'),
+callout:{type:'callout-ok',text:'Sometimes the whole proof lives in the comparator. Sorting by (to_A &minus; to_B) means the first N people gain the most from A — choose the key well and the greedy MOVE becomes a one-line split.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Interval Scheduling — the classic end-sort exchange proof',desc:'The base form, stated as a maximization: given intervals, select the <strong>most</strong> that are mutually compatible (activity selection). Sort by <strong>end time</strong> and greedily take each interval that starts after the last selected end. This is the textbook exchange proof — and the mirror image of our lead problem.',
+code:{h:'max_nonoverlapping.py — count the kept',b:`def max_nonoverlapping(intervals):
+    <span class="hi-b">intervals.sort(key=lambda iv: iv[1])</span>  <span class="cm"># sort by END</span>
+    count, last_end = 0, float('-inf')
+    for s, e in intervals:
+        if s &gt;= last_end:            <span class="hi-y"># compatible &rarr; SELECT</span>
+            count += 1
+            last_end = e
+    return <span class="hi-g">count</span>                    <span class="cm"># HARVEST: kept count</span>
+
+<span class="cm"># PROOF (classic exchange): replace any optimal
+# selection's first interval with the globally
+# earliest-ending one &rarr; still feasible, same count.
+# Induct &rarr; greedy is optimal. O(n log n).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">[1,2]</div><div class="ac win">[2,3]</div><div class="ac dead">[1,3]</div><div class="ac win">[3,4]</div>
+</div>
+<div class="av-cap">end-sorted; select [1,2], [2,3], skip [1,3] (overlaps), select [3,4]</div>
+<div class="av-gap"></div>
+<div class="av-cap"><b>count = 3</b> compatible intervals. Note kept (3) + removed (1) = n (4) &mdash;<br>this is the lead problem exactly, harvesting the OTHER number.</div>`,
+extra:()=>rulesCard('Rules card — interval scheduling',
+ 'INVARIANT: the selected set extends to a MAXIMUM compatible set; <code>last_end</code> is minimal for that set.',
+ 'MOVE: take the earliest-ending compatible interval; the exchange proof licenses "never reconsider."',
+ 'HARVEST: <code>count</code> of selected intervals — the running tally, read at the end.'),
+callout:{type:'callout-ok',text:'The HARVEST shifted: count the KEPT (maximize) instead of the REMOVED (minimize) — identical invariant, identical move. Only the number read flips (count vs. n &minus; count). This end-sort exchange is the proof every greedy borrows.'}
+},
+{phase:'pill-pattern',phaseTxt:'Foundations vs. Greedy',title:'Two Pointers vs. Sliding Window vs. Greedy',desc:'Three chapters, still zero new rules. Watch what "irreversible move" means when it is licensed not by geometry but by an <strong>exchange argument</strong> — a proof that the local best is always safe.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Greedy (Ch.11)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>The living <strong>inside</strong> the window + O(1) aux state</td><td>The partial pick can still reach <strong>some optimal</strong> (exchange argument)</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Commit the locally-best by sort key; never reconsider</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink / count per step</td><td>The accumulated choices — or a running extremum</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; 2n — both pointers monotone</td><td>O(n log n) sort + O(n) sweep</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are the constant, the IMPLEMENTATION is the variable. Greedy\'s move is the boldest yet — it commits forever — and the exchange argument is the safety proof that makes such nerve legal.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 11',desc:'Add greedy\'s implementations to the running lists — and, above all, its <strong>recognition signal</strong>: the shape a problem statement takes when this pattern applies.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">partial-pick-still-reaches-optimal
+               (exchange argument)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast+2 / slow+1,
+               <span class="hi-y">commit-locally-best-by-sort-key,
+               never reconsider (proof = exchange)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision / on-exhaustion,
+               <span class="hi-g">the accumulator itself /
+               a running extremum</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Greedy when:</span>
+  an OPTIMIZATION (fewest / most / min / max)
+  where sorting by some key exists AND
+  "swapping toward the greedy pick never
+  hurts" can be argued. No need to explore
+  combinations &mdash; one pass decides.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem asks for an optimum and you can name a sort key plus an exchange argument that says "the local best is always safe," stop searching. Sort, sweep, commit. If no such argument exists, greedy is simply wrong — and that failure is the pattern naming its own boundary.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

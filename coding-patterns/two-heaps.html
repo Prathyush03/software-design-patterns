@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 6 — Two Heaps | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 6 — Two Heaps</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Find Median from a Data Stream',desc:'A new shape of problem: numbers arrive one at a time in a <strong>stream</strong>, and at any moment you may be asked for the running <strong>median</strong>. Support two operations — <code>addNum(num)</code> to ingest and <code>findMedian()</code> to report — and the median may be queried again and again as the stream grows.',
+code:{h:'The problem',b:`addNum(1);  addNum(2)
+findMedian()   &rarr;   1.5
+
+addNum(3)
+findMedian()   &rarr;   2
+
+<span class="cm"># the stream keeps growing; the median is
+# asked again after every push — repeatedly.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">1</div><div class="ac">2</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac">3</div>
+</div>
+<div class="av-cap">the stream <code>[1,2,3]</code> splits into a smaller half and a larger half;<br>the median lives right at the <b>seam</b> between them.</div>`,
+callout:{type:'callout-ok',text:'No fixed array. No end to stop at. The median is asked over and over on a moving target — hold that "repeated query on a growing stream". It is the whole story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — keep one sorted list',desc:'The obvious idea: hold every number in a list kept in sorted order. Insert each new value in place; to report, read the middle (or average the two middles). Correct and simple — but watch what the insert costs.',
+code:{h:'MedianFinder — the naive attempt',b:`import bisect
+
+class MedianFinder:
+    def __init__(self):
+        self.a = []                  <span class="cm"># kept sorted</span>
+    def addNum(self, num):
+        bisect.insort(self.a, num)   <span class="cm"># O(n) shift!</span>
+    def findMedian(self):
+        n = len(self.a); m = n // 2
+        if n % 2:                    <span class="cm"># odd count</span>
+            return self.a[m]
+        return (self.a[m-1] + self.a[m]) / 2
+
+<span class="cm"># n = 1e5 inserts &times; O(n) shift
+# &rarr; ~1e10 ops &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac live">4</div><div class="ac live">5</div>
+</div>
+<div class="av-cap">insert <code>2.5</code> &rarr; every element from <code>3</code> on must slide right one slot</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac hot">2.5</div><div class="ac bad2">3</div><div class="ac bad2">4</div><div class="ac bad2">5</div>
+</div>
+<div class="av-cap">one insert can move O(n) elements &rarr; O(n) per <code>addNum</code>.<br>Correct, but far too slow on a long stream.</div>`,
+callout:{type:'callout-ok',text:'It is correct — the read is O(1). But keeping the WHOLE list sorted makes every insert O(n). This time the pain is not memory, it is the cost of the move.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is buckling?',desc:'Chapters 1–3 handed us three rules. This brute force is correct but <strong>heavy</strong> — every insert reshuffles the whole list. Audit it against the rules; the cost is O(n)-per-insert and the rules point straight at why.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (overkill).</span> "The entire list stays sorted" is a valid invariant — but it is far more than the task needs. Maintaining a TOTAL order costs O(n) per insert, when only the MIDDLE is ever read.',
+ '<span class="viol">&#10007; VIOLATED.</span> Inserting into a sorted array shifts up to n elements — O(n), not the O(log n) a heap gives. The move is where all the time goes.',
+ '<span style="color:var(--text-success);font-weight:500">&#10003; SURVIVES.</span> Reading the middle index is genuinely O(1) — but it is bankrolled by that O(n) insert. A cheap harvest hanging off a heavy move.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just keeps an O(n) invariant and an O(n) move where an O(log n) pair would do — we need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a two-heap partition',desc:'Stop keeping one sorted list. Split the data into two piles: a <strong>max-heap</strong> holding the smaller half and a <strong>min-heap</strong> holding the larger half, with their sizes never differing by more than one. Every value on the left is &le; every value on the right — so the median sits right at the seam between the two roots.',
+code:{h:'The promise — two heaps',b:`lo = []   <span class="cm"># MAX-heap: the smaller half</span>
+hi = []   <span class="cm"># MIN-heap: the larger half</span>
+
+<span class="hi-b"># INVARIANT — true after every addNum:
+#   max(lo) &le; min(hi), and
+#   0 &le; len(lo) - len(hi) &le; 1.</span>
+
+<span class="cm"># No full sort. The median simply straddles
+# the two ROOTS — O(1) to read, always.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">2</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac win">3</div><div class="ac">5</div>
+</div>
+<div class="av-cap">MAX-heap <code>lo</code> (smaller half), root <code>2</code> &middot; MIN-heap <code>hi</code> (larger half), root <code>3</code>.<br>Ch.1's invariant was the discarded OUTSIDE; Ch.2's the living window.<br>Here it is a <b>partition of ALL data</b> into two ordered piles whose seam is the median.</div>`,
+callout:{type:'callout-info',text:'Same rule as Chapters 1–3: name the property that survives every step. What changed is only its shape — from one flat sorted list to two heaps meeting exactly at the median.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is no longer a region or a set but a PARTITION of all data into two heaps — a max-heap of the smaller half, a min-heap of the larger half, kept within one element of each other. The median is whatever sits at that seam. Cost: two heaps, never a full sort.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: push one heap, hop one root across',desc:'Each <code>addNum</code>: push the value into <code>lo</code>, then move <code>lo</code>\'s largest into <code>hi</code> so the halves stay correctly ordered; then, if <code>hi</code> has grown bigger than <code>lo</code>, hop its smallest back. At most two heap hops — and the invariant is whole again before the call returns.',
+code:{h:'The move — push then rebalance',b:`<span class="cm"># push, then rebalance with ONE root hop</span>
+heappush(lo, -num)               <span class="cm"># tentatively low</span>
+heappush(hi, -heappop(lo))       <span class="cm"># hand lo's top up</span>
+<span class="hi-y">if len(hi) &gt; len(lo):            # keep lo the bigger
+    heappush(lo, -heappop(hi))   # hop one back</span>
+
+<span class="cm"># PROOF: a bounded number of heappush/heappop,
+# each O(log n) &rarr; O(log n) per insert, and the
+# invariant is restored before addNum returns.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">2</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac">5</div>
+</div>
+<div class="av-cap">before: <code>lo = {2,1}</code>, <code>hi = {5}</code> — balanced</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">4</div><div class="ac">2</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac">5</div>
+</div>
+<div class="av-cap">1) push <code>4</code> into <code>lo</code> (max-heap) — tentatively the smaller half</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">2</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac win">4</div><div class="ac">5</div>
+</div>
+<div class="av-cap">2) <code>lo</code>'s root <code>4</code> belongs in the larger half &rarr; one hop across the seam.<br>each hop is one heappush + one heappop = O(log n).</div>`,
+callout:{type:'callout-warn',text:'Two Pointers retired an element per step; Sliding Window expanded then repaired. Here the move pushes then hops ONE root — the repair is a single cross-heap transfer, and its O(log n) cost is the whole complexity story.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: push into one heap, then hop a single root across to restore balance. One-line proof: a bounded number of O(log n) heap ops per insert, and the invariant is whole again before addNum returns — that IS the O(log n) bound.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: the median is a root read',desc:'No scan, no sort. When the total count is <strong>odd</strong>, <code>lo</code> holds the extra element and its root IS the median. When <strong>even</strong>, the median is the average of the two roots. It is O(1), and correct the instant the last insert returned — so it can be asked any number of times for free.',
+code:{h:'The harvest — read the roots',b:`<span class="cm"># HARVEST — a root read, O(1), any time asked:</span>
+<span class="hi-g">if len(lo) &gt; len(hi):
+    return -lo[0]                # odd &rarr; lo's root
+return (-lo[0] + hi[0]) / 2      # even &rarr; average roots</span>
+
+<span class="cm"># The roots always straddle the median because
+# the invariant held after the last insert.
+# Reading it later is not "too late" — it sits
+# OUTSIDE the loop, correct the moment add returns.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">2</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac">3</div>
+</div>
+<div class="av-cap">ODD total (3): <code>lo</code> carries the extra &rarr; median = its root = <code>2</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac win">4</div><div class="ac">5</div>
+</div>
+<div class="av-cap">EVEN total (4): median = (lo root + hi root)/2 = (2+4)/2 = <code>3</code></div>`,
+callout:{type:'callout-ok',text:'Sliding Window sometimes harvested during the shrink; here the harvest is decoupled entirely — the roots are ready the moment any insert returns, so findMedian is a pure O(1) read, callable a million times for free.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the answer is a ROOT read — the max-heap root when the count is odd, the average of both roots when even. It sits OUTSIDE the insert loop and is O(1) whenever asked, because the invariant guaranteed the roots straddle the median the instant the last insert finished.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules into MedianFinder',desc:'The complete streaming median: two heaps, O(log n) per insert, O(1) per query. The O(n)-insert that sank the brute force is gone — replaced by a single root hop.',
+code:{h:'median_finder.py — final',b:`from heapq import heappush, heappop
+
+class MedianFinder:
+    def __init__(self):
+        self.lo = []                       <span class="cm"># max-heap</span>
+        self.hi = []                       <span class="cm"># min-heap</span>
+
+    def addNum(self, num):
+        <span class="hi-y">heappush(self.lo, -num)            # MOVE
+        heappush(self.hi, -heappop(self.lo))
+        if len(self.hi) &gt; len(self.lo):
+            heappush(self.lo, -heappop(self.hi))</span>
+
+    def findMedian(self):
+        <span class="hi-g">if len(self.lo) &gt; len(self.hi):
+            return -self.lo[0]             # HARVEST
+        return (-self.lo[0] + self.hi[0]) / 2</span>
+
+<span class="cm"># addNum: O(log n)  ·  findMedian: O(1)</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">1</div>
+  <div class="ac dead">&#8214;</div>
+</div>
+<div class="av-cap">add 1 &rarr; <code>lo={1}</code>, <code>hi={}</code> &middot; median = <code>1</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac win">2</div>
+</div>
+<div class="av-cap">add 2 &rarr; <code>lo={1}</code>, <code>hi={2}</code> &middot; median = (1+2)/2 = <code>1.5</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac">3</div>
+</div>
+<div class="av-cap">add 3 &rarr; <code>lo={2,1}</code>, <code>hi={3}</code> &middot; median = lo root = <code>2</code></div>`,
+callout:{type:'callout-ok',text:'The brute force paid O(n) per insert to keep a full order. Two heaps pay O(log n) and keep only what the median needs — the two roots at the seam.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Sliding Window Median — add lazy deletion',desc:'Now the median is over a sliding window of width <code>k</code>: each step one value enters and one <strong>leaves</strong>. Heaps can\'t delete from the middle cheaply, so the move gains a wrinkle — <strong>lazy deletion</strong>: mark the departed value, and only truly remove it once it bubbles up to a root.',
+code:{h:'window_median.py — lazy deletion',b:`from heapq import heappush, heappop
+from collections import defaultdict
+
+<span class="cm"># WINDOW slides: add entrant, remove leaver.
+# You can't delete from a heap's MIDDLE cheaply.</span>
+def prune(heap, dead):               <span class="cm"># purge stale roots</span>
+    while heap and dead[heap[0]] &gt; 0:
+        dead[heap[0]] -= 1
+        <span class="hi-y">heappop(heap)                # only ever at the ROOT</span>
+
+<span class="cm"># MOVE now = push entrant, MARK the leaver in 'dead',
+# prune both roots, rebalance by EFFECTIVE sizes.
+# A departed value lingers until it surfaces at a root.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">3</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac bad2">5</div><div class="ac">7</div>
+</div>
+<div class="av-cap"><code>5</code> has left the window but is buried in <code>hi</code> — marked "dead", not yet popped</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">3</div><div class="ac">1</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac win">7</div>
+</div>
+<div class="av-cap">later, <code>5</code> reaches the root &rarr; prune() finally heappops it. Every op stays O(log&nbsp;k).</div>`,
+extra:()=>rulesCard('Rules card — sliding window median',
+ 'Same two-heap split, but sizes counted by EFFECTIVE (non-stale) elements only.',
+ 'MOVE shifts &rarr; lazy deletion: mark the leaver, and purge it only when it bubbles up to a heap root.',
+ 'Same root read after pruning — the median of the current window, O(1).'),
+callout:{type:'callout-ok',text:'Same two heaps, one new wrinkle: you cannot delete from a heap\'s middle, so you defer it. Lazy deletion keeps every operation O(log k) even as the window slides.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'IPO / Maximize Capital — two heaps, two keys',desc:'Pick up to <code>k</code> projects to maximize your capital. Here the two heaps use <strong>different keys</strong>: a capital-ordered feed of not-yet-affordable projects, and a profit-ordered max-heap of affordable ones. The move is a <strong>transfer</strong> — projects cross from the feed into the profit heap as your capital grows.',
+code:{h:'max_capital.py — two-key heaps',b:`import heapq
+
+def max_capital(k, w, capital, profits):
+    n = len(profits)
+    order = sorted(range(n), key=lambda i: capital[i])
+    avail, j = [], 0                 <span class="cm"># avail = MAX-heap by profit</span>
+    for _ in range(k):
+        <span class="hi-y">while j &lt; n and capital[order[j]] &lt;= w:
+            heapq.heappush(avail, -profits[order[j]])
+            j += 1                   # TRANSFER: capital-feed &rarr; profit-heap</span>
+        if not avail:
+            break                    <span class="cm"># nothing affordable</span>
+        <span class="hi-g">w += -heapq.heappop(avail)       # HARVEST best profit</span>
+    return w
+
+<span class="cm"># two heaps, DIFFERENT keys: a capital-ordered feed
+# hands affordable projects to a profit-ordered heap.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">c=2</div><div class="ac dead">c=3</div><div class="ac">c=9</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac win">p=5</div><div class="ac">p=4</div>
+</div>
+<div class="av-cap">feed ordered by CAPITAL (left); with <code>w=6</code>, the two affordable projects<br>TRANSFER into the max-heap ordered by PROFIT (right). Take root <code>p=5</code>.</div>`,
+extra:()=>rulesCard('Rules card — IPO / maximize capital',
+ 'INVARIANT shifts &rarr; two heaps keyed DIFFERENTLY: a capital-ordered feed and a profit-ordered max-heap holding all affordable projects.',
+ 'MOVE = TRANSFER: whenever w covers a project\'s capital, it crosses from the feed into the profit heap.',
+ 'Pop the max-profit root, add it to w — repeat k times; greedy and provably optimal per pick.'),
+callout:{type:'callout-ok',text:'Two heaps needn\'t share a key. IPO pairs a capital-ordered feed with a profit-ordered heap; the move is the TRANSFER between them — greedy, and provably optimal at each pick.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Find Right Interval — heaps drained in coordination',desc:'For each interval, find the one whose start is the smallest value &ge; this interval\'s end. Build one heap over <strong>starts</strong> and one over <strong>ends</strong>; pop the largest end, then drain qualifying starts. The two-heap balance becomes a two-heap <strong>coordination</strong>.',
+code:{h:'find_right_interval.py — two coordinated heaps',b:`import heapq
+
+def find_right_interval(intervals):
+    n = len(intervals)
+    starts = [(-s, i) for i,(s,e) in enumerate(intervals)]
+    ends   = [(-e, i) for i,(s,e) in enumerate(intervals)]
+    heapq.heapify(starts); heapq.heapify(ends)
+    res = [-1]*n
+    for _ in range(n):
+        <span class="hi-y">e, i = heapq.heappop(ends)       # largest END first</span>
+        j = -1
+        while starts and starts[0][0] &lt;= e:   <span class="cm"># start &ge; end</span>
+            ns, j = heapq.heappop(starts)
+        <span class="hi-g">res[i] = j                       # HARVEST: the match</span>
+        if j != -1:
+            heapq.heappush(starts, (ns, j))   <span class="cm"># reuse it</span>
+    return res`},
+dia:()=>`<div class="av">
+  <div class="ac">s=1</div><div class="ac win">s=3</div><div class="ac">s=8</div>
+  <div class="ac dead">&#8214;</div>
+  <div class="ac hot">e=2</div>
+</div>
+<div class="av-cap">pop the largest END (<code>e=2</code>); drain STARTS &ge; 2 down to the smallest such,<br><code>s=3</code> &rarr; that interval\'s "right interval". Push <code>s=3</code> back to reuse it.</div>`,
+extra:()=>rulesCard('Rules card — find right interval',
+ 'Two heaps over STARTS and ENDS, both max-ordered — the invariant is the pair kept in sync, not a size balance.',
+ 'MOVE = coordinated drain: pop the largest end, then pop starts while they still reach it (start &ge; end).',
+ 'HARVEST shifts &rarr; the last drained start is the answer; push it back so smaller ends can reuse it.'),
+callout:{type:'callout-ok',text:'Starts in one heap, ends in another, drained in lockstep. The two-heap balance becomes a two-heap COORDINATION — the roots advance in agreement rather than staying size-matched.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Sliding Window Maximum — the deque cousin',desc:'A deliberate contrast. When you need only one extreme over a window, two heaps are overkill: a single <strong>monotone-decreasing deque</strong> keeps the maximum at its front, harvested in O(1). Same harvest goal, lighter structure — know when the balance of two heaps is more than you need.',
+code:{h:'max_sliding_window.py — a monotone deque',b:`from collections import deque
+
+def max_sliding_window(nums, k):
+    dq = deque()                     <span class="cm"># indices; values DECREASING</span>
+    out = []
+    for i, x in enumerate(nums):
+        <span class="hi-y">while dq and nums[dq[-1]] &lt;= x:
+            dq.pop()                 # evict smaller tails</span>
+        dq.append(i)
+        if dq[0] &lt;= i - k:
+            dq.popleft()             <span class="cm"># drop stale front</span>
+        if i &gt;= k - 1:
+            <span class="hi-g">out.append(nums[dq[0]])      # HARVEST: front is max</span>
+    return out
+
+<span class="cm"># no heaps at all: a monotone deque keeps the max at
+# the FRONT — harvest O(1). one decreasing sequence,
+# not two ordered piles. the CONTRAST to two heaps.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">7</div><div class="ac">3</div><div class="ac">1</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-success)">max</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">a single DECREASING deque; its front is the window max — read in O(1).<br>No second pile, no rebalance: the lighter tool when only one extreme is needed.</div>`,
+extra:()=>rulesCard('Rules card — sliding window maximum (contrast)',
+ 'INVARIANT shifts &rarr; a SINGLE monotone-decreasing deque whose front is the window max — not two balanced piles.',
+ 'MOVE = evict smaller tails, drop the stale front; each index enters and leaves once &rarr; O(1) amortized.',
+ 'Same HARVEST goal as the root read — front-of-deque, O(1) — but via one structure, not two heaps.'),
+callout:{type:'callout-ok',text:'When you need only one extreme over a window, a monotone deque beats two heaps: O(1) amortized per step, harvest is just the front. Know when the lighter tool wins — recognition includes recognizing when NOT to reach for the pattern.'}
+},
+{phase:'pill-pattern',phaseTxt:'Six patterns, one rulebook',title:'Two Pointers vs. Sliding Window vs. Two Heaps',desc:'Six chapters in, still zero new rules. Watch the invariant morph from a discarded region, to a living window, to a self-balancing PARTITION whose seam is the answer.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Two Heaps (Ch.6)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>The living <strong>inside</strong>: "the window is legal" + O(1) aux</td><td>A <strong>partition</strong>: max-heap = smaller half, min-heap = larger half, sizes differ &le; 1 — median at the seam</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Push one heap, hop <strong>one root</strong> across to rebalance</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink / count per step</td><td>Read one root (odd) or average both (even) — O(1), any time</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; 2n — both pointers monotone</td><td><strong>O(log n)</strong> per insert · <strong>O(1)</strong> per query</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, sixth chapter: the RULES are the constant; the IMPLEMENTATION is the variable. Two Heaps is the invariant as a self-balancing PARTITION — two ordered piles whose seam is the answer.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 6',desc:'Add Two Heaps\' implementations to the running lists — and, above all, its <strong>recognition signal</strong>: the shape a problem takes when two heaps are the answer.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that holds after every step.</span>
+  seen so far: outside-the-pointers, inside-the-window,
+               speed-ratio, deque-decreasing,
+  <span class="hi-b">two heaps: max-heap (smaller half) | min-heap
+  (larger half), sizes differ &le; 1; median = the seam.</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast+2/slow+1, evict-a-tail,
+  <span class="hi-y">push one heap, hop ONE root across &mdash;
+  O(log n), invariant restored every insert.</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision, read-the-front,
+  <span class="hi-g">read one root (odd) or average both (even) &mdash;
+  O(1), any time the stream is queried.</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Two Heaps when:</span>
+  STREAMING data &middot; the words "median", "middle",
+  "balance point between two extremes" &middot; or a
+  best-by-one-key gated on another key (IPO) &middot;
+  or a kth-largest / smallest maintained over time.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem streams data and asks for a median, a middle, or a balance between two extremes — or gates a best-by-one-key on another key — don\'t reach for a sort. Ask: can two heaps hold the two halves so the answer is always a root away? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

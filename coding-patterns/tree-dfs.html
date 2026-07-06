@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 20 — Tree Depth-First Search | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 20 — Tree Depth-First Search</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Diameter of a Binary Tree',desc:'A new shape of data: a <strong>binary tree</strong>. Given its <code>root</code>, return the length of its <strong>diameter</strong> — the number of edges on the longest path between <em>any</em> two nodes. The killer subtlety: <strong>that path need not pass through the root</strong>; it bends at exactly one highest node, and that node can be anywhere.',
+code:{h:'The problem',b:`class TreeNode:
+    val: int
+    left: 'TreeNode | None'
+    right: 'TreeNode | None'
+
+<span class="cm"># longest path (see viz):
+#   4 &rarr; 2 &rarr; 1 &rarr; 3  =  3 edges.
+# It need NOT pass through the root.</span>
+
+diameter(root) = 3`},
+dia:()=>`<div class="av"><div class="ac live">1</div></div>
+<div class="av"><div class="ac">2</div><div class="ac">3</div></div>
+<div class="av"><div class="ac">4</div><div class="ac">5</div></div>
+<div class="av-cap">binary tree, drawn level by level. The longest path <code>4&rarr;2&rarr;1&rarr;3</code><br>threads through node <code>1</code> here — but the deepest bend can sit anywhere.</div>`,
+callout:{type:'callout-ok',text:'No array, no window, no pointers — just parents and children. The path can bend at ANY node, not only the root. Hold that: the answer is a max over every possible bend.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — measure every bend from scratch',desc:'The diameter through a node is <code>height(left) + height(right)</code> in edges. So the obvious plan: at <em>every</em> node, compute both child heights freshly, add them, keep the max. It reads straight off the definition and is provably correct.',
+code:{h:'diameter.py — the naive attempt',b:`def height(node):
+    if not node: return 0
+    return 1 + max(height(node.left),
+                   height(node.right))
+
+def diameter(root):
+    if not root: return 0
+    through = height(root.left) + height(root.right)
+    return max(through,               <span class="cm"># bend here</span>
+               diameter(root.left),   <span class="cm"># or lower-left</span>
+               diameter(root.right))  <span class="cm"># or lower-right</span>
+
+<span class="cm"># height() re-walks each subtree at EVERY node.</span>`},
+dia:()=>`<div class="av"><div class="ac hot">1</div></div>
+<div class="av"><div class="ac hot">2</div><div class="ac">3</div></div>
+<div class="av"><div class="ac hot">4</div><div class="ac hot">5</div></div>
+<div class="av-cap">diameter(1) calls height(2) &rarr; walks 2, 4, 5.<br>Then diameter(2) calls height(4), height(5) &rarr; walks them AGAIN.<br>Every node re-measured by each ancestor.</div>`,
+callout:{type:'callout-ok',text:'It is correct. But height() runs at every node, and each call re-walks the whole subtree below it. On a skewed tree of n=1e5 nodes that is ~n&sup2;/2 &asymp; 5e9 ops &rarr; TLE. The pain is not memory this time — it is redundant work.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'The brute force is correct but <strong>quadratic</strong>. Three earlier chapters handed us three rules; audit against them. The failure is redundant work, and the rules point straight at the cause: a result that should be <em>final on return</em> is thrown away and recomputed.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> The DFS invariant says "a subtree\'s result is FINAL the moment its call returns." Here <code>height(2)</code> is computed, returned, then <strong>thrown away</strong> — every ancestor recomputes it from scratch. Nothing is kept final.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> "Each node visited once" is broken: <code>height()</code> re-walks each subtree at every ancestor, so a node is touched O(depth) times, not once.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "max over all bends" is the right harvest — but it is powered by re-measuring every subtree, so it drags an O(n&sup2;) bill behind it.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just RECOMPUTES a result that DFS guarantees is final on return. We do not need a new idea — we need a new IMPLEMENTATION of the same three rules: harvest during the SAME single traversal that computes the heights.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant: the call stack IS the root-to-node path',desc:'Stop recomputing. Maintain one fact through the whole traversal: <strong>at any instant the chain of active calls on the recursion stack is exactly the path from the root down to the node being visited — and any subtree whose call has returned is DONE, its result final.</strong> That finality is what forbids recomputation.',
+code:{h:'The promise — one traversal, results kept',b:`def height(node):
+    if not node: return 0
+    <span class="hi-b"># INVARIANT: when this call RETURNS,</span>
+    <span class="hi-b"># the number it hands back is the FINAL</span>
+    <span class="hi-b"># height of node's subtree — computed once,</span>
+    <span class="hi-b"># never revisited.</span>
+    ...
+
+<span class="cm"># The live stack = root &rarr; ... &rarr; node.
+# Returned subtrees are settled facts.</span>`},
+dia:()=>`<div class="av"><div class="ac live">1</div></div>
+<div class="av"><div class="ac live">2</div><div class="ac dead">3</div></div>
+<div class="av"><div class="ac hot">4</div><div class="ac dead">5</div></div>
+<div class="av-cap">live stack right now = <code>1 &rarr; 2 &rarr; 4</code> (the blue path).<br>Ch.1 invariant lived OUTSIDE the pointers; Ch.3 in a speed ratio;<br>here it lives in the <b>live call stack = the root-to-node path</b>.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter: name what survives each step. What changed is the carrier — from a window or a pointer ratio to the RECURSION STACK, whose depth is the current path and whose returns are finalized subtree facts.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is the recursion stack = the root-to-current path, plus the guarantee that a subtree result is final the instant its call returns. Nothing computed is ever recomputed. Space cost: O(h), the stack depth.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: recurse into each child once, combine on the way up',desc:'One step of DFS = descend into a child. Post-order: let both children return their finalized results, then <strong>combine</strong> them into your own. Pre-order: push state DOWN before descending. Either way, <strong>each node is entered exactly once</strong>.',
+code:{h:'The move — descend, then combine',b:`def height(node):
+    if not node: return 0
+    hL = height(node.left)    <span class="cm"># descend left, once</span>
+    hR = height(node.right)   <span class="cm"># descend right, once</span>
+    <span class="hi-y">return 1 + max(hL, hR)</span>    <span class="cm"># combine UP</span>
+
+<span class="cm"># PROOF: every node is ENTERED exactly once
+# (one call per node) &rarr; total work is O(n),
+# not O(n&sup2;). The stack is never deeper than h.</span>`},
+dia:()=>`<div class="av"><div class="ac dead">1</div></div>
+<div class="av"><div class="ac live">2</div><div class="ac">3</div></div>
+<div class="av"><div class="ac win">4</div><div class="ac win">5</div></div>
+<div class="av-cap">post-order: children <code>4</code>, <code>5</code> return first (height 1 each),<br>then <code>2</code> combines them into height 2 and hands it up.<br>One call per node &rarr; O(n).</div>`,
+callout:{type:'callout-info',text:'Ch.2 expanded a window; Ch.3 advanced two pointers. Here the move is a recursive descent that returns a finalized fact. Its one-line proof — one call per node — is exactly the O(n) bound the brute force lacked.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: recurse into children, then combine their returned results (post-order) or push state down (pre-order). Irreversibility = each node is entered once and its result finalized; that single-visit property IS the O(n) bound.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest sits at the return — one step later is too late',desc:'The answer becomes visible <strong>at the moment a node\'s children have returned but the node has not yet returned</strong>. For diameter that is where both child heights coexist: harvest <code>through = hL + hR</code> into a global max, then return only <code>1 + max(hL, hR)</code> upward. Wait one step — until after you return — and <code>hL</code>, <code>hR</code> are gone.',
+code:{h:'The harvest — combine(left, right, node)',b:`def diameter(root):
+    best = 0
+    def height(node):
+        nonlocal best
+        if not node: return 0
+        hL = height(node.left)
+        hR = height(node.right)
+        <span class="hi-g">best = max(best, hL + hR)</span>   <span class="cm"># HARVEST the bend</span>
+        return 1 + max(hL, hR)         <span class="cm"># RETURN one arm</span>
+    ...
+
+<span class="cm"># Harvest AFTER both children return,
+# BEFORE this node returns. One step later,
+# hL and hR have vanished with the frame.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.1 harvested on a value predicate; Ch.3 on pointer collision. Here it fires at the RETURN of each node — the one instant both child results are in hand. The gap between what you HARVEST (hL+hR) and what you RETURN (1+max) is the whole trick.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: harvest as a node call returns, when combine(left, right, node) has all its inputs. For path problems the harvest slides down to the LEAVES instead. The placement of the harvest is the dial that selects the problem.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete diameter solver: one post-order traversal computes every height <em>once</em> and harvests the widest bend as it goes. The O(n&sup2;) recomputation is gone — not patched, but designed out.',
+code:{h:'diameter.py — final',b:`def diameter(root):
+    best = 0
+    def height(node):              <span class="cm"># INVARIANT: returns the</span>
+        nonlocal best              <span class="cm">#   FINAL subtree height</span>
+        if not node: return 0
+        hL = height(node.left)     <span class="cm"># MOVE: descend once</span>
+        hR = height(node.right)
+        <span class="hi-g">best = max(best, hL + hR)</span>  <span class="cm"># HARVEST the bend</span>
+        return 1 + max(hL, hR)     <span class="cm"># return one arm up</span>
+    height(root)
+    return best
+
+<span class="cm"># O(n) time . O(h) space (the recursion stack).</span>`},
+dia:()=>`<div class="av"><div class="ac">1</div></div>
+<div class="av"><div class="ac">2</div><div class="ac">3</div></div>
+<div class="av"><div class="ac win">4</div><div class="ac win">5</div></div>
+<div class="av-cap">leaves 4, 5 return height 1; best = 0</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac">1</div></div>
+<div class="av"><div class="ac hot">2</div><div class="ac">3</div></div>
+<div class="av"><div class="ac dead">4</div><div class="ac dead">5</div></div>
+<div class="av-cap">node 2: hL=1, hR=1 &rarr; best = max(0, 2) = 2; returns 2</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">1</div></div>
+<div class="av"><div class="ac">2</div><div class="ac">3</div></div>
+<div class="av"><div class="ac dead">4</div><div class="ac dead">5</div></div>
+<div class="av-cap">root: hL=2 (from 2), hR=1 (from 3) &rarr; best = max(2, 3) = <b>3</b></div>`,
+callout:{type:'callout-ok',text:'The brute force re-measured every subtree; this measures each once and harvests the bend on the way up. O(n&sup2;) collapses to O(n) purely because the invariant keeps returned results final.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Path Sum — state flows DOWN, harvest at the leaves',desc:'Does any <strong>root-to-leaf</strong> path sum to a target? Now the interesting state — the remaining amount — is pushed DOWN the tree (pre-order), and the harvest slides from the return all the way to the <strong>leaves</strong>: a hit is a leaf where the remainder is exactly its own value.',
+code:{h:'path_sum.py — push-down, harvest at leaves',b:`def has_path_sum(root, target):
+    if not root: return False
+    rem = target - root.val         <span class="cm"># state flows DOWN</span>
+    if not root.left and not root.right:
+        <span class="hi-g">return rem == 0</span>            <span class="cm"># HARVEST at leaf</span>
+    return (has_path_sum(root.left, rem) or
+            has_path_sum(root.right, rem))
+
+<span class="cm"># Path Sum II collects the actual paths:
+# carry the path list down, append at leaves.</span>`},
+dia:()=>`<div class="av"><div class="ac live">5</div></div>
+<div class="av"><div class="ac live">4</div><div class="ac dead">8</div></div>
+<div class="av"><div class="ac win">11</div><div class="ac dead">2</div></div>
+<div class="av-cap">target 20: rem 20&minus;5=15 at 5, 15&minus;4=11 at 4,<br>11&minus;11=0 at leaf <code>11</code> &rarr; <b>hit</b>. State flowed down; harvest at the leaf.</div>`,
+extra:()=>rulesCard('Rules card — path sum',
+ 'Same stack-is-the-path invariant — but now a running <code>rem</code> rides DOWN the stack with it.',
+ 'Pre-order push-down: subtract <code>node.val</code> before descending; each node entered once.',
+ 'Relocated to the LEAVES: a root-to-leaf hit is a leaf where <code>rem == 0</code>.'),
+callout:{type:'callout-ok',text:'Diameter harvested at the return; Path Sum harvests at the leaves and pushes state down instead of combining up. Same invariant and move — only the harvest MOMENT and the flow DIRECTION changed.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Binary Tree Maximum Path Sum — harvest the bend, return one arm',desc:'The famous split. A path may bend at a node using BOTH arms, but a path handed to a <em>parent</em> may use only ONE. So at each node: <strong>harvest</strong> the through-value <code>node.val + max(0,left) + max(0,right)</code> into a global max, but <strong>return</strong> only <code>node.val + max(0, max(left,right))</code>.',
+code:{h:'max_path_sum.py — the split',b:`def max_path_sum(root):
+    best = float('-inf')
+    def gain(node):
+        nonlocal best
+        if not node: return 0
+        L = max(gain(node.left), 0)   <span class="cm"># drop negative arms</span>
+        R = max(gain(node.right), 0)
+        <span class="hi-g">best = max(best, node.val + L + R)</span>  <span class="cm"># HARVEST</span>
+        return node.val + max(L, R)   <span class="cm"># RETURN one arm</span>
+    gain(root)
+    return best`},
+dia:()=>`<div class="av"><div class="ac">-10</div></div>
+<div class="av"><div class="ac">9</div><div class="ac live">20</div></div>
+<div class="av"><div class="ac hot">15</div><div class="ac hot">7</div></div>
+<div class="av-cap">at node <code>20</code>: through = 20+15+7 = <b>42</b> &rarr; harvest into best.<br>but it RETURNS only 20+max(15,7)=35 upward — a parent can use one arm.</div>`,
+extra:()=>rulesCard('Rules card — max path sum',
+ 'Same finalized-return invariant — <code>gain(node)</code> is the best single-arm downward path from node.',
+ 'Post-order combine, clamping negative arms to 0 so a losing branch is simply dropped.',
+ 'HARVEST the two-arm through-value into a global max; RETURN only the one-arm value — the harvested value <strong>is not</strong> the returned value.'),
+callout:{type:'callout-ok',text:'The signature trick of Tree DFS: what you HARVEST (the bend, both arms) is not what you RETURN (one arm, for the parent). Same three rules — the harvest and the return simply diverge.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Lowest Common Ancestor — harvest where both sides report a hit',desc:'Find the lowest node that has both <code>p</code> and <code>q</code> in its subtree. Each call returns "did I find p or q at or below me?" The <strong>harvest is the first node where the LEFT side and the RIGHT side both report a hit</strong> — that node is the split point, the LCA.',
+code:{h:'lca.py — harvest at the first double-hit',b:`def lca(root, p, q):
+    if not root or root is p or root is q:
+        return root                   <span class="cm"># found one (or dead end)</span>
+    L = lca(root.left, p, q)
+    R = lca(root.right, p, q)
+    <span class="hi-g">if L and R: return root</span>       <span class="cm"># HARVEST: split point</span>
+    return L or R                     <span class="cm"># bubble the one hit up</span>`},
+dia:()=>`<div class="av"><div class="ac">3</div></div>
+<div class="av"><div class="ac win">5</div><div class="ac dead">1</div></div>
+<div class="av"><div class="ac hot">6</div><div class="ac hot">2</div></div>
+<div class="av-cap">find LCA(6, 2): under node 5 the left side reports 6, the right reports 2 &rarr;<br>both sides hit AT node <code>5</code> &rarr; harvest: <b>LCA = 5</b>.</div>`,
+extra:()=>rulesCard('Rules card — lowest common ancestor',
+ 'Same invariant — each returned value is a finalized fact: does p or q live in this subtree (or here)?',
+ 'Post-order: gather the left and right answers, then decide; each node entered once.',
+ 'HARVEST at the FIRST node where both L and R are non-null — the two targets split there, so it is the LCA.'),
+callout:{type:'callout-ok',text:'Diameter combined heights; LCA combines two hit-or-miss reports. The harvest CONDITION — both children report a hit — is new, but it fires at the same place: the node return.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Serialize &amp; Deserialize — pre-order with null markers',desc:'Flatten a tree to a string and rebuild it exactly. Emit nodes in <strong>pre-order</strong>, writing a marker (<code>#</code>) for every null child. Because each subtree encodes to a self-contained, finalized block, the stream is <strong>uniquely decodable</strong> — the invariant is what guarantees a lossless round-trip.',
+code:{h:'codec.py — pre-order + null markers',b:`def serialize(node):
+    if not node: return '#'           <span class="cm"># null marker</span>
+    <span class="hi-y">return f'{node.val},{serialize(node.left)},{serialize(node.right)}'</span>
+
+def deserialize(data):
+    it = iter(data.split(','))
+    def build():
+        v = next(it)
+        if v == '#': return None      <span class="cm"># finalized null</span>
+        node = TreeNode(int(v))
+        node.left = build()           <span class="cm"># consume left block</span>
+        node.right = build()          <span class="cm"># consume right block</span>
+        <span class="hi-g">return node</span>                <span class="cm"># subtree rebuilt</span>
+    return build()`},
+dia:()=>`<div class="av"><div class="ac live">1</div></div>
+<div class="av"><div class="ac live">2</div><div class="ac live">3</div></div>
+<div class="av-cap">pre-order emit: <code>1, 2, #, #, 3, #, #</code><br>every null becomes <code>#</code> &rarr; the string decodes back to exactly one tree.</div>`,
+extra:()=>rulesCard('Rules card — serialize / deserialize',
+ 'Same invariant — each subtree serializes to a self-contained, finalized block, so blocks nest without ambiguity.',
+ 'Pre-order emit (root, then left block, then right block); on rebuild, consume the stream in the same order.',
+ 'Serialize harvests the STRING as calls return; deserialize harvests a rebuilt NODE once both child blocks are consumed.'),
+callout:{type:'callout-ok',text:'The null markers plus pre-order make the encoding uniquely decodable — the finalized-subtree invariant is exactly what lets the decoder know where one subtree ends and the next begins.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Two Pointers vs. Fast &amp; Slow vs. Tree DFS',desc:'Four chapters, four patterns, still zero new rules. Watch the invariant leave the flat array entirely and move onto a <strong>call stack</strong> — the same three rules wearing a recursive body.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Fast &amp; Slow (Ch.3)</th><th>Tree DFS (Ch.20)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>A fixed <strong>speed ratio</strong> between two walkers — O(1)</td><td>The call stack <strong>IS</strong> the root-to-node path; a subtree result is final on return</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td><code>fast += 2</code>, <code>slow += 1</code></td><td>Recurse into each child once; combine up or push state down</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>On collision (cycle) or exhaustion (middle)</td><td>At the return: <code>combine(L, R, node)</code> — or at the leaves for path problems</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; n — gap closes 1/step, O(1) space</td><td>O(n) — one call per node, O(h) stack</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one more chapter: the RULES are constant, the IMPLEMENTATION is the variable. Tree DFS just moves the invariant off the array and onto the recursion stack — the move becomes a recursive descent, the harvest a return.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Tree DFS',desc:'Add tree DFS\'s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">call-stack = root-to-node path;
+               subtree result final on return</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast+2 / slow+1,
+               <span class="hi-y">recurse each child once; combine
+               up (post-order) or push down (pre-order)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision, on-exhaustion,
+               <span class="hi-g">at the return: combine(L, R, node)
+               — or at the leaves for path problems</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Tree DFS when:</span>
+  the input is a tree and the ask mentions
+  "path", "root-to-leaf", "subtree", "ancestor",
+  "depth / height", or any property defined
+  recursively over a node's children.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem hands you a tree and asks about a path, a subtree, or a property a node inherits from its children, do not ask "which trick?" Ask: what is the invariant each call returns, and do I harvest on the way UP (combine) or push state DOWN to the leaves? The pattern names itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 16 — Sort and Search | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 16 — Sort and Search</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Find the K Closest Elements',desc:'A brand-new shape of question. Given an <strong>unsorted</strong> array <code>arr</code>, a target <code>x</code>, and an integer <code>k</code>, return the <code>k</code> values closest to <code>x</code> by absolute difference. The gift hides in the mismatch: the answer is about <strong>closeness</strong>, but the input arrives in <strong>no order at all</strong>.',
+code:{h:'The problem',b:`arr = [7, 2, 14, 4, 10]   x = 6   k = 3
+
+<span class="cm"># distances from 6:</span>
+<span class="cm">#   7&rarr;1   2&rarr;4   14&rarr;8   4&rarr;2   10&rarr;4</span>
+
+k_closest(arr, 6, 3) = [2, 4, 7]
+
+<span class="cm"># the 3 nearest values to 6, returned in order</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">7</div><div class="ac">2</div><div class="ac">14</div><div class="ac">4</div><div class="ac">10</div>
+</div>
+<div class="av-cap">raw input &mdash; the values nearest <code>6</code> (<code>7</code>, <code>4</code>, <code>2</code>) sit at scattered indices.<br>Closeness is a fact about <b>order</b>, but this array has none.</div>`,
+callout:{type:'callout-ok',text:'Unsorted input, but the QUESTION is about closeness. Hold that mismatch — it is the whole chapter. The data lacks the very structure the question asks about.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — pluck the closest, k times',desc:'The obvious idea needs no sort: scan the whole array for the single closest unused element, take it, repeat <code>k</code> times. Correct, and it never reorders the input. But each pluck rescans everything from scratch.',
+code:{h:'k_closest.py — repeated selection',b:`def k_closest(arr, x, k):
+    used = [False] * len(arr)
+    out = []
+    for _ in range(k):               <span class="cm"># k rounds</span>
+        best = -1
+        for i in range(len(arr)):    <span class="cm"># full scan each round</span>
+            if used[i]: continue
+            if best &lt; 0 or abs(arr[i]-x) &lt; abs(arr[best]-x):
+                best = i
+        used[best] = True
+        out.append(arr[best])
+    return sorted(out)
+
+<span class="cm"># O(n&middot;k) time. k can be as large as n
+# &rarr; O(n&sup2;). n = 1e5 &rarr; ~1e10 ops &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">7</div><div class="ac">2</div><div class="ac">14</div><div class="ac">4</div><div class="ac">10</div>
+</div>
+<div class="av-cap">round 1: scan all 5 &rarr; <code>7</code> is closest (dist 1). Take it.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">7</div><div class="ac">2</div><div class="ac">14</div><div class="ac hot">4</div><div class="ac">10</div>
+</div>
+<div class="av-cap">round 2: scan the rest &rarr; <code>4</code> (dist 2). Take it. Round 3 &rarr; <code>2</code>.<br>Every round rescans the whole array — the work stacks up.</div>`,
+callout:{type:'callout-ok',text:'Genuinely correct. But k full scans is O(n&middot;k), and when k grows with n that is O(n&sup2;). The pain here is TIME — re-deriving "closest" from scratch on unordered data, over and over.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is missing?',desc:'Three chapters gave us three rules. Audit the brute force against them — and notice the real culprit sits upstream of all three: the data never had the structure the question needs.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; MISSING.</span> There is no structural invariant at all. On unordered data, "closest" is a global fact recomputed from scratch every round — nothing is guaranteed between steps, so each round starts blind.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> "Take the closest, mark it used" is a valid irreversible step — but with no order to lean on, proving progress costs a full O(n) rescan every single time.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "the k plucked values" is a correct answer — but it is harvested the slow way, one full scan per element.',
+ true),
+callout:{type:'callout-bad',text:'The rules are not broken — they are UNSUPPORTED. The array lacks the order the question is about. We do not need a new idea; we need to BUY the missing structure first, then run a rule we already own.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'Buy the structure the input lacked',desc:'Pay <code>O(n log n)</code> to sort once. The instant the array is sorted, a guarantee appears that raw input never had: <strong>closeness becomes adjacency</strong>. The k values nearest <code>x</code> are now a single <strong>contiguous window</strong> — you can no longer find a closer element by jumping across the array, because everything left is smaller and everything right is larger.',
+code:{h:'The promise — a purchased invariant',b:`arr.sort()          <span class="cm"># pay O(n log n), once</span>
+
+<span class="cm"># INVARIANT — true for the rest of the run:</span>
+<span class="hi-b">#  arr is monotonic &rarr; the k closest values
+#  to x form ONE contiguous run of length k.</span>
+
+<span class="cm"># Raw input had NO such guarantee. The sort
+# manufactures it. Every later step leans on it.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">2</div><div class="ac win">4</div><div class="ac win">7</div><div class="ac">10</div><div class="ac">14</div>
+</div>
+<div class="av-cap">sorted <code>[2,4,7,10,14]</code>. Now the values near <code>6</code> are <b>neighbours</b>, not scattered.<br>Ch.1's invariant lived on an ALREADY-ordered array; here we <b>purchase</b> the order,<br>then a borrowed invariant (a contiguous window) takes over.</div>`,
+callout:{type:'callout-info',text:'Same Rule #1 as ever — name the property true after every step. What is new: the property does not exist until we PAY for it. Sorting is the price of admission for every pattern that assumes order.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a STRUCTURAL GUARANTEE bought with an O(n log n) sort — monotonicity, hence adjacency. Once purchased, "closest" means "contiguous", and a borrowed invariant (window / two-pointer) is finally legal.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'Pay once, then borrow a move',desc:'The move is two-layered. <strong>Layer 1</strong>: the sort — an irreversible, pay-<em>once</em> step (you never re-sort). <strong>Layer 2</strong>: on the structure you bought, run a borrowed move — here, binary-search to where <code>x</code> lands, then a two-pointer window that extends toward whichever neighbour is closer. Its one-line proof doubles as the bound.',
+code:{h:'The move — sort once, then a borrowed pass',b:`arr.sort()                       <span class="cm"># pay once: O(n log n)</span>
+lo = bisect_left(arr, x)         <span class="cm"># borrowed: binary search</span>
+left, right = lo - 1, lo
+while right - left - 1 &lt; k:       <span class="cm"># borrowed: 2-ptr window</span>
+    if closer_on_left():
+        left -= 1                <span class="cm"># retire one candidate</span>
+    else:
+        right += 1
+
+<span class="cm"># PROOF: sort O(n log n) paid once; the window
+# retires 1 candidate per step &rarr; O(k). Total
+# O(n log n) &mdash; the sort dominates.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">2</div><div class="ac">4</div><div class="ac live">7</div><div class="ac">10</div><div class="ac">14</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>L</b></div><div class="ptr"><b style="color:var(--text-warning)">R</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">binary search drops us between <code>4</code> and <code>7</code> — the window seed near <code>x=6</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac win">4</div><div class="ac win">7</div><div class="ac">10</div><div class="ac">14</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>L</b></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-warning)">R</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">extend toward the closer side each step until the window holds <code>k=3</code></div>`,
+callout:{type:'callout-info',text:'Ch.1\'s move retired a useless end each step; here the FIRST move is the sort — paid once, up front — and every move after it is borrowed. The sort is what makes those borrowed moves provably correct.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: one O(n log n) sort paid up front, then a borrowed move (binary halving or two-pointer retire) on the bought structure. One-line proof: the sort dominates, so total O(n log n).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest is borrowed too',desc:'Sort and Search almost never invents its own harvest — it lends its legality to a borrowed one. Here the borrowed harvest is the sliding-window one: the answer is visible the <strong>instant the window reaches width <code>k</code></strong>. Read it then; one step later the window would overshoot.',
+code:{h:'The harvest — per the borrowed pattern',b:`while right - left - 1 &lt; k:
+    ... extend window ...
+<span class="hi-g">return arr[left+1 : right]</span>   <span class="cm"># HARVEST: the
+                              # width-k window IS
+                              # the k closest values,
+                              # already in order.</span>
+
+<span class="cm"># The output is sorted for free — a second
+# gift from the same sort we already paid for.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.2 harvested when the window was legal; the SAME harvest fires here — Sort and Search just made it reachable. This pattern is a substrate: it makes those other harvests legal on data that started unordered.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: there is no bespoke harvest — you borrow one. Window-hits-k, two-pointers-cross, binary-search-converges. What Sort and Search adds is making that borrowed harvest correct.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete solver: buy the structure, borrow the search, harvest the window. The O(n log n) sort is paid once and never repeated; everything after it is linear or logarithmic.',
+code:{h:'k_closest.py — final',b:`from bisect import bisect_left
+
+def k_closest(arr, x, k):
+    <span class="hi-b">arr.sort()</span>                       <span class="cm"># INVARIANT: monotone</span>
+    lo = bisect_left(arr, x)
+    left, right = lo - 1, lo
+    while right - left - 1 &lt; k:        <span class="cm"># MOVE: grow window</span>
+        if left &lt; 0:               right += 1
+        elif right &gt;= len(arr):     left  -= 1
+        elif x - arr[left] &lt;= arr[right] - x:
+            left -= 1                 <span class="cm"># left side closer</span>
+        else:
+            right += 1
+    return <span class="hi-g">arr[left+1 : right]</span>       <span class="cm"># HARVEST</span>
+
+<span class="cm"># O(n log n) sort + O(log n) search + O(k) grow
+#   = O(n log n) total &middot; O(1) extra space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">2</div><div class="ac live">4</div><div class="ac live">7</div><div class="ac">10</div><div class="ac">14</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>L</b></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-warning)">R</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">seed: L=idx1(<code>4</code>), R=idx2(<code>7</code>); window empty, need 3</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">2</div><div class="ac win">4</div><div class="ac win">7</div><div class="ac">10</div><div class="ac">14</div>
+</div>
+<div class="av-cap">|6-4|=2 &le; |10-6|=4 &rarr; take left. window <code>[4,7]</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac win">4</div><div class="ac win">7</div><div class="ac">10</div><div class="ac">14</div>
+</div>
+<div class="av-cap">|6-2|=4 &le; |10-6|=4 &rarr; take left again. width=3 &rarr; harvest <code>[2,4,7]</code></div>`,
+callout:{type:'callout-ok',text:'The brute force rescanned n elements k times; this sorts once and walks a window. O(n&sup2;) collapses to O(n log n) — bought with a single sort, then paid off by a pattern we already owned.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'3Sum — sort so the two-pointer proof holds',desc:'Find every triplet summing to 0 in an unsorted array. <strong>Sort first</strong> — not to order the output, but because sorting is what makes the converging two-pointer <em>proof</em> valid: on a monotone array, "sum too big &rarr; move the right pointer down" can never skip a solution.',
+code:{h:'three_sum.py — sort unlocks two pointers',b:`def three_sum(nums):
+    <span class="hi-b">nums.sort()</span>                     <span class="cm"># buy monotonicity</span>
+    res = []
+    for i in range(len(nums) - 2):
+        l, r = i + 1, len(nums) - 1
+        while l &lt; r:                  <span class="cm"># borrowed: converge</span>
+            s = nums[i] + nums[l] + nums[r]
+            if s == 0:
+                res.append([nums[i], nums[l], nums[r]])
+                l += 1; r -= 1
+            elif s &lt; 0: l += 1        <span class="cm"># too small &rarr; raise low</span>
+            else:       r -= 1        <span class="cm"># too big &rarr; lower high</span>
+    return res
+
+<span class="cm"># O(n log n) sort + O(n&sup2;) scan = O(n&sup2;).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">-4</div><div class="ac live">-1</div><div class="ac">0</div><div class="ac">1</div><div class="ac live">2</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">i</b></div><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-warning)">r</b></div></div>
+<div class="av-cap">sorted <code>[-4,-1,0,1,2]</code>; fix <code>i=-4</code>, converge l/r. Monotone order makes the moves safe.</div>`,
+extra:()=>rulesCard('Rules card — 3Sum (custom key)',
+ 'Bought monotonicity: in sorted order a converging pair around a fixed <code>i</code> never skips a valid sum.',
+ 'The SHIFTED rule: sort by <b>value</b> so the borrowed converging move (Ch.1) becomes provably safe, then run it.',
+ 'Borrowed from Two Pointers: harvest a triplet the instant the three-way sum equals 0.'),
+callout:{type:'callout-ok',text:'The sort key is a design choice: pick the key that makes the greedy or two-pointer PROOF valid. Here sorting by value licenses the converging move — without it, "move r down" could skip an answer.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Binary Search on the Answer — Koko eats bananas',desc:'Sometimes you sort <em>nothing</em> — the SEARCH SPACE is already sorted. Koko must eat <code>piles</code> within <code>h</code> hours; find the minimum speed. Candidate speeds run <code>1..max(piles)</code>, and <code>feasible(speed)</code> is <strong>monotone</strong> — faster is never worse. That hidden monotonicity is a free invariant; binary-search the answer axis.',
+code:{h:'koko.py — binary search over the answer',b:`def min_speed(piles, h):
+    def hours(v):                    <span class="cm"># feasibility probe</span>
+        return sum((p + v - 1)//v for p in piles)
+    lo, hi = 1, max(piles)
+    <span class="cm"># INVARIANT: feasible(hi) true, feasible(lo-1) false;</span>
+    <span class="hi-b"># the answer axis is monotone &mdash; a conceptual sort.</span>
+    while lo &lt; hi:
+        mid = (lo + hi) // 2         <span class="cm"># MOVE: halve range</span>
+        if hours(mid) &lt;= h: hi = mid
+        else:               lo = mid + 1
+    return <span class="hi-g">lo</span>                        <span class="cm"># HARVEST: the boundary</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">1</div><div class="ac dead">2</div><div class="ac live">3</div><div class="ac live">4</div><div class="ac win">5</div><div class="ac">6</div>
+</div>
+<div class="av-cap">answer axis = eating speeds. <code>feasible</code> flips false&rarr;true at one boundary;<br>binary search converges on the smallest feasible speed. No array was sorted — the axis already is.</div>`,
+extra:()=>rulesCard('Rules card — binary search on answer',
+ 'The SHIFTED rule: the "sort" is CONCEPTUAL — the answer space is already monotone in feasibility, so the sort is free.',
+ 'Halve the candidate range each step (Modified Binary Search) instead of scanning it — O(log range) probes.',
+ 'Borrowed harvest: the false&rarr;true boundary IS the minimal feasible answer.'),
+callout:{type:'callout-ok',text:'The meta view of Modified Binary Search: you are not searching an array, you are searching an ANSWER. When feasibility is monotone, the answer space is pre-sorted — pay nothing, binary-search it directly.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Minimum Absolute Difference — adjacency suffices',desc:'Find the smallest <code>|a - b|</code> over all pairs in an unsorted array. Brute force checks all <code>O(n&sup2;)</code> pairs. But after sorting, the closest pair must be <strong>adjacent</strong> — any non-adjacent pair is separated by an element nearer to at least one of them. So one linear pass over neighbours suffices.',
+code:{h:'min_diff.py — sort, then scan neighbours',b:`def min_diff(a):
+    <span class="hi-b">a.sort()</span>                        <span class="cm"># INVARIANT: monotone</span>
+    <span class="cm"># after sorting, the closest pair is ADJACENT</span>
+    best = min(a[i+1] - a[i]          <span class="cm"># MOVE: one pass</span>
+               for i in range(len(a) - 1))
+    return <span class="hi-g">best</span>                      <span class="cm"># HARVEST: min gap</span>
+
+<span class="cm"># O(n log n) sort + O(n) scan = O(n log n),
+# down from O(n&sup2;) brute-force pairs.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">1</div><div class="ac live">5</div><div class="ac live">8</div><div class="ac">13</div><div class="ac">21</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>a</b></div><div class="ptr"><b style="color:var(--text-warning)">b</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">sorted; neighbour gaps: 4, <b>3</b>, 5, 8. Minimum is <code>8-5=3</code>.<br>Only adjacent pairs can win — non-adjacent ones are strictly wider.</div>`,
+extra:()=>rulesCard('Rules card — minimum difference',
+ 'Bought adjacency: in sorted order the minimum gap lies between CONSECUTIVE elements — nowhere else.',
+ 'One linear sweep of neighbour differences on the sorted array — no nested pairing needed.',
+ 'The SHIFTED rule: the harvest collapses from O(n&sup2;) pair checks to a single min over n-1 adjacent gaps.'),
+callout:{type:'callout-ok',text:'"Closest pair" screams O(n&sup2;) — until the sort turns it into "smallest neighbour gap". Adjacency is the structural gift; the whole problem becomes one pass.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Count Smaller After Self — sort while you count',desc:'For each element, count how many later elements are smaller (inversions). Here the sort is not preprocessing — it <strong>is</strong> the algorithm. A merge sort counts, during each merge, exactly how many right-side elements jumped ahead of a left-side one. The harvest is woven into the move.',
+code:{h:'count_smaller.py — merge sort that counts',b:`def count_smaller(nums):
+    res = [0]*len(nums)
+    order = list(range(len(nums)))    <span class="cm"># indices, by value</span>
+    def msort(lo, hi):
+        if hi - lo &lt;= 1: return
+        mid = (lo + hi)//2
+        msort(lo, mid); msort(mid, hi)
+        merged, i, j = [], lo, mid
+        while i &lt; mid and j &lt; hi:
+            if nums[order[j]] &lt; nums[order[i]]:
+                merged.append(order[j]); j += 1   <span class="cm"># a right jumps</span>
+            else:
+                <span class="hi-g">res[order[i]] += j - mid</span>          <span class="cm"># HARVEST: count</span>
+                merged.append(order[i]); i += 1
+        while i &lt; mid:
+            <span class="hi-g">res[order[i]] += j - mid</span>; merged.append(order[i]); i += 1
+        <span class="hi-b">order[lo:hi] = merged + order[j:hi]</span>   <span class="cm"># now sorted</span>
+    msort(0, len(nums)); return res      <span class="cm"># O(n log n)</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">2</div><div class="ac live">5</div><div class="ac hot">1</div><div class="ac hot">6</div>
+</div>
+<div class="av-cap">left half <span style="color:var(--text-info)">[2,5]</span>, right half <span style="color:var(--text-warning)">[1,6]</span>, merging up.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">1</div><div class="ac win">2</div><div class="ac dead">5</div><div class="ac dead">6</div>
+</div>
+<div class="av-cap"><code>1</code> merges before <code>2</code> &rarr; <code>2</code> counts <b>1</b> smaller to its right.<br>The count is harvested mid-merge — the sort and the answer are one pass.</div>`,
+extra:()=>rulesCard('Rules card — count smaller (merge)',
+ 'Each recursive level keeps its subarray sorted by value — the merge-sort invariant, reused verbatim.',
+ 'The SHIFTED rule: the sort IS the move — every merge step both orders and counts, no separate scan.',
+ 'Harvest rides the merge: when a right element is placed before a left one, the current left element gains the rights already merged.'),
+callout:{type:'callout-ok',text:'Here sorting is not a warm-up — it is the whole computation. Divide-and-conquer counts inversions for free while it orders, giving O(n log n) where naive pair-counting is O(n&sup2;).'}
+},
+{phase:'pill-pattern',phaseTxt:'Borrowed rules, one substrate',title:'Two Pointers vs. Sliding Window vs. Sort and Search',desc:'Sort and Search is the odd one out: it does not compete with the earlier patterns — it <strong>enables</strong> them. Its rules are mostly borrowed rules, made legal by one up-front purchase.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Sort and Search (Ch.16)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong> on an already-ordered array</td><td>The legal <strong>inside</strong> of the window + aux state</td><td>A structural guarantee <strong>bought</strong> by sorting — monotonicity, adjacency</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Pay O(n log n) <strong>once</strong>, then run a borrowed move on the bought structure</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink</td><td><strong>Borrowed</strong> — window-hits-k, pointers-cross, boundary-found</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n, one pass</td><td>&le; 2n, both pointers monotone</td><td>O(n log n) — the sort dominates</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'The thesis, inverted: earlier chapters brought new rules; this one brings new POWER to old rules. Sort and Search is a substrate — it makes Two Pointers, Sliding Window, and Binary Search legal on data that arrived unordered.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 16',desc:'Add Sort and Search implementations — a purchased invariant, a pay-once move, a borrowed harvest — and, above all, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  ... outside-the-pointers, inside-the-window,
+      speed-ratio, ...
+  <span class="hi-b">bought structure: monotonicity / adjacency
+  (an O(n log n) purchase, or a free monotone axis)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  ... retire-an-end, expand-and-repair, +2/+1, ...
+  <span class="hi-y">sort once, then borrow: binary halve /
+  two-pointer converge / window grow</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  ... on-predicate, during-shrink, on-collision, ...
+  <span class="hi-g">borrowed: window-hits-k, pointers-cross,
+  false&rarr;true boundary, count-during-merge</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Sort and Search when:</span>
+  the input is UNSORTED but the QUESTION is about
+  ORDER, CLOSENESS, or PAIRING &mdash; "k closest",
+  "closest pair", "triplets that sum", "min feasible speed"
+  &mdash; or a brute force is O(n&sup2;) only for lack of order.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem is O(n&sup2;) purely because the data is unordered, do not hunt for a cleverer scan. Ask: what structure would make an OLD pattern legal here — and is one sort enough to buy it? Almost always, it is.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

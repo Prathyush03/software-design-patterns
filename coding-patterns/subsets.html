@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 10 — Subsets | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 10 — Subsets</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Generate All Subsets',desc:'New shape of problem: given a set of <strong>distinct</strong> integers, return <strong>every</strong> subset — the full powerset. No "find the best"; the task is to <strong>enumerate every possibility</strong>, each exactly once. For <code>n</code> elements there are <strong>2&#8319; subsets</strong>, so the answer itself is exponentially large.',
+code:{h:'The problem',b:`nums = [1, 2, 3]
+
+subsets(nums) = [
+  [], [1], [2], [3],
+  [1,2], [1,3], [2,3], [1,2,3]
+]
+
+<span class="cm"># 2&#8319; = 8 subsets, every size from 0 to n.
+# Order of subsets need not matter; each must
+# appear exactly ONCE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">{ }</div><div class="ac">{1}</div><div class="ac">{2}</div><div class="ac">{3}</div>
+  <div class="ac">{1,2}</div><div class="ac">{1,3}</div><div class="ac">{2,3}</div><div class="ac">{1,2,3}</div>
+</div>
+<div class="av-cap">the powerset of <code>{1,2,3}</code> &mdash; all 2&sup3; = 8 subsets, every size 0..3.<br>The whole job: emit each one, exactly once.</div>`,
+callout:{type:'callout-info',text:'There is no clever shortcut hiding here: 2&#8319; subsets MUST be emitted, so the output is exponentially large by definition. The game is one DISCIPLINED way to build every candidate — one that will still work for permutations and constrained enumeration.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — the bitmask trick',desc:'A working idea: each element is an independent yes/no choice, so a subset is an <code>n</code>-bit number. Loop <code>mask</code> from <code>0</code> to <code>2&#8319;-1</code>; bit <code>i</code> set means "include <code>nums[i]</code>". Correct, and asymptotically optimal — <code>2&#8319;</code> is unavoidable. But watch what it <strong>cannot</strong> do.',
+code:{h:'subsets_bitmask.py — the naive attempt',b:`def subsets_bitmask(nums):
+    n = len(nums)
+    out = []
+    for mask in range(1 &lt;&lt; n):          <span class="cm"># 0 .. 2&#8319;-1</span>
+        sub = [nums[i] for i in range(n)
+               if mask &amp; (1 &lt;&lt; i)]        <span class="cm"># bit i set &rarr; include</span>
+        out.append(sub)
+    return out
+
+<span class="cm"># CORRECT. O(n &middot; 2&#8319;) time — optimal.
+# But it WORKS only because "each element =
+# one independent yes/no bit." Order matters?
+# Duplicates? A constraint between choices?
+# No clean bit encoding exists for any of them.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">000</div><div class="ac live">001</div><div class="ac live">010</div><div class="ac live">011</div>
+  <div class="ac live">100</div><div class="ac live">101</div><div class="ac live">110</div><div class="ac live">111</div>
+</div>
+<div class="av-cap">each 3-bit mask picks a subset: <code>101</code> &rarr; {1,3}. Clean&hellip; for subsets.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac bad2">perm?</div><div class="ac bad2">dup?</div><div class="ac bad2">()?</div>
+</div>
+<div class="av-cap">but what bit-string encodes a <b>permutation</b>, a <b>deduped</b> set,<br>or a <b>balanced-parens</b> constraint? The trick evaporates.</div>`,
+callout:{type:'callout-warn',text:'Correct and asymptotically optimal — 2&#8319; is inherent. But it is a subset-only party trick welded to binary. The instant order matters or a constraint appears, the encoding vanishes and you invent a fresh hack per problem. That NON-TRANSFER is the real pain, not big-O.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is frozen?',desc:'The brute force is not <em>slow</em> — <code>2&#8319;</code> is unavoidable — it is <strong>rigid</strong>. Audit it against the three rules from earlier chapters and the rigidity has an exact address: every rule is present, but each is welded to binary include/exclude and cannot bend.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — bitmask brute force vs. the three rules',
+ '<span class="viol">&#10007; WELDED.</span> The mask does carry an invariant ("bits 0..k decided"), but it is fused to a binary yes/no encoding. It cannot represent a partial <em>permutation</em> or a valid parenthesis <em>prefix</em> — so the invariant does not generalize one inch.',
+ '<span class="viol">&#10007; FROZEN.</span> "increment to the next integer" is a single hard-coded move meaning include / exclude, nothing else. It cannot express "insert into every slot" or "add a char if a guard holds." One shape, one problem.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES (narrowly).</span> Reading each mask works, but there is no notion of leaf-vs-node — so "complete solutions ONLY" (fixed-size combinations, full permutations) is inexpressible.',
+ true),
+callout:{type:'callout-bad',text:'The rules are here only in embryo, frozen to binary. 2&#8319; is inherent, so we do not need a faster idea — we need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a complete partial catalog',desc:'Stop encoding. Keep a growing list <code>result</code> and maintain one fact: <strong>after deciding the first <code>i</code> elements, <code>result</code> holds every subset of <code>nums[:i]</code> — each exactly once, none missing, none doubled.</strong> The invariant is the COMPLETENESS of a catalog, not a pointer or a window.',
+code:{h:'The promise — a complete-so-far catalog',b:`result = [[]]            <span class="cm"># powerset of the EMPTY prefix</span>
+
+<span class="hi-b"># INVARIANT — after deciding the first i
+#   elements, result is EXACTLY the powerset
+#   of nums[:i]: no dup, no omission.
+#   So |result| == 2**i.</span>
+
+<span class="cm"># result is a COMPLETE catalog of a prefix —
+# built up, never searched. Structure is what
+# the catalog holds when every element is in.</span>`},
+dia:()=>`<div class="av"><div class="ac win">{ }</div></div>
+<div class="av-cap">i=0 (empty prefix): result = powerset(&empty;) = { {} }</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">{ }</div><div class="ac win">{1}</div></div>
+<div class="av-cap">i=1: result = powerset({1}) — 2&sup1; = 2, each exactly once</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">{ }</div><div class="ac win">{1}</div><div class="ac win">{2}</div><div class="ac win">{1,2}</div></div>
+<div class="av-cap">i=2: result = powerset({1,2}) — 2&sup2; = 4. Always COMPLETE for the prefix seen.</div>`,
+callout:{type:'callout-info',text:'Same rule as Chapters 1-3: name the property that survives every step. What changed is its shape — from a boundary (Two Pointers) or a ratio (Fast &amp; Slow) to a complete-so-far CATALOG of partial answers.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a COMPLETENESS property of a growing catalog. After element i, result is the exact powerset of nums[:i] — nothing missing, nothing doubled. In Two Pointers the invariant described what was thrown OUT; here it describes what has been fully BUILT.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: branch each partial into exclude / include',desc:'To fold in one new element, take every partial already in the catalog and <strong>branch</strong> it: the <em>exclude</em> copy stays as-is, the <em>include</em> copy is a clone with the new element appended. In BFS you clone; in DFS you recurse then undo. Each element is decided <strong>exactly once</strong>.',
+code:{h:'The move — one decision doubles the catalog',b:`for num in nums:                 <span class="cm"># decide ONE element</span>
+    for sub in list(result):     <span class="cm"># every existing partial</span>
+        result.append(sub + [num])   <span class="hi-y"># INCLUDE branch (clone)</span>
+        <span class="cm"># EXCLUDE branch = leave sub untouched</span>
+
+<span class="cm"># PROOF: each element doubles the catalog once
+#   -> n doublings -> 2&#8319; subsets. Each element
+#   decided exactly once -> no partial revisited
+#   -> no duplicates. O(n &middot; 2&#8319;) time.</span>`},
+dia:()=>`<div class="av"><div class="ac live">{ }</div><div class="ac live">{1}</div><div class="ac live">{2}</div><div class="ac live">{1,2}</div></div>
+<div class="av-cap">catalog before deciding element <code>3</code> (4 subsets)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">{ }</div><div class="ac live">{1}</div><div class="ac live">{2}</div><div class="ac live">{1,2}</div>
+  <div class="ac hot">{3}</div><div class="ac hot">{1,3}</div><div class="ac hot">{2,3}</div><div class="ac hot">{1,2,3}</div>
+</div>
+<div class="av-cap">MOVE: clone every subset, append <code>3</code> (amber = include-branch).<br>4 &rarr; 8 — one doubling. Element <code>3</code> is now decided, forever.</div>`,
+callout:{type:'callout-info',text:'Two Pointers retired one element per step; here nothing is retired — the frontier DOUBLES. But the irreversible fact is the same in spirit: each element is committed exactly once, and that single commitment is precisely what bounds the tree to 2&#8319; leaves.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: the move is a BRANCH — for every existing partial, decide the next element (exclude / include). BFS clones the catalog; DFS recurses then undoes. Irreversibility: each element is decided once, so no partial is revisited. One line proves the bound: n decisions -> 2&#8319; leaves.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: a completed partial — copied in time',desc:'The answer is "a partial is complete." For plain subsets <strong>every node</strong> qualifies (each partial IS a valid subset). For fixed-size combinations or full permutations, only the <strong>leaves</strong> do. Wherever you read it, you must grab a <strong>copy</strong> — the next move mutates the shared path, so one step later the evidence is gone.',
+code:{h:'The harvest — placement is the variant dial',b:`<span class="cm"># WHERE you harvest picks the problem:</span>
+
+<span class="cm"># SUBSETS — every node is itself an answer:</span>
+result.append(<span class="hi-g">cur[:]</span>)         <span class="cm"># grab a COPY, always</span>
+
+<span class="cm"># COMBINATIONS / PERMUTATIONS — leaves only:</span>
+if len(cur) == k:
+    result.append(<span class="hi-g">cur[:]</span>)     <span class="cm"># snapshot AT the leaf</span>
+
+<span class="cm"># WHY [:] : the backtracking move mutates cur
+# on the way back up. Store a reference and the
+# next move overwrites your answer. Too late.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Chapters 1-3 harvested on a predicate, a collision, an exhaustion. Here the harvest is "a partial is complete" — and the only subtlety is COPYING it before the backtracking move overwrites the path.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the candidate is a completed partial. For plain subsets EVERY node qualifies; for fixed-size combinations or full permutations only the LEAVES do. Wherever you read it, snapshot a COPY — the very next move mutates the shared path, so one step later the evidence is gone.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete powerset generator: a catalog that starts at <code>[[]]</code>, one doubling move per element, and the harvest built in — because for subsets every node already sits in <code>result</code>. One disciplined build, and it is ready to bend.',
+code:{h:'subsets.py — final (BFS build)',b:`def subsets(nums):
+    result = [[]]                <span class="hi-b"># INVARIANT: powerset so far</span>
+    for num in nums:             <span class="cm"># MOVE: one element / step</span>
+        for sub in list(result):
+            result.append(<span class="hi-y">sub + [num]</span>)   <span class="cm"># include-branch</span>
+    return <span class="hi-g">result</span>               <span class="cm"># HARVEST: every node is an answer</span>
+
+<span class="cm"># n elements -> 2&#8319; subsets -> O(n &middot; 2&#8319;) time &amp; space.
+# Equivalent DFS: recurse(i) branches skip / take nums[i].</span>`},
+dia:()=>`<div class="av"><div class="ac live">{ }</div></div>
+<div class="av-cap">start: result = [ [] ]</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">{ }</div><div class="ac hot">{1}</div></div>
+<div class="av-cap">after num=1: doubled to 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">{ }</div><div class="ac">{1}</div><div class="ac">{2}</div><div class="ac">{1,2}</div>
+  <div class="ac win">{3}</div><div class="ac win">{1,3}</div><div class="ac win">{2,3}</div><div class="ac win">{1,2,3}</div>
+</div>
+<div class="av-cap">after num=2 then num=3: 8 subsets — done. O(n &middot; 2&#8319;).</div>`,
+callout:{type:'callout-ok',text:'The bitmask hid the decision structure inside integers; this exposes it as a tree we BUILD. Same optimal 2&#8319; work — but now the invariant, move, and harvest are three dials we can turn. Watch the next four problems turn exactly one dial each.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Subsets With Duplicates',desc:'Now the input may repeat: <code>[1,2,2]</code>. Plain enumeration would emit <code>{2}</code> twice. Fix: <strong>sort so equals are adjacent</strong>, then the MOVE gains one guard — at a given level, do not re-try a value already tried here. Same invariant, same harvest.',
+code:{h:'subsets_dup.py — sort + skip (DFS)',b:`def subsets_dup(nums):
+    nums.sort()                  <span class="cm"># equals become adjacent</span>
+    result, cur = [], []
+    def dfs(start):
+        result.append(<span class="hi-g">cur[:]</span>)     <span class="cm"># HARVEST: every node</span>
+        for i in range(start, len(nums)):
+            <span class="hi-y">if i &gt; start and nums[i] == nums[i-1]:
+                continue</span>         <span class="cm"># MOVE guard: skip dup branch</span>
+            cur.append(nums[i])
+            dfs(i + 1)
+            cur.pop()            <span class="cm"># undo -> never revisit</span>
+    dfs(0)
+    return result`},
+dia:()=>`<div class="av"><div class="ac">1</div><div class="ac">2</div><div class="ac">2</div></div>
+<div class="av-cap">sorted input <code>[1,2,2]</code> — equal values now adjacent</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">{ }</div><div class="ac win">{1}</div><div class="ac win">{1,2}</div><div class="ac win">{1,2,2}</div>
+  <div class="ac win">{2}</div><div class="ac win">{2,2}</div><div class="ac dead">{2}</div>
+</div>
+<div class="av-cap">6 distinct subsets, not 8. The faded second-level <code>{2}</code> is the pruned duplicate branch.</div>`,
+extra:()=>rulesCard('Rules card — subsets with duplicates',
+ 'Same catalog, tightened: it holds every DISTINCT subset. Sorting makes "is this a repeat?" a purely local check.',
+ 'Same recurse/undo, PLUS one guard: at a level, a value already tried is skipped. The move now proves a duplicate branch yields a duplicate subset — so it is pruned.',
+ 'Unchanged — every node is still a valid subset; snapshot a copy.'),
+callout:{type:'callout-ok',text:'Only Rule #2 shifted: the move learned a single skip. Sort so equals are adjacent, then never re-open the same value at the same level. Invariant and harvest are untouched.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Permutations',desc:'Now <strong>order matters</strong> and every element must be used. The MOVE changes shape: it no longer asks include / exclude — it asks <em>which still-unused element goes in the next slot</em>. The HARVEST retreats to the <strong>leaves</strong>: a permutation is complete only when all <code>n</code> slots are filled.',
+code:{h:'permutations.py — choose an unused element',b:`def permutations(nums):
+    result, cur = [], []
+    used = [False] * len(nums)
+    def dfs():
+        if len(cur) == len(nums):
+            result.append(<span class="hi-g">cur[:]</span>)   <span class="cm"># HARVEST: leaves only</span>
+            return
+        for i in range(len(nums)):
+            <span class="hi-y">if used[i]:
+                continue</span>         <span class="cm"># MOVE: place each UNUSED elt</span>
+            used[i] = True; cur.append(nums[i])
+            dfs()
+            used[i] = False; cur.pop()   <span class="cm"># undo the choice</span>
+    dfs()
+    return result`},
+dia:()=>`<div class="av"><div class="ac live">[ ]</div></div>
+<div class="av-cap">empty path; used = { }</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac hot">[1]</div><div class="ac hot">[2]</div><div class="ac hot">[3]</div></div>
+<div class="av-cap">MOVE: place each unused element in slot 1 (branch factor 3)</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">[1,2,3]</div><div class="ac win">[1,3,2]</div><div class="ac win">&hellip;</div><div class="ac win">[3,2,1]</div></div>
+<div class="av-cap">leaves: all 3! = 6 full permutations. HARVEST only when len == n.</div>`,
+extra:()=>rulesCard('Rules card — permutations',
+ 'cur is a partial permutation of a chosen prefix; the used array records which elements are spent. Order now matters.',
+ 'CHANGED: not include/exclude but "drop each still-unused element into the next slot." n choices, then n-1, ... -> n! leaves.',
+ 'RETREATED to the leaves: harvest only when len(cur) == n — a partial permutation is not yet an answer.'),
+callout:{type:'callout-ok',text:'Two dials turned at once: the MOVE (which unused element next, not yes/no) and the HARVEST (leaves only, not every node). The invariant tracks a used-set instead of a prefix — same three rules, permuted.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Letter Case Permutations',desc:'Given <code>"a1b"</code>, produce every string that flips each <em>letter</em> to lower/upper while leaving digits fixed. The MOVE branches <strong>only at letters</strong> — the branch factor becomes <strong>data-dependent</strong>: 2 at a letter, 1 at a digit. Harvest at the leaf (a full string).',
+code:{h:'letter_case.py — branch only at letters',b:`def letter_case(s):
+    result, cur = [], []
+    def dfs(i):
+        if i == len(s):
+            result.append(<span class="hi-g">"".join(cur)</span>)  <span class="cm"># HARVEST: leaf</span>
+            return
+        c = s[i]
+        <span class="hi-y">if c.isalpha():</span>           <span class="cm"># MOVE: 2 children at a letter</span>
+            cur.append(c.lower()); dfs(i+1); cur.pop()
+            cur.append(c.upper()); dfs(i+1); cur.pop()
+        else:                    <span class="cm"># digit -> 1 child, passed through</span>
+            cur.append(c); dfs(i+1); cur.pop()
+    dfs(0)
+    return result`},
+dia:()=>`<div class="av"><div class="ac hot">a</div><div class="ac dead">1</div><div class="ac hot">b</div></div>
+<div class="av-cap"><code>"a1b"</code>: branch at letters (amber), pass digits through (faded)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">a1b</div><div class="ac win">a1B</div><div class="ac win">A1b</div><div class="ac win">A1B</div>
+</div>
+<div class="av-cap">2 letters &rarr; 2&sup2; = 4 strings; the digit <code>1</code> is fixed &rarr; branch factor 1 there.</div>`,
+extra:()=>rulesCard('Rules card — letter case permutations',
+ 'cur is a valid cased prefix of s[:i]: digits fixed, letters resolved to one case.',
+ 'CHANGED: the branch factor is DATA-DEPENDENT — 2 children at a letter, 1 at a digit. Same build-a-tree move, variable fan-out.',
+ 'Leaves only — an answer exists when i == len(s), a fully cased string.'),
+callout:{type:'callout-ok',text:'Same tree-building move, but the number of children each node spawns now depends on the data. That single relaxation — a variable branch factor — is all that separates this from plain subsets.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Generate Balanced Parentheses',desc:'Emit every valid string of <code>n</code> pairs of parentheses. Here the MOVE <strong>branches under constraints</strong>: add <code>(</code> only while <code>open &lt; n</code>, add <code>)</code> only while <code>close &lt; open</code>. A branch that would break validity is never taken — this is the <strong>bridge into Backtracking</strong>.',
+code:{h:'gen_parens.py — branch under guards',b:`def gen_parens(n):
+    result, cur = [], []
+    def dfs(open_, close):
+        if len(cur) == 2 * n:
+            result.append(<span class="hi-g">"".join(cur)</span>)  <span class="cm"># HARVEST: leaf</span>
+            return
+        <span class="hi-y">if open_ &lt; n:</span>              <span class="cm"># MOVE guard: '(' still allowed</span>
+            cur.append("("); dfs(open_+1, close); cur.pop()
+        <span class="hi-y">if close &lt; open_:</span>          <span class="cm"># MOVE guard: ')' keeps prefix valid</span>
+            cur.append(")"); dfs(open_, close+1); cur.pop()
+    dfs(0, 0)
+    return result`},
+dia:()=>`<div class="av"><div class="ac live">(</div><div class="ac bad2">)</div></div>
+<div class="av-cap">n=2: first char must be <code>(</code> — <code>)</code> is pruned (close &lt; open fails)</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">(())</div><div class="ac win">()()</div></div>
+<div class="av-cap">only 2 of the 2&#8308; = 16 raw length-4 strings survive the guards (Catalan C&#8322;=2).<br>The invariant (valid prefix) is enforced BY the move.</div>`,
+extra:()=>rulesCard('Rules card — balanced parentheses',
+ 'cur is always a VALID prefix: never more ")" than "(", i.e. close &le; open &le; n. The invariant is enforced, not merely observed.',
+ 'CHANGED: two GUARDED branches. A branch that would violate the invariant is pruned before it is ever explored — the guard IS the safety proof.',
+ 'Leaves only — a complete balanced string when len(cur) == 2n.'),
+callout:{type:'callout-ok',text:'Here the invariant is enforced BY the move: a branch that would make the prefix invalid is never taken. That prune-at-the-move is exactly the seed of the Backtracking chapter — Subsets with guards.'}
+},
+{phase:'pill-pattern',phaseTxt:'Enumerate vs. narrow',title:'Two Pointers vs. Sliding Window vs. Subsets',desc:'The foundation chapters <strong>narrowed</strong> a search with an invariant. Subsets <strong>builds every candidate</strong> with one. Same three rules — but here the invariant grows a catalog instead of guarding a boundary, and the cost is output-sized, not linear.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Subsets (Ch.10)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>The living <strong>inside</strong>: "the window is legal" + O(1) aux</td><td>The partial <strong>catalog is complete</strong>: every subset of the prefix, exactly once</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Branch each partial: <strong>exclude / include</strong> the next element (doubles the catalog)</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink / per step</td><td><strong>Every node</strong> (subsets) or the <strong>leaves</strong> (combos / permutations)</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; 2n — both pointers monotone</td><td>&Theta;(2&#8319;) or &Theta;(n!) — <strong>output-sized</strong>, inherently exponential</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'The thesis holds one chapter louder: the RULES are constant, the IMPLEMENTATION varies. Where Two Pointers threw candidates AWAY, Subsets builds every candidate — and the harvest moment (every node vs. leaves) plus a guard on the move is all that separates subsets, permutations, and balanced parentheses.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 10',desc:'Add Subsets&#39; implementations to the running lists — and, above all, its <strong>recognition signal</strong>: the tell in a problem statement that says "build every candidate."',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  prior: outside-the-pointers, inside-the-window,
+         two-pointer speed ratio,
+  <span class="hi-b">NEW: the partial CATALOG is complete and
+       duplicate-free for every prefix decided.</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  prior: retire-an-end, expand-and-repair,
+         fast +2 / slow +1,
+  <span class="hi-y">NEW: branch each partial — exclude / include
+       (BFS clone, DFS recurse+undo); a guard
+       may prune. Proof: n decisions -> 2&#8319; leaves.</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  prior: on-predicate, on-collision, on-exhaustion,
+  <span class="hi-g">NEW: every node (all subsets) OR leaves only
+       (fixed combos / full permutations) — and
+       snapshot a COPY before backtrack mutates it.</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Subsets when:</span>
+  "all subsets / combinations / permutations",
+  "enumerate every possibility / all the ways",
+  generate-and-test where you must produce EVERY
+  candidate — and the answer count is itself
+  exponential (2&#8319;) or factorial (n!).`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem says "give me ALL of them" over choices you make one at a time, do not reach for a bitmask. Ask: what is my partial solution, what is the one decision that extends it, and where does a complete answer sit — every node, or only the leaves? Answer those three and the tree writes itself. Add a guard to the move and you have stepped into Backtracking.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

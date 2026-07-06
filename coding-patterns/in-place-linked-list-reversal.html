@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 5 — In-Place Linked List Reversal | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 5 — In-Place Linked List Reversal</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Reverse a Linked List',desc:'A new shape of data, a new kind of surgery. Given the <code>head</code> of a singly linked list, return the list <strong>reversed</strong> — <code>1&rarr;2&rarr;3&rarr;4</code> becomes <code>4&rarr;3&rarr;2&rarr;1</code>. Trivial with a spare array. But the interviewer adds the killer clause: <strong>do it in place, in O(1) extra space</strong>, rewiring the nodes you were handed.',
+code:{h:'The problem',b:`before:  1 &rarr; 2 &rarr; 3 &rarr; 4 &rarr; None
+
+after:   4 &rarr; 3 &rarr; 2 &rarr; 1 &rarr; None
+
+<span class="cm"># same nodes, every next pointer flipped.
+# no new list may be allocated — O(1) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">1</div><div class="ac">2</div><div class="ac">3</div><div class="ac">4</div>
+</div>
+<div class="av-cap">a singly linked list &mdash; each node's <code>next</code> points RIGHT.<br>we must make every arrow point LEFT, touching only the pointers.</div>`,
+callout:{type:'callout-ok',text:'No array to index. No second list to fill. Just the nodes you were handed and O(1) scratch space. Hold that constraint — it is the whole story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — dump the values, rebuild backwards',desc:'The obvious idea: walk the list once, push every value into an array. Then walk again, popping values off the back and overwriting the nodes front-to-back. Correct, simple, passes every sample.',
+code:{h:'reverse.py — the naive attempt',b:`def reverse(head):
+    vals = []                    <span class="cm"># INVARIANT: a copy of</span>
+    node = head                  <span class="cm">#   every value seen</span>
+    while node:
+        vals.append(node.val)
+        node = node.next
+    node = head
+    while node:                  <span class="cm"># overwrite front-to-back</span>
+        node.val = vals.pop()    <span class="cm"># with popped (reversed)</span>
+        node = node.next
+    return head
+
+<span class="cm"># O(n) TIME — but O(n) SPACE for vals.
+# The interviewer said O(1).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac live">4</div>
+</div>
+<div class="av-cap">pass 1: copy every value into a side array &rarr; <code>[1,2,3,4]</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">4</div><div class="ac hot">3</div><div class="ac hot">2</div><div class="ac hot">1</div>
+</div>
+<div class="av-cap">pass 2: pop the array back over the nodes &rarr; <code>4,3,2,1</code>.<br>the catch: that side array held all n values — O(n) memory.</div>`,
+callout:{type:'callout-ok',text:'It is correct, and even O(n) time. Ship it? The O(1)-space clause is about to bite — and this time the pain is not speed, it is memory: we cloned the whole list just to reverse it.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'The earlier chapters handed us three rules. This brute force is not <em>slow</em> — it is <strong>fat</strong>. So audit it against the rules: the failure is space, and the rules point straight at the culprit.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (space).</span> "Keep a copy of every value" is a valid property — but it costs O(n) memory. It duplicates the entire list, when the list already holds every node and every pointer we need to work with.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> The real work is two separate passes — read all, then write all — and nothing is rewired in place. The move rebuilds instead of flipping.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> Returning <code>head</code> gives the right order — but only because the O(n) array fed it the reversed values.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just keeps an O(n) invariant where an O(1) one would do — the nodes themselves can carry the reversal. We need a LEANER implementation of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant: a reversed prefix meets an untouched suffix',desc:'Stop copying values. Keep two pointers, <code>prev</code> and <code>curr</code>, and maintain one fact: <strong><code>prev</code> heads a fully-reversed prefix; <code>curr</code> heads the untouched suffix.</strong> Every node lives in exactly one side of that frontier — nothing is ever lost, and no memory is spent.',
+code:{h:'The promise — the frontier',b:`prev = None                      <span class="cm"># reversed prefix: empty</span>
+curr = head                      <span class="cm"># untouched suffix: all</span>
+
+<span class="cm"># INVARIANT — true after every step:</span>
+<span class="hi-b">#  prev  &rarr; head of a fully REVERSED prefix
+#  curr  &rarr; head of the UNTOUCHED suffix
+#  every node is in exactly ONE side.</span>
+
+<span class="cm"># The only state is two pointers — O(1).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac hot">3</div><div class="ac">4</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>prev</b></div><div class="ptr"><b style="color:var(--text-warning)">curr</b></div><div class="ptr"></div></div>
+<div class="av-cap">mid-reversal: prefix <code>2&rarr;1&rarr;None</code> is done (blue), suffix <code>3&rarr;4</code> untouched (amber/plain).<br>Ch.1's invariant lived OUTSIDE the pointers; here it is a <b>frontier</b> splitting done from todo.</div>`,
+callout:{type:'callout-info',text:'Same rule as the foundation chapters: name the property that survives every step. In Two Pointers it described the discarded outside; here it partitions the list into a done prefix and a todo suffix — carried by the nodes themselves, zero extra memory.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is no longer a region or a set — it is a FRONTIER inside the list itself. prev heads the reversed part, curr heads the rest; every node sits on exactly one side. Cost: two pointers, O(1).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: flip one pointer, then slide the trio',desc:'Each step rewires exactly one arrow — <code>curr.next = prev</code> — which pushes the frontier one node to the right. But save <code>curr.next</code> first, or you sever the suffix. So it is a four-line dance over three pointers: <strong>save, flip, advance prev, advance curr</strong>.',
+code:{h:'The move — one flip, then shift',b:`nxt  = curr.next            <span class="cm"># 1. save the suffix</span>
+<span class="hi-y">curr.next = prev</span>            <span class="cm"># 2. FLIP one arrow</span>
+prev = curr                 <span class="cm"># 3. prefix grows by one</span>
+curr = nxt                  <span class="cm"># 4. suffix shrinks by one</span>
+
+<span class="cm"># PROOF: exactly one node crosses the
+# frontier per step, and never crosses back
+# &rarr; n steps total. O(n) time, O(1) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac hot">2</div><div class="ac">3</div><div class="ac">4</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>prev</b></div><div class="ptr"><b style="color:var(--text-warning)">curr</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">before: prefix is <code>1</code>, curr on <code>2</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac hot">3</div><div class="ac">4</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>prev</b></div><div class="ptr"><b style="color:var(--text-warning)">curr</b></div><div class="ptr"></div></div>
+<div class="av-cap">after one move: <code>2</code>'s arrow now points to <code>1</code>; the frontier slid right by one.</div>`,
+callout:{type:'callout-info',text:'Ch.1\'s move retired one element per step; here one node crosses the reversed/untouched frontier per step. That one-way crossing is the irreversible progress, and its one-line proof — n crossings total — is the O(n) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: the irreversible step is a single pointer rewrite (curr.next = prev) plus a three-way slide. Irreversibility lives in the frontier — a node, once reversed, never returns to the suffix, which is exactly what bounds the work at n steps.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: when curr runs out, prev is the new head',desc:'No value check, no lookup. The whole list is reversed the instant <code>curr</code> becomes <code>None</code> — the suffix is empty, so the prefix is the entire list, and <code>prev</code> sits on its new head. Grab <code>prev</code> then; <strong>one step later there is no next step, and prev is the answer</strong>. For partial reversals, this same moment is where you reconnect the sublist ends.',
+code:{h:'The harvest — read prev at exhaustion',b:`while curr:
+    ...                     <span class="cm"># the move</span>
+return <span class="hi-g">prev</span>                 <span class="cm"># HARVEST: suffix empty
+                            # &rarr; prev heads the whole
+                            # reversed list.</span>
+
+<span class="cm"># For a SUBLIST reverse, the harvest is not
+# "return prev" but "stitch prev + tail back
+# onto the anchors" — same moment, richer grab.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'The foundation chapters harvested when a predicate fired or a pointer collided; here it fires on EXHAUSTION — curr is None. Where you read it — the whole-list head, or the two ends of a reversed segment — chooses the problem.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the answer is the value of prev at the moment curr exhausts. For full reversal that is the new head; for a sublist it is one end of the segment to be stitched back. The harvest sits AFTER the loop, never inside it.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete in-place reversal: three pointers, no allocation, one pass. The O(1)-space clause that killed the brute force is satisfied by construction — the nodes reverse themselves.',
+code:{h:'reverse.py — final',b:`def reverse(head):
+    prev, curr = None, head          <span class="cm"># INVARIANT set up</span>
+    while curr:                      <span class="cm"># MOVE, n times:</span>
+        nxt = curr.next              <span class="cm">#   save suffix</span>
+        <span class="hi-y">curr.next = prev</span>             <span class="cm">#   flip one arrow</span>
+        prev, curr = curr, nxt        <span class="cm">#   slide the trio</span>
+    return <span class="hi-g">prev</span>                     <span class="cm"># HARVEST at exhaustion</span>
+
+<span class="cm"># O(n) time · O(1) space · three pointers, ever.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">1</div><div class="ac">2</div><div class="ac">3</div><div class="ac">4</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b style="color:var(--text-warning)">curr</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">start: prev = None, curr on <code>1</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac hot">3</div><div class="ac">4</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>prev</b></div><div class="ptr"><b style="color:var(--text-warning)">curr</b></div><div class="ptr"></div></div>
+<div class="av-cap">mid: prefix <code>2&rarr;1</code> reversed, curr on <code>3</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1</div><div class="ac win">2</div><div class="ac win">3</div><div class="ac win">4</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-success)">prev</b></div></div>
+<div class="av-cap">curr fell off the end &rarr; prev on <code>4</code> heads <code>4&rarr;3&rarr;2&rarr;1</code></div>`,
+callout:{type:'callout-ok',text:'The brute force cloned all n values; this touches only n pointers and two scratch variables. Same O(n) time — but O(n) space collapses to O(1), purely because the invariant moved into the list itself.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Reverse Linked List II — a sublist from m to n',desc:'Reverse only positions <code>m..n</code>, leaving the rest intact. Same engine — but before reversing, save two <strong>anchors</strong>: the node just before position <code>m</code>, and the node at <code>m</code> (which becomes the segment\'s tail). After the loop, stitch the reversed segment back between them. The harvest grows from "return prev" to "reconnect the two ends".',
+code:{h:'reverse_between.py — anchored engine',b:`def reverse_between(head, m, n):
+    dummy = Node(0); dummy.next = head
+    before = dummy
+    for _ in range(m - 1):            <span class="cm"># walk to m-1</span>
+        before = before.next
+    prev, curr = None, before.next    <span class="cm"># seg tail = curr</span>
+    tail = curr
+    for _ in range(n - m + 1):        <span class="cm"># SAME move, n-m+1&times;</span>
+        nxt = curr.next
+        <span class="hi-y">curr.next = prev</span>
+        prev, curr = curr, nxt
+    <span class="hi-g">before.next = prev</span>              <span class="cm"># HARVEST: stitch head</span>
+    <span class="hi-g">tail.next = curr</span>                <span class="cm"># ...and stitch tail</span>
+    return dummy.next`},
+dia:()=>`<div class="av">
+  <div class="ac dead">1</div><div class="ac hot">2</div><div class="ac hot">3</div><div class="ac hot">4</div><div class="ac dead">5</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>before</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">reverse positions 2..4; <code>1</code> and <code>5</code> stay put (faded)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">1</div><div class="ac win">4</div><div class="ac win">3</div><div class="ac win">2</div><div class="ac dead">5</div>
+</div>
+<div class="av-cap">segment flipped &rarr; <code>1&rarr;4&rarr;3&rarr;2&rarr;5</code>; both ends stitched to the anchors</div>`,
+extra:()=>rulesCard('Rules card — reverse sublist (m..n)',
+ 'Same frontier, restricted: <code>prev</code> heads the reversed part of the segment, <code>curr</code> the untouched rest OF THE SEGMENT.',
+ 'Identical flip-and-slide — run exactly <code>n&minus;m+1</code> times instead of to the end.',
+ 'Grows: reconnect <code>before.next = prev</code> and <code>tail.next = curr</code> — stitch both cut ends.'),
+callout:{type:'callout-ok',text:'The engine did not change one line. All that is new is bookkeeping: two saved anchors so the reversed segment can be sewn back. The invariant simply operates on a window of the list instead of all of it.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Reverse Nodes in k-Group',desc:'Reverse every consecutive block of <code>k</code> nodes; a trailing block shorter than <code>k</code> is left as-is. Run the base engine <code>k</code> nodes at a time, then link each reversed block\'s tail to the next block\'s new head. The invariant now <strong>extends across group boundaries</strong> — one group\'s tail is the anchor the next group reverses against.',
+code:{h:'reverse_k_group.py — engine per block',b:`def reverse_k(head, k):
+    node = head                       <span class="cm"># check k nodes exist</span>
+    for _ in range(k):
+        if not node: return head      <span class="cm"># short tail: leave it</span>
+        node = node.next
+    prev, curr = None, head
+    for _ in range(k):                <span class="cm"># SAME move, k&times;</span>
+        nxt = curr.next
+        <span class="hi-y">curr.next = prev</span>
+        prev, curr = curr, nxt
+    <span class="hi-g">head.next = reverse_k(curr, k)</span>   <span class="cm"># HARVEST: link block
+                                      # tail to next new head</span>
+    return prev                       <span class="cm"># this block's new head</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">1</div><div class="ac hot">2</div><div class="ac live">3</div><div class="ac live">4</div><div class="ac dead">5</div>
+</div>
+<div class="av-cap">k = 2: blocks <code>[1,2] [3,4]</code>, leftover <code>[5]</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac win">1</div><div class="ac win">4</div><div class="ac win">3</div><div class="ac dead">5</div>
+</div>
+<div class="av-cap">each block reversed and chained &rarr; <code>2&rarr;1&rarr;4&rarr;3&rarr;5</code></div>`,
+extra:()=>rulesCard('Rules card — reverse in k-groups',
+ 'The frontier now spans BLOCK boundaries: each group\'s tail becomes the anchor the next group reverses against.',
+ 'The identical flip-and-slide, fired in bursts of exactly <code>k</code>; still one node crosses per step, still O(n) total.',
+ 'Per block: <code>head.next = reverse(next block)</code> — chain each block\'s new head onto the last.'),
+callout:{type:'callout-ok',text:'The base reverse is now a subroutine fired k nodes at a time. The only new idea is chaining: one group tail points at the next group new head. Same rules, tiled across the list.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Swap Nodes in Pairs — k = 2, specialised',desc:'Swap every two adjacent nodes: <code>1&rarr;2&rarr;3&rarr;4</code> becomes <code>2&rarr;1&rarr;4&rarr;3</code>. This is literally k-group with <strong>k fixed at 2</strong> — so small it needs no inner loop, just the flip applied to each pair. Same invariant, same move, hard-coded to a block of two.',
+code:{h:'swap_pairs.py — k=2 in closed form',b:`def swap_pairs(head):
+    dummy = Node(0); dummy.next = head
+    prev = dummy
+    while prev.next and prev.next.next:
+        a, b = prev.next, prev.next.next
+        <span class="hi-y">a.next = b.next</span>              <span class="cm"># MOVE: flip the</span>
+        <span class="hi-y">b.next = a</span>                   <span class="cm">#   pair's two arrows</span>
+        <span class="hi-y">prev.next = b</span>                <span class="cm">#   re-anchor</span>
+        prev = a                      <span class="cm"># frontier &rarr; next pair</span>
+    return <span class="hi-g">dummy.next</span>            <span class="cm"># HARVEST</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">1</div><div class="ac hot">2</div><div class="ac live">3</div><div class="ac live">4</div>
+</div>
+<div class="av-cap">pairs <code>[1,2]</code> and <code>[3,4]</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac win">1</div><div class="ac win">4</div><div class="ac win">3</div>
+</div>
+<div class="av-cap">each pair's arrows flipped &rarr; <code>2&rarr;1&rarr;4&rarr;3</code></div>`,
+extra:()=>rulesCard('Rules card — swap pairs (k=2)',
+ 'Same frontier with the group size PINNED to 2: a reversed prefix of swapped pairs meets an untouched suffix.',
+ 'The k-group flip with k hard-coded to two — no inner loop, just re-point three arrows per pair.',
+ 'Return <code>dummy.next</code> — the head after the very first swap.'),
+callout:{type:'callout-ok',text:'A "different" LeetCode problem that is just the k-group engine frozen at k=2. Recognising it as a specialisation — not a new algorithm — is exactly the compression this series is built on.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Rotate List — reversal\'s cousin, by composition',desc:'Rotate the list right by <code>k</code> places: <code>1&rarr;2&rarr;3&rarr;4&rarr;5</code> with k=2 becomes <code>4&rarr;5&rarr;1&rarr;2&rarr;3</code>. No arrow is reversed — but the same <strong>pointer-surgery discipline</strong> solves it: close the list into a ring, then break it at the right spot. It composes the traversal-and-rewire toolkit.',
+code:{h:'rotate.py — close the ring, cut it',b:`def rotate(head, k):
+    if not head: return head
+    n, tail = 1, head
+    while tail.next:                  <span class="cm"># measure + find tail</span>
+        tail = tail.next; n += 1
+    <span class="hi-y">tail.next = head</span>              <span class="cm"># MOVE: close the ring</span>
+    steps = n - k % n                 <span class="cm"># new tail sits here</span>
+    new_tail = head
+    for _ in range(steps - 1):
+        new_tail = new_tail.next
+    <span class="hi-g">new_head = new_tail.next</span>       <span class="cm"># HARVEST: the break</span>
+    <span class="hi-y">new_tail.next = None</span>            <span class="cm"># cut the ring open</span>
+    return new_head`},
+dia:()=>`<div class="av">
+  <div class="ac">1</div><div class="ac">2</div><div class="ac hot">3</div><div class="ac">4</div><div class="ac">5</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>new_tail</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">n=5, k=2: close <code>5&rarr;1</code> into a ring; new tail is node <code>3</code> (position n&minus;k)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">4</div><div class="ac win">5</div><div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div>
+</div>
+<div class="av-cap">cut after <code>3</code> &rarr; new head <code>4</code>: <code>4&rarr;5&rarr;1&rarr;2&rarr;3</code></div>`,
+extra:()=>rulesCard('Rules card — rotate list',
+ 'Transient ring invariant: after linking tail&rarr;head, the list is a cycle where every node still appears exactly once.',
+ 'Two rewires — close the ring (<code>tail.next = head</code>), then cut it at <code>n&minus;k</code> (<code>new_tail.next = None</code>).',
+ 'The node after the cut, <code>new_tail.next</code>, IS the rotated list\'s new head.'),
+callout:{type:'callout-ok',text:'Rotate reverses nothing, yet it is the same craft: measure, rewire, cut — all O(1) space. In-place list surgery is a discipline, and rotation is its compositional cousin.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Fast &amp; Slow vs. In-Place Reversal',desc:'Another chapter, another pattern, still zero new rules. Line up In-Place Reversal\'s three implementations against the foundation chapters and watch only the <strong>bodies</strong> change.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Fast &amp; Slow (Ch.3)</th><th>In-Place Reversal (Ch.5)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong> — the answer is not out there</td><td>A fixed <strong>speed ratio</strong> between two walkers, O(1)</td><td>A <strong>frontier</strong>: <code>prev</code> heads a reversed prefix, <code>curr</code> an untouched suffix — every node on exactly one side</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td><code>fast += 2</code>, <code>slow += 1</code></td><td>Flip one arrow (<code>curr.next = prev</code>), then slide the trio — one node crosses the frontier</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>On collision (cycle) or exhaustion (middle)</td><td>At exhaustion (<code>curr is None</code>) &rarr; <code>prev</code> is the head; or reconnect the sublist ends</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; n — gap closes 1/step, O(1) space</td><td>&le; n — one node crosses per step, <strong>O(1) space</strong></td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are the constant, the IMPLEMENTATION is the variable. In-Place Reversal turns the invariant into a moving frontier inside the data — and the entire reversal falls out of maintaining it.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 5',desc:'Add In-Place Reversal\'s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window,
+               two-pointer speed ratio,
+               <span class="hi-b">reversed-prefix / untouched-suffix frontier</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast +2 / slow +1,
+               <span class="hi-y">flip curr.next=prev, slide trio (1 node/step)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, after-repair,
+               on-collision, on-exhaustion,
+               <span class="hi-g">prev at curr=None / stitch sublist ends</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for In-Place Reversal when:</span>
+  a linked list AND the words "reverse",
+  "swap pairs", "k-group", "rotate" ·
+  and a hard O(1)-space constraint that
+  forbids copying the list into an array.`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem says "reverse or reorder these links in place" and bans extra memory, do not reach for an array. Ask: can I carry a reversed-prefix / untouched-suffix frontier and slide it one node at a time? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 25 — Union Find | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 25 — Union Find</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Number of Provinces',desc:'A new shape of problem: you are handed an <code>n&times;n</code> matrix <code>isConnected</code> where <code>isConnected[i][j] = 1</code> means city <code>i</code> and city <code>j</code> are directly friends. A <strong>province</strong> is a maximal group of cities linked directly or transitively. Count the provinces. Then the interviewer twists it: <strong>friendships arrive one at a time, and after each you must re-report the province count</strong> &mdash; connectivity becomes dynamic.',
+code:{h:'The problem',b:`isConnected = [[1,1,0],
+               [1,1,0],
+               [0,0,1]]
+
+<span class="cm"># cities 0-1 friends, city 2 alone</span>
+provinces = 2      <span class="cm"># {0,1} and {2}</span>
+
+<span class="cm"># then friendship (1,2) arrives...
+# {0,1,2} &rarr; provinces = 1</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac live">1</div><div class="ac">2</div>
+</div>
+<div class="av-cap">cities 0 and 1 share a province; city <code>2</code> stands alone &rarr; 2 provinces.<br>Now let edges arrive over time and keep answering&hellip;</div>`,
+callout:{type:'callout-info',text:'Static, a single scan would do. But "answer after every new edge" is the real task &mdash; dynamic connectivity. Hold that clause; it is the whole story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — a fresh DFS for every question',desc:'The obvious idea: to count provinces, run DFS from each unvisited city, flooding its whole component, and increment a counter. Correct, and for a single static matrix genuinely fine at <code>O(n&sup2;)</code>. The trouble is the <strong>dynamic</strong> twist &mdash; after each new friendship you must recount, and DFS has no memory, so it rebuilds the entire picture from scratch every time.',
+code:{h:'provinces_bruteforce.py',b:`def provinces(M):
+    n = len(M)
+    seen = [False]*n
+    def dfs(i):
+        for j in range(n):
+            if M[i][j] and not seen[j]:
+                seen[j] = True
+                dfs(j)
+    count = 0
+    for i in range(n):
+        if not seen[i]:
+            seen[i] = True
+            dfs(i)               <span class="cm"># flood one province</span>
+            count += 1
+    return count
+<span class="cm"># One scan: O(n&sup2;). But re-run per edge over Q
+# queries &rarr; O(Q &times; (V+E)). Q,E ~ 1e5 &rarr; ~1e10 &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac live">1</div><div class="ac dead">2</div>
+</div>
+<div class="av-cap">DFS floods {0,1}, then starts fresh at 2 &rarr; count = 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">0</div><div class="ac hot">1</div><div class="ac hot">2</div>
+</div>
+<div class="av-cap">edge (1,2) arrives &rarr; the ENTIRE DFS runs again from scratch.<br>Nothing from the last scan was kept.</div>`,
+callout:{type:'callout-ok',text:'For one snapshot it is correct and O(n&sup2;) &mdash; no shame there. But every new edge throws the whole traversal away and starts over. The waste is not one query; it is the re-scanning, forever.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Earlier chapters gave us three rules. This brute force is not exactly <em>slow</em> on one scan &mdash; it is <strong>forgetful</strong>. Audit it: the failure is repeated recomputation, and the rules point straight at the missing piece.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — DFS-per-query vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> DFS keeps <em>no persistent</em> record of connectivity between questions. There is no invariant that survives an edge insertion &mdash; each query re-derives the whole component map from a blank <code>seen[]</code>.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> Its "move" is a full flood, not an incremental merge. Adding a single edge cannot cheaply update the answer; it forces re-exploring all <code>O(V+E)</code>.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> Counting components at the end is correct &mdash; but you pay an entire traversal to reach that moment, every single time.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force refuses to remember what it already proved connected &mdash; so we need a new IMPLEMENTATION of the same three rules, not a new idea: one that accumulates connectivity in near-O(1) per edge.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a forest that remembers',desc:'Stop re-flooding. Keep one array, <code>parent[]</code>: every element points at another until it reaches a <strong>root</strong> that points at itself. Each root names one component. The single fact we maintain: <strong><code>find(x) == find(y)</code> if and only if <code>x</code> and <code>y</code> are connected.</strong> That forest is a persistent, compressed transcript of every connection learned so far &mdash; it is never rebuilt.',
+code:{h:'The promise — a disjoint-set forest',b:`parent = list(range(n))   <span class="cm"># each node its own root</span>
+
+<span class="cm"># INVARIANT — true after every operation:</span>
+<span class="hi-b">#  find(x) == find(y)  &lt;=&gt;  x, y connected</span>
+<span class="cm"># The forest ACCUMULATES connectivity;
+# it is never rebuilt between queries.</span>
+
+def find(x):
+    while parent[x] != x:  <span class="cm"># walk to the root</span>
+        x = parent[x]
+    return x               <span class="cm"># root = component id</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac live">1</div><div class="ac">2</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>root</b></div><div class="ptr">&uarr;0</div><div class="ptr"><b>root</b></div></div>
+<div class="av-cap">parent = [0, 0, 2]: node 1 points to root 0; node 2 is its own root.<br>Two roots &rarr; two components &mdash; and this survives into the next query.</div>`,
+callout:{type:'callout-info',text:'In Two Pointers the invariant described the discarded OUTSIDE; in Sliding Window the living INSIDE the window. Here it is a PERSISTENT structure that accumulates across time &mdash; the first invariant that is itself a data structure.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a disjoint-set forest where <code>find(x)==find(y)</code> iff <code>x,y</code> are connected. Not a region, not a ratio &mdash; it is memory that grows monotonically with every union.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: union two roots, irreversibly',desc:'One operation grows the structure: <code>union(a, b)</code> finds both roots and hangs one under the other. Two guards keep it near-instant &mdash; <strong>union by rank</strong> (always attach the shorter tree under the taller, so depth barely grows) and <strong>path compression</strong> (on each <code>find</code>, re-point nodes straight at the root). Merges are <strong>irreversible</strong>: components only ever grow, never split.',
+code:{h:'The move — union by rank + compression',b:`def find(x):
+    while parent[x] != x:
+        parent[x] = parent[parent[x]]  <span class="cm"># compress</span>
+        x = parent[x]
+    return x
+
+def union(a, b):                 <span class="cm"># MOVE: irreversible merge</span>
+    ra, rb = find(a), find(b)
+    if ra == rb: return          <span class="cm"># already one component</span>
+    if rank[ra] &lt; rank[rb]:
+        ra, rb = rb, ra          <span class="cm"># shorter under taller</span>
+    <span class="hi-y">parent[rb] = ra</span>
+    rank[ra] += rank[ra] == rank[rb]
+
+<span class="cm"># PROOF: rank keeps trees O(log n) tall; compression
+# flattens them &rarr; amortized &alpha;(n) ~ O(1) per op.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac hot">2</div><div class="ac">5</div>
+</div>
+<div class="av-cap">before union(0,2): separate roots {0} and {2}</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac win">2</div><div class="ac">5</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>root</b></div><div class="ptr">&uarr;0</div><div class="ptr"></div></div>
+<div class="av-cap">after union(0,2): 2 hangs under root 0 &rarr; one component. It never un-merges.</div>`,
+callout:{type:'callout-info',text:'Ch.1\'s move retired an end (&le; n steps); here the move MERGES two roots and components can only grow. That monotonic, irreversible growth is exactly what bounds the total work.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: <code>union</code> links two roots under rank with path compression. One-line proof = the complexity: both guards keep every tree near-flat, so each operation is amortized <code>&alpha;(n) &asymp; O(1)</code> (inverse Ackermann).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest reads the forest three ways',desc:'The answer already sits in the forest; you just choose <em>when</em> to look. Three harvest moments, same structure: at <strong>query time</strong> &mdash; <code>connected(x,y) = (find(x)==find(y))</code>; at <strong>merge time</strong> &mdash; if the two roots are <em>already equal</em> before you union, this edge closed a cycle; and the <strong>root count</strong> &mdash; the number of distinct roots is the number of components. Placement is the whole game: read the cycle BEFORE the union, or the evidence is gone.',
+code:{h:'The harvest — three moments, one forest',b:`<span class="cm"># 1) QUERY TIME:</span>
+<span class="hi-g">connected = find(x) == find(y)</span>
+
+<span class="cm"># 2) MERGE TIME  (read it BEFORE unioning):</span>
+if find(a) == find(b):
+    <span class="cm"># roots already equal &rarr; this edge is a CYCLE</span>
+    ...
+
+<span class="cm"># 3) ROOT COUNT:</span>
+<span class="hi-g">components = sum(find(i) == i for i in range(n))</span>
+
+<span class="cm"># One step too late (after a blind union) and the
+# cycle evidence is already merged away.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.3 harvested on pointer identity; here on ROOT identity. And the harvest MOVES: read equal-roots at merge time and you have cycle detection; count roots at the end and you have components. Where you look picks the problem.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the candidate is a root comparison. connected? &rarr; equal roots at query time; cycle? &rarr; roots already equal at merge time; how many groups? &rarr; count distinct roots. Grab the cycle before the union destroys the evidence.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules — Number of Provinces',desc:'The complete disjoint-set structure, then Number of Provinces falls out in three lines: union every friendship edge, then harvest the root count. The dynamic twist is free &mdash; each new edge is one near-O(1) union, and <code>count</code> is always current.',
+code:{h:'provinces.py — final',b:`class DSU:
+    def __init__(self, n):
+        self.par = list(range(n))    <span class="cm"># INVARIANT: par[x]</span>
+        self.rank = [0]*n            <span class="cm">#  chains to a root</span>
+        self.count = n               <span class="cm"># live components</span>
+    def find(self, x):
+        while self.par[x] != x:
+            self.par[x] = self.par[self.par[x]]  <span class="cm"># compress</span>
+            x = self.par[x]
+        return x
+    def union(self, a, b):           <span class="cm"># MOVE</span>
+        ra, rb = self.find(a), self.find(b)
+        if ra == rb: return False    <span class="cm"># already joined</span>
+        if self.rank[ra] &lt; self.rank[rb]: ra, rb = rb, ra
+        self.par[rb] = ra
+        self.rank[ra] += self.rank[ra] == self.rank[rb]
+        self.count -= 1              <span class="cm"># one fewer component</span>
+        return True
+
+def provinces(M):
+    d = DSU(len(M))
+    for i in range(len(M)):
+        for j in range(i+1, len(M)):
+            if M[i][j]: d.union(i, j)     <span class="cm"># MOVE per edge</span>
+    return <span class="hi-g">d.count</span>                  <span class="cm"># HARVEST: root count</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac">1</div><div class="ac">2</div>
+</div>
+<div class="av-cap">start: 3 singletons &rarr; count = 3</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac win">1</div><div class="ac">2</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>root</b></div><div class="ptr">&uarr;0</div><div class="ptr"><b>root</b></div></div>
+<div class="av-cap">union(0,1) &rarr; count = 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac win">1</div><div class="ac win">2</div>
+</div>
+<div class="av-cap">edge (1,2) arrives &rarr; union(1,2) &rarr; count = 1, instantly</div>`,
+callout:{type:'callout-ok',text:'The brute force re-scanned the graph per edge; this touches two roots per edge and keeps <code>count</code> live. O(n&sup2;&middot;&alpha;(n)) to build, and every dynamic query is answered in near-O(1).'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Redundant Connection — harvest at merge time',desc:'A tree of <code>n</code> nodes had exactly one extra edge added, forming a cycle; return that edge. Process edges in order and union each. The <strong>harvest moves to merge time</strong>: the first edge whose two endpoints <em>already share a root</em> is the redundant one &mdash; unioning them would close a cycle.',
+code:{h:'redundant.py — cycle guard',b:`def redundant(edges):
+    d = DSU(len(edges) + 1)      <span class="cm"># nodes are 1..n</span>
+    for a, b in edges:
+        <span class="hi-g">if not d.union(a, b):</span>    <span class="cm"># HARVEST at merge time:</span>
+            return [a, b]        <span class="cm">#  roots already equal &rarr; cycle</span>
+    return []
+<span class="cm"># union() returns False exactly when a, b were
+# already connected &rarr; this edge closes the loop.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div>
+</div>
+<div class="av-cap">edges (1,2),(2,3) union cleanly &rarr; one component {1,2,3}</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">1</div><div class="ac win">2</div><div class="ac bad2">3</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-danger)">!</b></div></div>
+<div class="av-cap">edge (1,3): find(1)==find(3) already &rarr; redundant. Harvest it now.</div>`,
+extra:()=>rulesCard('Rules card — redundant connection',
+ 'Same forest: <code>find(x)==find(y)</code> iff connected. Unchanged.',
+ 'Same <code>union</code> &mdash; but we now READ its return value.',
+ 'Shifted to MERGE TIME: the edge for which the two roots are already equal is the cycle-closer. Read it before the merge fires.'),
+callout:{type:'callout-ok',text:'Only the harvest moment moved &mdash; from "count roots at the end" to "the merge that would have closed a loop". Same forest, same union, one earlier glance.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Accounts Merge — union by shared email',desc:'Each account is a name plus a list of emails; two accounts belong to the same person iff they share any email. Merge them. The <strong>invariant now lives over emails</strong>: union every email of an account to that account\'s first email; then <strong>harvest by grouping</strong> each email under its root.',
+code:{h:'accounts.py — union on a shared key',b:`def merge_accounts(accounts):
+    parent, owner = {}, {}
+    def find(x):                 <span class="cm"># dict-backed DSU</span>
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]; x = parent[x]
+        return x
+    for name, *emails in accounts:
+        for e in emails:
+            owner[e] = name
+            parent.setdefault(e, e)
+            parent[find(e)] = find(emails[0])   <span class="cm"># MOVE: union</span>
+    groups = collections.defaultdict(list)
+    for e in owner:
+        <span class="hi-g">groups[find(e)].append(e)</span>          <span class="cm"># HARVEST: group</span>
+    return [[owner[r]] + sorted(v)
+            for r, v in groups.items()]`},
+dia:()=>`<div class="av">
+  <div class="ac live">a@x</div><div class="ac live">b@y</div><div class="ac">c@z</div>
+</div>
+<div class="av-cap">acct1 = {a@x, b@y}; acct2 = {b@y, c@z} &mdash; they share <code>b@y</code></div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">a@x</div><div class="ac win">b@y</div><div class="ac win">c@z</div>
+</div>
+<div class="av-cap">shared <code>b@y</code> unions the two &rarr; all three emails under one root</div>`,
+extra:()=>rulesCard('Rules card — accounts merge',
+ 'Same forest, keyed by EMAIL: two emails share a root iff they belong to one person.',
+ 'Union every email of an account to the account\'s first email &mdash; a shared email links two accounts.',
+ 'Group-by-root: collect all emails under each root, then attach the owner\'s name.'),
+callout:{type:'callout-ok',text:'The elements need not be integers &mdash; strings work just as well. The invariant is unchanged; only what we hash into the forest, and a group-by-root harvest, differ.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Islands II — where DFS cannot follow',desc:'A grid starts all water; land cells are added one at a time by <code>addLand(r,c)</code>, and after each you must report the island count. This is the case DFS <em>cannot</em> match: edits arrive over time and merges accumulate. The <strong>move gains a birth step</strong> &mdash; a new land cell is its own island (<code>count += 1</code>), then unions with each existing land neighbor (<code>count -= 1</code> per successful merge).',
+code:{h:'islands_ii.py — online connectivity',b:`def num_islands2(m, n, positions):
+    d = DSU(m*n); d.count = 0
+    land, res = set(), []
+    for r, c in positions:
+        if (r, c) in land:
+            res.append(d.count); continue
+        land.add((r, c))
+        d.count += 1              <span class="cm"># MOVE: born as its own island</span>
+        for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+            nb = (r+dr, c+dc)
+            if nb in land:
+                d.union(r*n+c, nb[0]*n+nb[1])  <span class="cm"># merge &rarr; count--</span>
+        <span class="hi-g">res.append(d.count)</span>        <span class="cm"># HARVEST: running count</span>
+    return res`},
+dia:()=>`<div class="av">
+  <div class="ac dead">.</div><div class="ac dead">.</div><div class="ac dead">.</div>
+</div>
+<div class="av-cap">all water &rarr; 0 islands</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">L</div><div class="ac dead">.</div><div class="ac hot">L</div>
+</div>
+<div class="av-cap">add (0,0) and (0,2): two separate islands &rarr; count = 2</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">L</div><div class="ac win">L</div><div class="ac win">L</div>
+</div>
+<div class="av-cap">add (0,1): born as +1 (count=3), then unions left and right &rarr; two merges &rarr; count = 1</div>`,
+extra:()=>rulesCard('Rules card — Islands II (online)',
+ 'Same forest over grid cells (<code>r&times;n + c</code>); connected land cells share a root.',
+ 'Two-part move: a new cell is BORN as its own component (+1), then unions with each land neighbor (&minus;1 per merge).',
+ 'A running count after every insertion &mdash; the answer streams out as edits arrive.'),
+callout:{type:'callout-ok',text:'DFS would re-flood the whole grid after every single addition. Union-Find just merges the new cell with its neighbors in near-O(1) &mdash; online connectivity is its home turf.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Kruskal\'s MST — Union-Find as the cycle guard',desc:'Build a minimum spanning tree: sort all edges by weight, then greedily take each edge <em>unless</em> it would form a cycle. Union-Find is the cycle guard &mdash; take an edge only when its endpoints are in <strong>different</strong> components; <code>union</code> both and add the weight. Stop at <code>n&minus;1</code> edges.',
+code:{h:'kruskal.py — greedy + cycle guard',b:`def kruskal(n, edges):           <span class="cm"># edges: (w, u, v)</span>
+    d = DSU(n)
+    total, used = 0, 0
+    for w, u, v in sorted(edges):        <span class="cm"># greedy by weight</span>
+        <span class="hi-y">if d.union(u, v):</span>        <span class="cm"># MOVE: take iff no cycle</span>
+            total += w           <span class="cm"># union() False &rarr; would loop</span>
+            used += 1
+            <span class="hi-g">if used == n - 1:</span>    <span class="cm"># HARVEST: tree complete</span>
+                break
+    return total`},
+dia:()=>`<div class="av">
+  <div class="ac live">A</div><div class="ac live">B</div><div class="ac">C</div>
+</div>
+<div class="av-cap">sorted edges: A-B(1), B-C(2), A-C(3)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">A</div><div class="ac win">B</div><div class="ac win">C</div>
+</div>
+<div class="av-cap">take A-B(1) &amp; B-C(2) &rarr; all joined, total weight 3</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">A</div><div class="ac win">B</div><div class="ac bad2">C</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b style="color:var(--text-danger)">skip</b></div></div>
+<div class="av-cap">A-C(3): same component already &rarr; union returns False &rarr; skip (cycle)</div>`,
+extra:()=>rulesCard('Rules card — Kruskal MST',
+ 'Same forest: nodes share a root iff already linked by chosen edges &mdash; the partial tree so far.',
+ 'Greedy: attempt <code>union</code> on the lightest remaining edge; it succeeds iff the edge joins two components.',
+ 'Accumulate weight of accepted edges; harvest when <code>n&minus;1</code> edges are chosen &mdash; the MST is complete.'),
+callout:{type:'callout-ok',text:'The SAME union-returns-False signal that flagged a redundant edge here REJECTS a cycle-forming edge. One primitive &mdash; "are these already connected?" &mdash; powers detection and construction alike.'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Two Pointers vs. Fast & Slow vs. Union Find',desc:'Four chapters, four patterns, still zero new rules. Watch the invariant change shape once more &mdash; from a discarded region, to a two-pointer ratio, to a <strong>persistent forest that only ever grows</strong>.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Fast &amp; Slow (Ch.3)</th><th>Union Find (Ch.25)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong> &mdash; "the answer is not out there"</td><td>A fixed <strong>speed ratio</strong> between two walkers &mdash; O(1)</td><td>A <strong>forest</strong>: <code>find(x)=find(y)</code> iff connected &mdash; persistent, grows monotonically</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td><code>fast+=2</code>, <code>slow+=1</code></td><td><code>union</code> by rank + path compression &mdash; irreversible merge</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>On collision (cycle) or exhaustion (middle)</td><td>Query roots · equal-roots at merge (cycle) · root count (components)</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n &mdash; one retired per step</td><td>&le; n &mdash; O(1) space</td><td>&alpha;(n) &asymp; O(1) amortized per op</td></tr>
+</table></div>
+<div class="legend"><div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div><div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div><div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div></div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are constant, the IMPLEMENTATION is the variable. Union Find is the first invariant that is itself a growing data structure &mdash; connectivity remembered, never recomputed.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 25',desc:'Add Union Find\'s implementations to the running lists &mdash; and, above all, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  ... outside-the-pointers, inside-the-window,
+      two-pointer speed ratio,
+  <span class="hi-b">a disjoint-set forest: find(x)==find(y)
+      iff connected (persistent, monotone)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  ... retire-an-end, fast+2 / slow+1,
+  <span class="hi-y">union by rank + path compression
+      &rarr; amortized &alpha;(n) ~ O(1) per op</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  ... on-predicate, on-collision,
+  <span class="hi-g">equal roots at query (connected?),
+  equal roots at merge (cycle!),
+  count of distinct roots (components)</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Union Find when:</span>
+  DYNAMIC connectivity, MERGING groups, or
+  CYCLE DETECTION in an undirected graph;
+  edges arrive over time and you must keep
+  answering "are these two together yet?"`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem asks whether two things are connected while the connections keep changing &mdash; or whether a new edge closes a loop &mdash; do not reach for a fresh traversal. Ask: can a forest of roots remember every merge and answer in near-O(1)? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

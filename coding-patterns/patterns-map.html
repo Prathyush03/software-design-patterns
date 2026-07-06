@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Table — 28 Patterns, 3 Rules | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-600: #534AB7; --purple-800: #3C3489;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-600: #AFA9EC; --purple-800: #CECBF6;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.55; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 21px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 3px; max-width: 640px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Rules banner */
+  .rules-banner { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  @media (max-width: 720px) { .rules-banner { grid-template-columns: 1fr; } }
+  .rb { border-radius: var(--radius-sm); padding: 12px 14px; border: 0.5px solid; }
+  .rb-inv { background: var(--bg-info); border-color: var(--border-info); }
+  .rb-mov { background: var(--bg-warning); border-color: var(--border-warning); }
+  .rb-har { background: var(--bg-success); border-color: var(--border-success); }
+  .rb .rb-lbl { font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .rb .rb-txt { font-size: 12.5px; line-height: 1.5; }
+  .rb-inv .rb-lbl, .rb-inv .rb-txt { color: var(--text-info); }
+  .rb-mov .rb-lbl, .rb-mov .rb-txt { color: var(--text-warning); }
+  .rb-har .rb-lbl, .rb-har .rb-txt { color: var(--text-success); }
+
+  .howto { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.6; }
+  .howto b { color: var(--text-primary); font-weight: 500; }
+
+  .search-row { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+  .search-box { flex: 1; min-width: 220px; padding: 9px 14px; font-size: 13px; font-family: var(--font-body); border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); outline: none; }
+  .search-box:focus { border-color: var(--border-info); }
+  .count-lbl { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+  .expand-btn { background: var(--bg-primary); border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 12px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); }
+  .expand-btn:hover { background: var(--bg-secondary); }
+
+  /* Table */
+  .tbl-wrap { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 900px; }
+  th { text-align: left; padding: 9px 12px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); position: sticky; top: 0; }
+  th.th-inv { color: var(--text-info); }
+  th.th-mov { color: var(--text-warning); }
+  th.th-har { color: var(--text-success); }
+  td { padding: 10px 12px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.55; }
+  tr.prow { cursor: pointer; transition: background 0.12s; }
+  tr.prow:hover { background: var(--bg-secondary); }
+  td.p-name { font-weight: 500; white-space: nowrap; color: var(--text-primary); }
+  td.p-name .p-num { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); display: block; }
+  td.p-name .caret { font-size: 10px; color: var(--text-tertiary); margin-left: 4px; }
+  td.p-name .p-link { color: var(--text-primary); text-decoration: none; border-bottom: 1px solid var(--border-secondary); transition: color 0.12s, border-color 0.12s; }
+  td.p-name .p-link:hover { color: var(--text-info); border-bottom-color: var(--text-info); }
+  td.c-inv { color: var(--text-info); }
+  td.c-mov { color: var(--text-warning); }
+  td.c-har { color: var(--text-success); }
+  td.c-sig { color: var(--text-secondary); font-size: 12px; }
+
+  /* Detail row */
+  tr.drow td { background: var(--bg-secondary); padding: 12px 16px 14px; }
+  .var-title { font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--purple-800); background: var(--purple-50); display: inline-block; padding: 2px 10px; border-radius: 12px; margin-bottom: 8px; }
+  .var-grid { display: grid; gap: 6px; }
+  .var-item { display: grid; grid-template-columns: 210px 1fr; gap: 10px; font-size: 12px; padding: 6px 10px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: 5px; }
+  @media (max-width: 720px) { .var-item { grid-template-columns: 1fr; } }
+  .var-name { font-weight: 500; color: var(--text-primary); }
+  .var-how { color: var(--text-secondary); }
+  .var-how b { font-weight: 500; }
+  .var-how .vi { color: var(--text-info); }
+  .var-how .vm { color: var(--text-warning); }
+  .var-how .vh { color: var(--text-success); }
+
+  .foot { margin-top: 16px; font-size: 11.5px; color: var(--text-tertiary); text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Master Table — 28 Patterns, 3 Rules</h1>
+      <p>Every pattern in Grokking the Coding Interview Patterns, audited against the same three rules derived in Chapter 1 and reused ever after. <b>Click any pattern name to open its full interactive chapter.</b> The rules never change — only their implementation does.</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="rules-banner">
+    <div class="rb rb-inv"><div class="rb-lbl">Rule 1 — Name the invariant</div><div class="rb-txt">The property that is true after every single step. The invariant IS the pattern.</div></div>
+    <div class="rb rb-mov"><div class="rb-lbl">Rule 2 — Define the move</div><div class="rb-txt">One deterministic step: irreversible progress + a one-line safety proof. The proof doubles as the complexity bound.</div></div>
+    <div class="rb rb-har"><div class="rb-lbl">Rule 3 — Mark the harvest</div><div class="rb-txt">The exact moment an answer is visible. Grab it before the move destroys the evidence.</div></div>
+  </div>
+
+  <div class="howto"><b>How to read this table:</b> each row states how one pattern implements the three rules. Click a row to expand its variations — within a pattern, variations keep the rules and change only the implementation (usually the move's proof or the harvest's placement). The <b>Signal</b> column is the recognition cue: what a problem statement sounds like when this pattern applies.</div>
+
+  <div class="search-row">
+    <input class="search-box" id="q" type="text" placeholder="Filter patterns, variations, signals… (e.g. 'sorted', 'heap', 'prefix', 'cycle')" oninput="filter()">
+    <span class="count-lbl" id="cnt"></span>
+    <button class="expand-btn" id="xall" onclick="toggleAll()">Expand all</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:150px">Pattern</th>
+          <th class="th-inv">Invariant — what is always true</th>
+          <th class="th-mov">Move — irreversible step + proof</th>
+          <th class="th-har">Harvest — when the answer is visible</th>
+          <th style="width:170px">Signal — when to reach for it</th>
+        </tr>
+      </thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+
+  <div class="foot">
+    All 28 chapters are built — click any pattern name above to open its interactive walkthrough. Chapter 1 (Two Pointers) derives the three rules; every chapter after it reuses them with new implementations.<br>
+    Variation lists are representative, not exhaustive.
+  </div>
+</div>
+
+<script>
+const P=[
+{n:1,name:'Two Pointers',
+ inv:'If an answer exists, it lies within [l, r] — everything outside has been proven unable to participate.',
+ mov:'Compare the ends; retire the one that is provably useless. Each step kills one element → ≤ n steps.',
+ har:'The moment the predicate fires — or every step for closest/count variants.',
+ sig:'Sorted input; pair/triplet with a target; in-place partition or dedupe.',
+ vars:[
+  ['Converging (pair sum, 3Sum)','<span class="vm">Move</span>: retire the end whose best partner already failed.'],
+  ['Converging (container with most water)','<span class="vm">Move</span> proof changes: retire the shorter wall. <span class="vh">Harvest</span>: every step.'],
+  ['Reader / writer (dedupe, move zeroes)','<span class="vi">Invariant</span> relocates: prefix [0..w) is final. Reader always advances.'],
+  ['Two ends → output (sorted squares, merge)','<span class="vi">Invariant</span> lives in the OUTPUT: its suffix is final. Every write is a <span class="vh">harvest</span>.'],
+  ['Expand from center (palindromes)','<span class="vm">Move</span> inverts: pointers diverge while the palindrome invariant holds.']]},
+{n:2,name:'Sliding Window',
+ inv:'Window [l..r] satisfies (or tracks its distance from) the constraint; aux state makes the check O(1).',
+ mov:'Expand-and-repair: r++ always; while broken, l++. Both pointers monotone → ≤ 2n steps.',
+ har:'Longest → after repair; shortest → during shrink; count → += (r−l+1) each step.',
+ sig:'Contiguous subarray/substring; optimize or count its length/contents.',
+ vars:[
+  ['Fixed size (max avg subarray)','<span class="vm">Move</span> fuses: add right, drop left in lockstep — invariant unbreakable.'],
+  ['Longest valid (no-repeat substring)','<span class="vh">Harvest</span> after repair — the base form.'],
+  ['Shortest satisfying (min window substring)','Everything inverts: expand to validity, <span class="vh">harvest</span> INSIDE the shrink.'],
+  ['Counting (at most K distinct)','<span class="vh">Harvest</span> counts all windows ending at r in one line; exactly(K) = atMost(K) − atMost(K−1).'],
+  ['Window + deque (sliding window maximum)','<span class="vi">Invariant</span> gains a clause: deque decreasing — front answers the harvest in O(1).']]},
+{n:3,name:'Fast & Slow Pointers',
+ inv:'The gap between fast and slow encodes structure: fast is always exactly 2× (or k steps) ahead along the traversal.',
+ mov:'fast += 2, slow += 1. The relative speed of 1 guarantees they meet inside any cycle — the gap shrinks by 1 per step.',
+ har:'At the meeting point (cycle exists) or when fast hits null (slow is the middle).',
+ sig:'Linked list or implicit sequence; "cycle", "middle", "loop"; O(1) space demanded.',
+ vars:[
+  ['Cycle detection','<span class="vh">Harvest</span>: pointers meet ⇒ cycle exists.'],
+  ['Cycle start','Second phase: reset one pointer to head, move both by 1 — new <span class="vi">invariant</span>: equal distance to entry.'],
+  ['Middle of list','<span class="vh">Harvest</span> relocates: when fast exhausts, slow IS the answer.'],
+  ['Happy number','Same rules on an implicit sequence — the "list" is f(f(f(n))).'],
+  ['Palindrome linked list','Composes with in-place reversal: middle via fast/slow, then reverse and compare.']]},
+{n:4,name:'Merge Intervals',
+ inv:'The output list is always disjoint and sorted — no two emitted intervals overlap.',
+ mov:'Sort by start, then compare each interval with the last merged: overlap ⇒ extend; gap ⇒ append. One interval consumed per step.',
+ har:'The extend-or-append decision IS the harvest — the answer is built one settled interval at a time.',
+ sig:'Ranges, meetings, schedules; "overlap", "conflict", "free time", "insert".',
+ vars:[
+  ['Merge intervals','Base form — sort, then extend-or-append.'],
+  ['Insert interval','Input pre-sorted: <span class="vm">move</span> becomes three phases (before / overlapping / after).'],
+  ['Interval intersection (two lists)','Borrows Two Pointers: advance the list whose interval ends first.'],
+  ['Meeting rooms II','<span class="vi">Invariant</span> gains a min-heap of end times: heap size = rooms in use. Bridges to Two Heaps.'],
+  ['Employee free time','Merge all, then <span class="vh">harvest</span> the GAPS between settled intervals.']]},
+{n:5,name:'In-Place Linked List Reversal',
+ inv:'prev heads a fully-reversed prefix; curr heads an untouched suffix. Nothing is ever lost — every node is in exactly one of the two.',
+ mov:'Rewire exactly one pointer (curr.next = prev), then shift the trio forward. One node crosses the frontier per step.',
+ har:'When curr exhausts, prev IS the answer — or reconnect the sublist ends for partial reversals.',
+ sig:'"Reverse … in place", O(1) space on a linked list, k-group manipulation.',
+ vars:[
+  ['Full reversal','Base form — the three-pointer walk.'],
+  ['Reverse sublist (m..n)','Same engine, plus saved anchors to stitch the reversed segment back.'],
+  ['Reverse in k-groups','Run the engine k nodes at a time; <span class="vi">invariant</span> extends across group boundaries.'],
+  ['Swap pairs','k = 2 special case.'],
+  ['Rotate list','Compose: find length, connect tail to head, break at n − k.']]},
+{n:6,name:'Two Heaps',
+ inv:'Max-heap holds the smaller half, min-heap the larger half; their sizes never differ by more than 1.',
+ mov:'Push into one heap, then rebalance by moving a single root across. O(log n), invariant restored every insert.',
+ har:'The median is a root read — O(1), any time the stream is asked.',
+ sig:'Streaming data; median / middle / balance point between two extremes.',
+ vars:[
+  ['Running median','Base form — the two-heap balance.'],
+  ['Sliding window median','Adds lazy deletion: departed elements are marked, purged when they surface at a root.'],
+  ['IPO / maximize capital','Two heaps with different keys: min-heap by capital feeds a max-heap by profit — <span class="vm">move</span> is a transfer between them.'],
+  ['Next interval','Two heaps over starts and ends, drained in coordination.']]},
+{n:7,name:'K-way Merge',
+ inv:'The heap holds exactly the frontier — the current head of each source — so the heap top is always the globally smallest unconsumed element.',
+ mov:'Pop the min, push its successor from the same source. One element consumed per step → n log k total.',
+ har:'Every pop IS the harvest: elements exit in final sorted order.',
+ sig:'Multiple sorted inputs; "combined order", "kth across lists", sorted matrix.',
+ vars:[
+  ['Merge k sorted lists','Base form — the frontier heap.'],
+  ['Kth smallest in sorted matrix','Rows are the sources; stop after k pops (<span class="vh">harvest</span> truncates).'],
+  ['Smallest range covering k lists','<span class="vi">Invariant</span> gains a clause: track the max in the heap — range = [top, max].'],
+  ['K pairs with smallest sums','Sources generated lazily: popping (i, j) seeds (i, j+1).']]},
+{n:8,name:'Top K Elements',
+ inv:'A heap of size k holds the best k seen so far; its root is the weakest of the best — the gatekeeper.',
+ mov:'Each newcomer duels the root: beat it ⇒ pop & push (log k); lose ⇒ discarded forever, with proof.',
+ har:'After the scan, the heap IS the answer; the root alone is the kth element.',
+ sig:'"Top / smallest / closest / most frequent K" — without sorting everything.',
+ vars:[
+  ['Kth largest element','Base form — min-heap of size k.'],
+  ['K closest points','Same engine, key = distance; max-heap gatekeeps.'],
+  ['Top K frequent','Compose with Hash Maps: count first, then gatekeep on counts.'],
+  ['Reorganize string / task scheduler','Heap becomes a greedy dispenser: <span class="vm">move</span> = pop the most frequent that is legally placeable.']]},
+{n:9,name:'Modified Binary Search',
+ inv:'The answer always lies within [lo, hi], guaranteed by a monotone predicate over the search space.',
+ mov:'Probe mid; the predicate\'s answer kills half the space — monotonicity is the proof it was safe. O(log n).',
+ har:'For boundaries: record mid when the predicate holds, then keep pressing into the surviving half.',
+ sig:'Sorted or rotated input; any monotone yes/no property; "minimize the maximum".',
+ vars:[
+  ['Exact find','Base form.'],
+  ['First / last occurrence','<span class="vh">Harvest</span> changes: record and continue instead of returning.'],
+  ['Rotated array','<span class="vm">Move</span> proof changes: one half is always sorted — decide using it.'],
+  ['Search on the ANSWER space (Koko bananas, split array)','<span class="vi">Invariant</span> relocates: [lo, hi] brackets feasible answers, not indices. The predicate is "can we do it at speed m?"'],
+  ['Search in unknown length / matrix','Space reshaped; rules untouched.']]},
+{n:10,name:'Subsets (BFS/DFS enumeration)',
+ inv:'After processing element i, every partial solution over the first i elements exists exactly once — each a valid prefix of some final answer.',
+ mov:'For each existing partial, branch: exclude / include the next element (clone in BFS, recurse in DFS). Never revisits a decision.',
+ har:'Complete solutions at the leaves — or every node, when all subsets are themselves answers.',
+ sig:'"All combinations / permutations / subsets"; enumerate every possibility.',
+ vars:[
+  ['Subsets','Base form — double each partial per element.'],
+  ['Subsets with duplicates','Sort + skip: <span class="vm">move</span> gains a proof that duplicate branches are redundant.'],
+  ['Permutations','<span class="vm">Move</span> changes: insert the new element into every slot of every partial.'],
+  ['Letter case permutations','Branch only at letters.'],
+  ['Balanced parentheses','Branch under constraints — a bridge into Backtracking.']]},
+{n:11,name:'Greedy',
+ inv:'The current partial choice set can still be extended to SOME optimal solution — maintained by an exchange argument.',
+ mov:'Take the locally best option by the chosen sort key; never reconsider. The exchange argument is the proof.',
+ har:'At the end — the accumulated choices are the answer (or the running extremum along the way).',
+ sig:'Optimization where a sort key + "swapping toward greedy never hurts" argument exists.',
+ vars:[
+  ['Interval scheduling (max non-overlap)','Sort by END time; the exchange proof is the classic.'],
+  ['Jump game','<span class="vi">Invariant</span>: maxReach covers everything reachable so far; <span class="vh">harvest</span> = does it cover the end.'],
+  ['Gas station','<span class="vi">Invariant</span>: a failed stretch can never contain the start — restart past it.'],
+  ['Two city scheduling','Sort by cost DELTA — the key encodes the exchange.'],
+  ['Chain of pairs','Interval scheduling in disguise.']]},
+{n:12,name:'Backtracking',
+ inv:'The current path is ALWAYS a legal partial solution — prune the instant it is not.',
+ mov:'Choose → explore → UNCHOOSE. The undo is deliberate; irreversibility lives in the enumeration order (no state is visited twice).',
+ har:'At a goal or leaf — deep-copy the path NOW, because the unwind will destroy it.',
+ sig:'"All ways…", heavy constraints, grids/boards, n small (≤ ~20).',
+ vars:[
+  ['N-Queens','<span class="vi">Invariant</span> carried by attack sets (cols, diagonals) for O(1) legality checks.'],
+  ['Word search','<span class="vm">Move</span> marks the cell in-place, unmarks on unwind.'],
+  ['Combination sum','Prune on remaining target; ordering prevents duplicate paths.'],
+  ['Sudoku solver','Legality tables per row/col/box — same invariant, three clauses.'],
+  ['Palindrome partitioning','Prune = "is the next cut a palindrome"; often composed with DP.']]},
+{n:13,name:'Dynamic Programming',
+ inv:'Every filled state is FINAL and correct — it depended only on states that were already final.',
+ mov:'Fill states in dependency order (a topological order over subproblems). Memoization is the same rule, discovered lazily.',
+ har:'Read the target state at the end — or take the best over all final states; walk parents to reconstruct.',
+ sig:'Overlapping subproblems + optimal substructure; count/min/max over exponentially many choices.',
+ vars:[
+  ['0/1 Knapsack family','State = (item, capacity); <span class="vm">move</span> = take-or-skip.'],
+  ['Unbounded knapsack / coin change','Same state, item reusable — the transition loosens.'],
+  ['LCS family (edit distance)','State = (i, j) over two sequences.'],
+  ['LIS','State = best ending here; O(n log n) version hires binary search for the <span class="vh">harvest</span>.'],
+  ['Palindromic subsequences','State = (l, r) over one sequence, filled by increasing length.'],
+  ['State-machine DP (stock problems)','States = holding/not-holding; transitions = buy/sell/rest.']]},
+{n:14,name:'Cyclic Sort',
+ inv:'Every completed swap has put at least one value into its home slot permanently — homes only fill, never empty.',
+ mov:'While arr[i] is not home, SWAP it home. Each swap settles ≥1 value → ≤ n swaps total, O(1) space.',
+ har:'A second pass: the first slot where arr[i] ≠ i+1 exposes the missing/duplicate number.',
+ sig:'Array of values in range 1..n (or 0..n); O(n) time and O(1) space demanded.',
+ vars:[
+  ['Missing number','Base form.'],
+  ['Find all missing numbers','<span class="vh">Harvest</span> collects every out-of-place slot.'],
+  ['Find the duplicate','The value refusing to settle IS the answer (also solvable by Fast & Slow!).'],
+  ['First missing positive','Ignore out-of-range values during the <span class="vm">move</span>; rules untouched.']]},
+{n:15,name:'Topological Sort',
+ inv:'The emitted order never violates a dependency; the queue holds exactly the currently-free (indegree-0) nodes.',
+ mov:'Pop a free node, emit it, decrement its children; any child reaching 0 joins the queue. Each edge cut once.',
+ har:'Emission IS the harvest — and if emitted count < n at the end, a cycle exists: no valid order.',
+ sig:'Prerequisites, dependencies, "build order", "can all courses be finished".',
+ vars:[
+  ['Course schedule (can finish?)','<span class="vh">Harvest</span> = just the count check.'],
+  ['Course schedule II (the order)','<span class="vh">Harvest</span> = the emission sequence itself.'],
+  ['Alien dictionary','The graph must be BUILT first — from adjacent-word comparisons; then base form.'],
+  ['Minimum height trees','Inverted: peel leaves layer by layer; the last 1–2 nodes are the centers.'],
+  ['All topological orders','Hybridizes with Backtracking: choose any free node, explore, unchoose.']]},
+{n:16,name:'Sort and Search',
+ inv:'After paying for preprocessing (sort), a structural guarantee — monotonicity, adjacency — holds that the raw input lacked.',
+ mov:'Spend O(n log n) once, then run a borrowed pattern (binary search, two pointers, sliding window) on the structure you bought.',
+ har:'Per the borrowed pattern — this pattern\'s contribution is making the other patterns legal.',
+ sig:'Unsorted input, but the QUESTION is about order, closeness, or pairing.',
+ vars:[
+  ['Find K closest elements','Sort (or already sorted) + binary search + two pointers outward.'],
+  ['Pairs by custom key','Sort by the key that makes the greedy/two-pointer proof valid.'],
+  ['Binary search on answer (meta)','Sorting the SEARCH SPACE conceptually — Modified Binary Search\'s answer-space variant seen from the other side.']]},
+{n:17,name:'Matrices',
+ inv:'A boundary partition: visited vs. unvisited regions, tracked by four walls (or an index mapping that is a bijection).',
+ mov:'Advance the boundary — spiral shrinks a wall after consuming it; rotate composes transpose + reverse; each cell touched O(1) times.',
+ har:'Cells are emitted as the boundary passes them — or the matrix itself, after an in-place transform.',
+ sig:'2-D grid traversal or transform; in-place demanded.',
+ vars:[
+  ['Spiral traversal','Four-wall <span class="vi">invariant</span>: top/bottom/left/right shrink inward.'],
+  ['Rotate image','<span class="vm">Move</span> = transpose then reverse rows — two bijections compose into one.'],
+  ['Set matrix zeroes','First row/col become the flag storage — aux state folded into the matrix itself.'],
+  ['Diagonal traverse','Index mapping i+j = const; direction alternates.']]},
+{n:18,name:'Stacks (incl. Monotonic)',
+ inv:'The stack is always sorted (monotonic) — or always holds exactly the unresolved opens.',
+ mov:'Each newcomer pops everything it dominates, then pushes itself. Every element pushed once, popped once → O(n).',
+ har:'AT POP TIME — the popped element just met its resolution: the pusher is its "next greater".',
+ sig:'"Next greater/smaller", spans, nested structure, histogram areas.',
+ vars:[
+  ['Next greater element','Base monotonic form.'],
+  ['Daily temperatures','Same, harvesting index distance at pop.'],
+  ['Largest rectangle in histogram','<span class="vh">Harvest</span> at pop = height × (span the pop reveals).'],
+  ['Valid parentheses / calculator','<span class="vi">Invariant</span> = unresolved opens; pop on match.'],
+  ['Remove K digits','Monotonic + budget: pop while it improves and budget remains — a greedy hybrid.']]},
+{n:19,name:'Graphs (BFS / DFS)',
+ inv:'BFS: all nodes at distance < d finish before any node at distance d. DFS: the recursion stack IS the current path; colors (unvisited/in-progress/done) partition all nodes.',
+ mov:'BFS: expand the frontier queue level by level. DFS: dive, then backtrack. Each node and edge processed O(1) times.',
+ har:'BFS: FIRST touch of the goal = shortest path — harvest immediately. DFS: at discovery (components) or at finish (orderings, cycle via in-progress hit).',
+ sig:'Networks, grids-as-graphs, reachability; "shortest" → BFS, "exists / all / detect cycle" → DFS.',
+ vars:[
+  ['Number of islands','DFS/BFS flood fill; visited-marking is the <span class="vi">invariant</span>.'],
+  ['Clone graph','DFS + hashmap old→new prevents revisits.'],
+  ['Bipartite check','2-coloring: the <span class="vi">invariant</span> is "no edge joins same colors".'],
+  ['Shortest path in grid / word ladder','BFS — the level count IS the answer.'],
+  ['Dijkstra','BFS whose frontier queue becomes a min-heap: same rules, weighted <span class="vm">move</span>.']]},
+{n:20,name:'Tree Depth-First Search',
+ inv:'The recursion stack is exactly the root-to-current path; a subtree\'s result is final the moment its call returns.',
+ mov:'Recurse into children; combine results on the way up (post-order) or push state down (pre-order). Each node visited once.',
+ har:'Usually at the return: combine(left, right, node). For path problems: at the leaves.',
+ sig:'"Path", "subtree", "root-to-leaf", tree properties.',
+ vars:[
+  ['Path sum / all paths','State (remaining sum) flows DOWN; <span class="vh">harvest</span> at leaves.'],
+  ['Max path sum','The famous split: <span class="vh">harvest</span> the THROUGH-value at each node, but RETURN only the one-arm value upward.'],
+  ['Diameter','Same split: harvest left+right, return max(left, right)+1.'],
+  ['Lowest common ancestor','<span class="vh">Harvest</span> at the first node where both sides report a hit.'],
+  ['Serialize / deserialize','Pre-order with null markers — the invariant makes the encoding uniquely decodable.']]},
+{n:21,name:'Tree Breadth-First Search',
+ inv:'The queue holds exactly one complete level at the top of each round.',
+ mov:'Snapshot the level size, drain exactly that many, enqueue their children. Level boundaries never blur.',
+ har:'Per level, as each completes: collect / average / take the last / count.',
+ sig:'"Level", "depth", "layer by layer", "nearest" in a tree.',
+ vars:[
+  ['Level order traversal','Base form.'],
+  ['Zigzag','A direction flag flips per level — <span class="vh">harvest</span> order alternates.'],
+  ['Right side view','<span class="vh">Harvest</span> = last node of each level.'],
+  ['Minimum depth','<span class="vh">Harvest</span> = the FIRST leaf found; BFS guarantees it is shallowest.'],
+  ['Connect level siblings','<span class="vm">Move</span> wires next-pointers while draining the level.']]},
+{n:22,name:'Trie',
+ inv:'Every root-to-node path spells a stored prefix exactly once; shared prefixes share nodes.',
+ mov:'Walk (or create) one child per character — insert and search are both O(word length).',
+ har:'At the end-flag node (exact word) or across an entire subtree (everything with this prefix).',
+ sig:'Many strings + prefix queries: autocomplete, dictionaries, word games.',
+ vars:[
+  ['Insert / search / startsWith','Base form.'],
+  ['Wildcard search (add-and-search)','A "." fans out: DFS over all children at that depth — Trie composed with Backtracking.'],
+  ['Longest word built letter by letter','<span class="vi">Invariant</span> tightens: only walk nodes that are themselves complete words.'],
+  ['Word squares / boggle','Trie prunes a backtracking search — the invariant kills dead prefixes early.']]},
+{n:23,name:'Hash Maps',
+ inv:'The map is a complete index of everything SEEN so far — the past is queryable in O(1).',
+ mov:'For each new element: query for its complement/partner FIRST, then insert itself. One pass, no lookback.',
+ har:'At the instant a lookup hits — the partner was indexed by a previous step.',
+ sig:'Unsorted data; "have I seen X — or f(X) — before?"',
+ vars:[
+  ['Two sum (unsorted)','Base form — complement lookup.'],
+  ['Group anagrams','The KEY is the insight: a canonical form (sorted word / count signature).'],
+  ['Subarray sum equals K','Prefix-sum map: <span class="vi">invariant</span> = counts of ALL prefix sums so far; <span class="vh">harvest</span> = lookup of (running − K).'],
+  ['Isomorphic strings','Two maps enforcing a bijection.'],
+  ['LRU cache','Map + linked list — a bridge into Custom Data Structures.']]},
+{n:24,name:'Knowing What to Track',
+ inv:'A small counter/summary stays perfectly in sync with the stream — the past never needs re-reading.',
+ mov:'O(1) counter updates per element; one pass.',
+ har:'Read the summary when asked — or the moment a count crosses its threshold.',
+ sig:'One pass + O(1)/O(k) memory is enough IF you pick the right thing to count.',
+ vars:[
+  ['Majority element (Boyer–Moore)','The elegant <span class="vi">invariant</span>: candidate + count such that the true majority always survives cancellation.'],
+  ['Permutation in string','Frequency-match counter riding inside a fixed sliding window.'],
+  ['First unique character','Count pass + scan pass.'],
+  ['Tic-tac-toe win detection','Track row/col/diagonal sums — O(1) per move instead of re-scanning the board.']]},
+{n:25,name:'Union Find',
+ inv:'The forest exactly encodes all connectivity learned so far: find(x) = find(y) ⟺ x and y are connected.',
+ mov:'Union by rank + path compression. Merges are irreversible — components only ever grow. Near-O(1) amortized.',
+ har:'At query time ("connected?"), at merge time (roots already equal ⇒ cycle found!), or root count (number of components).',
+ sig:'Dynamic connectivity; merging groups; cycle detection in an undirected graph.',
+ vars:[
+  ['Redundant connection','<span class="vh">Harvest</span> at merge time: the edge whose endpoints already share a root.'],
+  ['Number of provinces','<span class="vh">Harvest</span> = count of distinct roots.'],
+  ['Accounts merge','Union by shared email; harvest by grouping under roots.'],
+  ['Islands II (online)','Union-Find shines where DFS can\'t: edits arrive over time, merges accumulate.'],
+  ['Kruskal MST','Greedy sorted edges + Union-Find as the cycle guard.']]},
+{n:26,name:'Custom Data Structures',
+ inv:'A composed structure keeps EVERY sub-invariant simultaneously (e.g. map for O(1) lookup AND list for order).',
+ mov:'Every operation updates all parts atomically, so no sub-invariant is ever observed broken.',
+ har:'Each API call reads whichever component answers it in O(1).',
+ sig:'"Design a structure supporting X, Y, Z — all in O(1)."',
+ vars:[
+  ['LRU cache','HashMap + doubly-linked list: lookup from one, recency order from the other.'],
+  ['Insert/Delete/GetRandom O(1)','HashMap + array + swap-to-end delete — the swap preserves both invariants.'],
+  ['Min stack','Each entry carries the min-so-far: the <span class="vi">invariant</span> is stored, not computed.'],
+  ['Time-based key-value store','Map of append-only sorted lists + binary search for the <span class="vh">harvest</span>.']]},
+{n:27,name:'Bitwise Manipulation',
+ inv:'An algebraic identity holds across the fold: x⊕x = 0, x⊕0 = x — pairs annihilate, survivors persist.',
+ mov:'Fold the operator across the input; each op is O(1), one pass.',
+ har:'Whatever survives the algebra IS the answer.',
+ sig:'Duplicates that should cancel; "O(1) extra space"; parity tricks.',
+ vars:[
+  ['Single number','Base form — XOR everything.'],
+  ['Two single numbers','Split by any bit where the combined XOR is 1, then run base form on each half.'],
+  ['Missing number','XOR values against indices — the identity supplies the phantom partner.'],
+  ['Counting bits','dp[i] = dp[i>>1] + (i&1) — an algebra/DP hybrid.'],
+  ['Power of two','n & (n−1) erases the lowest set bit; zero remains ⟺ one bit existed.']]},
+{n:28,name:'Math & Geometry',
+ inv:'A mathematical property replaces simulation: digit-sum orbits cycle, GCD strictly shrinks, cross-products decide orientation.',
+ mov:'Apply the identity to shrink the instance — each application is a provable reduction.',
+ har:'At the fixed point or closed form the identity guarantees.',
+ sig:'Pure-number problems where direct simulation would TLE.',
+ vars:[
+  ['Happy number','The orbit either reaches 1 or cycles — detected with Fast & Slow (Rule reuse across chapters!).'],
+  ['Pow(x, n) fast exponentiation','<span class="vi">Invariant</span>: result × x^n is constant every step; squaring halves n.'],
+  ['GCD / LCM problems','Euclid: gcd(a, b) = gcd(b, a mod b) — the mod is the irreversible <span class="vm">move</span>.'],
+  ['Rotate / reflect points','Orientation via cross product — the sign is the <span class="vh">harvest</span>.'],
+  ['Excel column numbers','Base-26 with an offset — positional identity, no simulation.']]}
+];
+
+const CH={1:'two-pointers',2:'sliding-windows',3:'fast-slow-pointers',4:'merge-intervals',5:'in-place-linked-list-reversal',6:'two-heaps',7:'k-way-merge',8:'top-k-elements',9:'modified-binary-search',10:'subsets',11:'greedy',12:'backtracking',13:'dynamic-programming',14:'cyclic-sort',15:'topological-sort',16:'sort-and-search',17:'matrices',18:'stacks',19:'graphs',20:'tree-dfs',21:'tree-bfs',22:'trie',23:'hash-maps',24:'knowing-what-to-track',25:'union-find',26:'custom-data-structures',27:'bitwise-manipulation',28:'math-and-geometry'};
+
+const tb=document.getElementById('tb');
+let allOpen=false;
+
+function esc(s){return s;}
+
+function render(){
+  let h='';
+  P.forEach((p,i)=>{
+    h+=`<tr class="prow" id="r${i}" onclick="toggleRow(${i})">
+      <td class="p-name"><span class="p-num">Ch. ${p.n}</span><a class="p-link" href="${CH[p.n]}.html" target="_blank" rel="noopener" onclick="event.stopPropagation()">${p.name}</a><span class="caret" id="c${i}">▸</span></td>
+      <td class="c-inv">${p.inv}</td>
+      <td class="c-mov">${p.mov}</td>
+      <td class="c-har">${p.har}</td>
+      <td class="c-sig">${p.sig}</td>
+    </tr>
+    <tr class="drow" id="d${i}" style="display:none"><td colspan="5">
+      <span class="var-title">Variations — same rules, different implementation</span>
+      <div class="var-grid">${p.vars.map(v=>`<div class="var-item"><div class="var-name">${v[0]}</div><div class="var-how">${v[1]}</div></div>`).join('')}</div>
+    </td></tr>`;
+  });
+  tb.innerHTML=h;
+  updateCount();
+}
+
+function toggleRow(i){
+  const d=document.getElementById('d'+i);
+  const c=document.getElementById('c'+i);
+  const open=d.style.display!=='none';
+  d.style.display=open?'none':'';
+  c.textContent=open?'▸':'▾';
+}
+
+function toggleAll(){
+  allOpen=!allOpen;
+  P.forEach((_,i)=>{
+    const r=document.getElementById('r'+i);
+    if(r.style.display==='none') return;
+    document.getElementById('d'+i).style.display=allOpen?'':'none';
+    document.getElementById('c'+i).textContent=allOpen?'▾':'▸';
+  });
+  document.getElementById('xall').textContent=allOpen?'Collapse all':'Expand all';
+}
+
+function filter(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  P.forEach((p,i)=>{
+    const hay=(p.name+' '+p.inv+' '+p.mov+' '+p.har+' '+p.sig+' '+p.vars.map(v=>v[0]+' '+v[1]).join(' ')).toLowerCase();
+    const show=!q||hay.includes(q);
+    document.getElementById('r'+i).style.display=show?'':'none';
+    if(!show){ document.getElementById('d'+i).style.display='none'; document.getElementById('c'+i).textContent='▸'; }
+  });
+  updateCount();
+}
+
+function updateCount(){
+  const visible=P.filter((_,i)=>document.getElementById('r'+i).style.display!=='none').length;
+  document.getElementById('cnt').textContent=visible+' of '+P.length+' patterns';
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+render();
+</script>
+</body>
+</html>

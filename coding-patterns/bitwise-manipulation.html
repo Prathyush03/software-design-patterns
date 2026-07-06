@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 27 — Bitwise Manipulation | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 27 — Bitwise Manipulation</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Single Number',desc:'A new shape of problem, and a generous one: you are given a non-empty array where <strong>every number appears exactly twice, except one</strong> that appears a single time. Return that lone number. The interviewer pins the terms down: <strong>O(n) time and O(1) extra space.</strong>',
+code:{h:'The problem',b:`nums = [4, 1, 2, 1, 2]
+<span class="cm"># 1 and 2 each appear twice; 4 appears once</span>
+
+single_number(nums) = 4
+
+<span class="cm"># the pairs ought to cancel each other;
+# whatever is left standing is the answer.</span>`},
+dia:()=>`<div class="av"><div class="ac dead">1</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac dead">2</div><div class="ac win">4</div></div>
+<div class="av-cap">the two 1s form a pair, the two 2s form a pair &mdash; imagine them annihilating.<br>Only <code>4</code> has no partner, so <b>4</b> is the answer.</div>`,
+callout:{type:'callout-ok',text:'No sort budget. No side table. Just O(1) space, with duplicates that clearly want to cancel — hold that constraint, it is the whole story.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — tally how many times each value appears',desc:'The obvious idea: sweep the array into a hash map of counts, then scan the map for the value whose count is <code>1</code>. Correct, simple, passes every sample. It even runs in O(n) time.',
+code:{h:'single_number.py — the naive attempt',b:`def single_number(nums):
+    count = {}                    <span class="cm"># INVARIANT: how many</span>
+    for x in nums:                <span class="cm">#   times each value seen</span>
+        count[x] = count.get(x, 0) + 1
+    for x, c in count.items():
+        if c == 1:                <span class="cm"># the odd one out</span>
+            return x
+
+<span class="cm"># O(n) TIME — but O(n) SPACE for the map.
+# The interviewer said O(1).</span>`},
+dia:()=>`<div class="av"><div class="ac live">4:1</div><div class="ac live">1:2</div><div class="ac live">2:2</div></div>
+<div class="av-cap">count = {4:1, 1:2, 2:2} &mdash; a full census of every value, O(n) memory</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">1:2</div><div class="ac dead">2:2</div><div class="ac win">4:1</div></div>
+<div class="av-cap">scan the map: <code>4</code> is the only value with count 1 &rarr; answer.<br>Correct — but that map is O(n) space we were explicitly forbidden.</div>`,
+callout:{type:'callout-ok',text:'Honest accounting: this is O(n) time, exactly what the pattern will be too. The win we are hunting is NOT a better big-O — it is SPACE and elegance. The map is dead weight when one integer would do.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Earlier chapters handed us three rules. This brute force is not <em>slow</em> — it is <strong>fat</strong>. So audit it against the rules: the failure is memory, and the rules point straight at the culprit.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (space).</span> "count = the occurrences of every value" is a <em>valid</em> invariant — but it costs O(n) memory. It keeps a whole tally when a single running accumulator would carry the one fact we actually need.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> One increment per element is fine and irreversible — but it dumps its knowledge into an O(n) map instead of folding it into a constant-size total.',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "the value with count 1" is correct — but it is powered entirely by that O(n) map.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force just parks an O(n) invariant in a side table when a single integer can host an O(1) one. We need a leaner IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes an algebraic identity',desc:'Throw away the tally. Keep a single integer <code>acc</code>, and maintain one algebraic fact: <strong><code>acc</code> is the XOR of every value seen so far</strong>. By the identity <code>x^x = 0</code> and <code>x^0 = x</code>, that XOR equals the XOR of exactly those values seen an <strong>odd</strong> number of times — pairs annihilate, survivors persist. Storage: one int, O(1).',
+code:{h:'The promise — one accumulator',b:`acc = 0
+
+<span class="hi-b"># INVARIANT — true after every fold:
+#   acc = XOR of all values seen so far
+#       = XOR of the values seen an ODD
+#         number of times   (x^x=0, x^0=x)</span>
+
+<span class="cm"># No census. The only state is one integer,
+# no matter how long the array — O(1).</span>`},
+dia:()=>`<div class="av"><div class="ac hot">100</div><div class="ac">001</div><div class="ac">010</div><div class="ac">001</div><div class="ac">010</div></div>
+<div class="av-cap">read each value in binary: 4=100, 1=001, 2=010, 1=001, 2=010.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">acc</div><div class="ac live">=</div><div class="ac win">100</div></div>
+<div class="av-cap">bit by bit, a bit set an even number of times XORs back to 0; only bits set an ODD number of times survive.<br>That surviving pattern is the whole invariant — Cyclic Sort kept its invariant INSIDE the array; here it lives INSIDE one integer.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter so far: name the property that survives every step. What changed is only its footprint — from an O(n) map to one accumulator whose bits track odd-vs-even parity.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is no longer a region, a ratio, or a set of counts — it is an ALGEBRAIC IDENTITY. acc = XOR of everything folded in = XOR of the values seen an odd number of times. Extra memory: one int, O(1).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: fold the operator across the input',desc:'One step, one element: <code>acc ^= x</code>. Why it is irreversible progress: <strong>every value that appears twice contributes <code>x^x = 0</code> and vanishes from <code>acc</code> for good</strong>. The fold sweeps left to right, one O(1) operation per element, never revisiting — so the lone survivor is all that can remain.',
+code:{h:'The move — fold ^ in',b:`for x in nums:
+    acc ^= x        <span class="hi-y"># fold the operator across the input</span>
+
+<span class="cm"># PROOF: every duplicated value cancels
+# itself (x^x=0), so after ONE pass only the
+# lone survivor is left. O(n) time, O(1) space.</span>`},
+dia:()=>`<div class="av"><div class="ac hot">4</div><div class="ac">1</div><div class="ac">2</div><div class="ac">1</div><div class="ac">2</div></div>
+<div class="ptr-row"><div class="ptr"><b>x</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">acc starts 0; fold in 4 &rarr; acc = 4. Each op is a single XOR — O(1).</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">4</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac live">1</div><div class="ac hot">2</div></div>
+<div class="av-cap">by the time both 1s and both 2s have been folded, each pair has XORed to 0 and left acc.<br>Nothing is retired from the array; the CANCELLATION is the irreversible progress.</div>`,
+callout:{type:'callout-info',text:'A foundation move retired an element per step; here nothing is retired — but each duplicate erases itself from the accumulator, permanently. That single-pass fold, one XOR each, IS the O(n)/O(1) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: fold the operator across the input, acc ^= x. The one-line safety proof — each pair cancels via x^x=0, so only the survivor persists — doubles as the complexity bound: one O(1) op per element, O(n) total, O(1) space.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest: read whatever survived the algebra',desc:'No scan, no lookup, no second pass. When the fold drains, <code>acc</code> holds exactly the XOR of the values that appeared an odd number of times — here, the single number. <strong>Whatever survives the algebra IS the answer.</strong> Return <code>acc</code>.',
+code:{h:'The harvest — read the accumulator',b:`return acc        <span class="hi-g"># HARVEST: whatever survived</span>
+                  <span class="hi-g">#          the algebra IS the answer</span>
+
+<span class="cm"># every pair annihilated to 0; the lone
+# value XORed against 0 is simply itself.
+# WHICH identity you fold picks the problem:
+#   ^ over values      &rarr; the unpaired one
+#   ^ over values+index &rarr; the missing one
+#   n &amp; (n-1)          &rarr; power-of-two test</span>`},
+dia:()=>`<div class="av"><div class="ac dead">1^1=0</div><div class="ac dead">2^2=0</div><div class="ac win">4</div></div>
+<div class="av-cap">after the fold: the two pairs collapsed to 0, and <code>4 ^ 0 = 4</code> stands alone.<br>The accumulator does not need interpreting — it already IS the answer.</div>`,
+callout:{type:'callout-info',text:'A foundation harvest waited for a value predicate to fire; here the harvest is simply reading the accumulator once the algebra has done all the work. Which operator and operands you fold selects the problem you solved.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: no candidate to test — the fold leaves the answer sitting in acc. The moment the pass ends, acc is visible and correct. Change the identity you fold and the very same harvest solves a different problem.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete single-number finder: one accumulator, one pass, no memory. The O(1)-space constraint that killed the brute force is now satisfied <strong>by construction</strong> — not bolted on afterward.',
+code:{h:'single_number.py — final',b:`def single_number(nums):
+    acc = 0
+    for x in nums:          <span class="cm"># MOVE: fold ^ across input</span>
+        acc ^= x
+    return <span class="hi-g">acc</span>              <span class="cm"># HARVEST: the survivor</span>
+
+<span class="cm"># O(n) time · O(1) space · one int, ever.</span>`},
+dia:()=>`<div class="av"><div class="ac hot">4</div><div class="ac">1</div><div class="ac">2</div><div class="ac">1</div><div class="ac">2</div></div>
+<div class="ptr-row"><div class="ptr"><b>x</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">start: acc = 0, then <code>acc ^= 4</code> &rarr; acc = <b>4</b></div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">4</div><div class="ac dead">1</div><div class="ac hot">2</div><div class="ac">1</div><div class="ac">2</div></div>
+<div class="av-cap">4^1^2 &rarr; acc = <b>7</b> (111): every bit still odd so far</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">4</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac dead">1</div><div class="ac win">2</div></div>
+<div class="av-cap">&hellip;^1^2 &rarr; the second 1 and 2 cancel their twins &rarr; acc = <b>4</b>. Return it.</div>`,
+callout:{type:'callout-ok',text:'The brute force stored a whole map; this stores one integer, ever. Same O(n) time — but O(n) space collapses to O(1), purely because the invariant became an algebraic identity.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Single Number II — the two lonely values',desc:'Now <strong>two</strong> values appear once and everything else appears twice. A single fold gives <code>a ^ b</code>, not either one alone. The fix: any bit that is <code>1</code> in <code>a ^ b</code> is a bit where <code>a</code> and <code>b</code> <strong>differ</strong> — so <strong>partition the array by that bit</strong> and run the base fold on each half.',
+code:{h:'two_single.py — split, then fold each half',b:`def two_single(nums):
+    xor = 0
+    for x in nums:              <span class="cm"># acc = a ^ b (twins gone)</span>
+        xor ^= x
+    bit = xor <span class="hi-y">&amp;</span> (-xor)          <span class="cm"># lowest bit where a,b differ</span>
+    a = b = 0
+    for x in nums:              <span class="cm"># partition by that bit</span>
+        if x <span class="hi-y">&amp;</span> bit:
+            a ^= x              <span class="cm"># base fold on group 1</span>
+        else:
+            b ^= x              <span class="cm"># base fold on group 0</span>
+    return <span class="hi-g">[a, b]</span>`},
+dia:()=>`<div class="av"><div class="ac">1</div><div class="ac">2</div><div class="ac">1</div><div class="ac">3</div><div class="ac">2</div><div class="ac">5</div></div>
+<div class="av-cap">nums = [1,2,1,3,2,5]; folding all &rarr; xor = 3 ^ 5 = <b>110</b>. Lowest differing bit = <b>010</b>.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac live">bit=010</div><div class="ac win">3</div><div class="ac hot">5</div></div>
+<div class="av-cap">split by that bit: 3 (011) has it set, 5 (101) does not &rarr; they land in different halves.<br>Each half now has one lonely value + pairs &rarr; base fold each &rarr; <b>[3, 5]</b>.</div>`,
+extra:()=>rulesCard('Rules card — two single numbers',
+ 'Same parity identity, run TWICE: within each partition, the twins still cancel and one survivor persists.',
+ 'The move gains a splitter: <code>xor &amp; (-xor)</code> isolates a bit where a and b differ, then the base fold runs on each half.',
+ 'Two survivors instead of one — <code>[a, b]</code>, each read from its own accumulator.'),
+callout:{type:'callout-ok',text:'The move shifted: a partitioning step wraps the base fold so two survivors can be separated. The invariant (parity) and the harvest (read the accumulator) are the base problem\'s — reused whole.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Missing Number — XOR values against indices',desc:'An array of <code>n</code> distinct integers from <code>0..n</code>, one value missing. Fold <strong>both the indices and the values</strong> into one accumulator: every present value pairs with its own index and cancels, and the identity supplies the <strong>phantom partner</strong> for the missing one — its index survives alone.',
+code:{h:'missing_number.py — fold index ^ value',b:`def missing_number(nums):
+    acc = len(nums)             <span class="cm"># seed with index n (no value n)</span>
+    for i, x in enumerate(nums):
+        acc ^= i ^ x            <span class="hi-y"># fold index AND value</span>
+    return <span class="hi-g">acc</span>              <span class="cm"># HARVEST: the unmatched index</span>
+
+<span class="cm"># each present value cancels its own index;
+# the missing number is the one index left
+# without a value partner. O(n) time, O(1).</span>`},
+dia:()=>`<div class="av"><div class="ac">3</div><div class="ac">0</div><div class="ac">1</div></div>
+<div class="ptr-row"><div class="ptr">i=0</div><div class="ptr">i=1</div><div class="ptr">i=2</div></div>
+<div class="av-cap">nums = [3,0,1], indices 0..3. Fold every index AND every value into one acc.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac dead">0,0</div><div class="ac dead">1,1</div><div class="ac dead">3,3</div><div class="ac win">2</div></div>
+<div class="av-cap">values {3,0,1} cancel indices {0,1,3}; index <b>2</b> has no value to pair with &rarr; survives &rarr; <b>missing = 2</b>.</div>`,
+extra:()=>rulesCard('Rules card — missing number',
+ 'Same parity identity over a DOUBLED stream — indices 0..n and values both folded in.',
+ 'One fold, two things per step: <code>acc ^= i ^ x</code>. Present value and its index annihilate.',
+ 'The lone index with no value partner survives in acc — that is the missing number.'),
+callout:{type:'callout-ok',text:'The identity manufactures the missing value\'s partner for free: every real value cancels its index, so the orphaned index is exactly what is absent. Same fold, wider operands.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Counting Bits — an algebra / DP hybrid',desc:'For every number <code>0..n</code>, return its popcount (number of set bits). The bit trick: <code>i &gt;&gt; 1</code> drops the lowest bit, and that shifted number is a <strong>smaller index already solved</strong>; add the dropped bit back with <code>i &amp; 1</code>. Here the invariant leans on a solved subproblem — honestly more DP than pure fold, but the move is pure algebra.',
+code:{h:'count_bits.py — dp[i] = dp[i&gt;&gt;1] + (i&amp;1)',b:`def count_bits(n):
+    dp = [0] * (n + 1)
+    for i in range(1, n + 1):
+        dp[i] = <span class="hi-b">dp[i &gt;&gt; 1]</span> + <span class="hi-y">(i &amp; 1)</span>
+        <span class="cm"># known popcount of i&gt;&gt;1, plus the</span>
+        <span class="cm"># lowest bit that the shift dropped</span>
+    return <span class="hi-g">dp</span>
+
+<span class="cm"># each entry O(1) &rarr; O(n) total, no popcount
+# call needed. dp itself is the O(n) OUTPUT.</span>`},
+dia:()=>`<div class="av"><div class="ac">0</div><div class="ac">1</div><div class="ac">2</div><div class="ac">3</div><div class="ac">4</div><div class="ac">5</div></div>
+<div class="ptr-row"><div class="ptr">000</div><div class="ptr">001</div><div class="ptr">010</div><div class="ptr">011</div><div class="ptr">100</div><div class="ptr">101</div></div>
+<div class="av-cap">index i, shown in binary. Each popcount is built from a smaller, already-known one.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac win">0</div><div class="ac win">1</div><div class="ac win">1</div><div class="ac win">2</div><div class="ac win">1</div><div class="ac win">2</div></div>
+<div class="av-cap">dp = [0,1,1,2,1,2]. e.g. dp[5]: 5=101, 5&gt;&gt;1 = 2 (dp=1), plus 5&amp;1 = 1 &rarr; <b>2</b>.</div>`,
+extra:()=>rulesCard('Rules card — counting bits',
+ 'Invariant shifts to a DP ledger: <code>dp[i]</code> already holds the correct popcount for every index below i.',
+ 'The move is pure bit algebra: <code>dp[i &gt;&gt; 1] + (i &amp; 1)</code> — reuse the shifted-away subproblem, add back the low bit.',
+ 'The whole <code>dp</code> array IS the answer, read after one linear pass; no per-number popcount loop.'),
+callout:{type:'callout-ok',text:'Honest note: this is a fold-meets-DP hybrid — the accumulator is an array of prior answers, not one integer. The bit identity (shift drops a bit, &amp;1 recovers it) is what makes each step O(1).'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Power of Two — erase the lowest set bit',desc:'Is <code>n</code> a power of two? A power of two has <strong>exactly one</strong> set bit. The identity <code>n &amp; (n-1)</code> clears the lowest set bit; if the result is <code>0</code>, that bit was the <em>only</em> one — so <code>n</code> was a power of two. One expression, no loop.',
+code:{h:'is_power_of_two.py — one bit or bust',b:`def is_power_of_two(n):
+    return n &gt; 0 and <span class="hi-y">n &amp; (n - 1)</span> == <span class="hi-g">0</span>
+
+<span class="cm"># n-1 flips the lowest set bit and every bit
+# below it; ANDing n with it erases that
+# lowest set bit. If the result is 0, then
+# exactly ONE bit was set &rarr; a power of two.</span>`},
+dia:()=>`<div class="av"><div class="ac win">1</div><div class="ac dead">0</div><div class="ac dead">0</div><div class="ac dead">0</div></div>
+<div class="av-cap">n = 8 = <code>1000</code>, n-1 = 7 = <code>0111</code>; <code>1000 &amp; 0111 = 0000</code> &rarr; one bit existed &rarr; <b>power of two</b>.</div>
+<div class="av-gap"></div>
+<div class="av"><div class="ac hot">1</div><div class="ac dead">0</div><div class="ac bad2">1</div><div class="ac dead">0</div></div>
+<div class="av-cap">n = 10 = <code>1010</code>, n-1 = 9 = <code>1001</code>; <code>1010 &amp; 1001 = 1000 &ne; 0</code> &rarr; two bits &rarr; <b>not</b>.</div>`,
+extra:()=>rulesCard('Rules card — power of two',
+ 'Invariant is a one-shot bit-count fact: a power of two carries exactly one set bit.',
+ 'The move erases the lowest set bit with <code>n &amp; (n-1)</code> — a single O(1) algebraic op, no loop.',
+ 'Result is 0 &rArr; only one bit existed &rArr; power of two; nonzero &rArr; another bit remained.'),
+callout:{type:'callout-ok',text:'No fold, no array — just one algebraic identity that collapses "count the bits" into a single AND. The same n &amp; (n-1) trick, iterated, is Brian Kernighan\'s popcount.'}
+},
+{phase:'pill-pattern',phaseTxt:'Three O(1)-space patterns, one rulebook',title:'Two Pointers vs. Cyclic Sort vs. Bitwise',desc:'Three patterns, all winning on SPACE rather than big-O, still zero new rules. Watch the invariant migrate from the pointers, into the array, and finally into the bits of a single integer.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Cyclic Sort (Ch.14)</th><th>Bitwise (Ch.27)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td><strong>Settled homes</strong>: value v sits in slot v, settled slots only grow</td><td>An <strong>algebraic identity</strong>: acc = XOR of the values seen an ODD number of times</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>While the cursor is not home, swap it home</td><td><strong>Fold the operator</strong> across the input — one O(1) op each</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>Second pass: the wrong slot exposes the answer</td><td>Read the accumulator — <strong>whatever survived the algebra IS the answer</strong></td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; n swaps — each settles a value; O(1) space</td><td>&le; n folds — one XOR each; <strong>O(1) space</strong></td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, one chapter louder: the RULES are the constant, the IMPLEMENTATION is the variable. Bitwise stores its invariant in the bits of ONE integer — the leanest ledger a pattern has used yet, and often no big-O win at all, just space and elegance.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 27',desc:'Another pattern down. Add bitwise manipulation\'s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               speed-ratio, settled-homes, &hellip;,
+               <span class="hi-b">an algebraic identity in one int
+               (x^x=0, x^0=x): parity of the bits</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, swap-to-home,
+               fast +2 / slow +1, &hellip;,
+               <span class="hi-y">fold the operator across the input
+               (^, or n &amp; (n-1)) — each op O(1)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, second-pass,
+               on-collision / on-exhaustion, &hellip;,
+               <span class="hi-g">read the accumulator — whatever
+               survived the algebra IS the answer</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Bitwise when:</span>
+  duplicates that should CANCEL · a hard
+  "O(1) extra space" clause · parity / count-
+  the-set-bits tricks · a bounded range where
+  values and indices can be XORed together.`},
+dia:null,
+callout:{type:'callout-purple',text:'When duplicates ought to annihilate and memory is forbidden, do not ask "which trick?" Ask: is there an operator I can fold across the input so the pairs cancel and only the answer survives? XOR is that operator, and the pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

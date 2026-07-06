@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 1 — Two Pointers | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Array visualization */
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 36px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); text-decoration: line-through; }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 36px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  /* Rules card — the signature element */
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+
+  /* Summary table */
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 1 — Two Pointers</h1>
+      <p>Grokking Patterns, The Rules Way — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har){
+  return '<div class="rules-card"><div class="rc-h">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Pair with Target Sum',desc:'You are in the interview. Given a <strong>sorted</strong> array of integers and a target, return the indices of the two numbers that add up to the target. Exactly one solution exists. The clock is running.',
+code:{h:'The problem',b:`<span class="cm"># Input:  a SORTED array + a target</span>
+nums   = [1, 2, 3, 4, 6]
+target = 6
+
+<span class="cm"># Output: indices of the pair</span>
+answer = (1, 3)   <span class="cm"># nums[1] + nums[3] = 2 + 4 = 6</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">1</div><div class="ac win">2</div><div class="ac">3</div><div class="ac win">4</div><div class="ac">6</div>
+</div>
+<div class="ptr-row"><div class="ptr">0</div><div class="ptr"><b>1</b></div><div class="ptr">2</div><div class="ptr"><b>3</b></div><div class="ptr">4</div></div>
+<div class="av-cap">2 + 4 = 6 — this is the pair we must find</div>`,
+callout:{type:'callout-ok',text:'Looks easy enough. You have 35 minutes. Go.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — check every pair',desc:'The textbook first instinct: two nested loops, test every possible pair. It is correct, it is simple, and it passes the sample tests.',
+code:{h:'pair_sum.py — the naive attempt',b:`def pair_sum(nums, target):
+    for i in range(len(nums)):
+        <span class="hi-r">for j in range(i + 1, len(nums)):</span>
+            if nums[i] + nums[j] == target:
+                return (i, j)
+
+<span class="cm"># Every i is paired with every j after it.
+# Correct answer. Textbook code. Ship it?</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">1</div><div class="ac">2</div><div class="ac">3</div><div class="ac">4</div><div class="ac">6</div>
+</div>
+<div class="av-cap">i fixed at 0 &rarr; j tries 1, 2, 3, 4</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">1</div><div class="ac hot">2</div><div class="ac">3</div><div class="ac">4</div><div class="ac">6</div>
+</div>
+<div class="av-cap">then i = 1 &rarr; j tries 2, 3, 4 &hellip; and so on.<br>Every pair gets tested: n&middot;(n&minus;1)/2 comparisons.</div>`,
+callout:{type:'callout-ok',text:'All sample tests pass. Life is good... for about ninety seconds.'}
+},
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'Time Limit Exceeded',desc:'The hidden test has a million elements. And then the interviewer asks the question that stings: <em>"The array is sorted. Did you use that anywhere?"</em>',
+code:{h:'The wall',b:`n = 10<span class="cm">^</span>6  &rarr;  n&middot;(n-1)/2  &asymp;  <span class="hi-r">5 &times; 10^11 pairs</span>
+
+<span class="cm"># At ~10^8 simple ops per second:
+#   &asymp; 83 minutes of compute.  TLE.</span>
+
+<span class="cm"># Interviewer: "The array is sorted.
+#               Did you use that anywhere?"</span>
+
+<span class="cm"># We didn't. We treated sorted data like
+# random noise — almost every comparison we
+# ran had an outcome that sortedness had
+# already decided in advance.</span>`},
+dia:null,
+callout:{type:'callout-bad',text:'Brute force does work whose outcome is already known. The structure of the input (sorted!) is information — and we threw it away.'}
+},
+{phase:'pill-fix',phaseTxt:'Fix attempt #1',title:'Throw a hash map at it',desc:'The memorized trick: store what you have seen, look up the complement. O(n) time — problem solved?',
+code:{h:'The hash trick',b:`def pair_sum(nums, target):
+    seen = {}                        <span class="cm"># value &rarr; index</span>
+    for j, x in enumerate(nums):
+        if <span class="hi-g">target - x in seen</span>:       <span class="cm"># O(1) lookup</span>
+            return (seen[target - x], j)
+        seen[x] = j
+
+<span class="cm"># O(n) time... but:</span>
+<span class="hi-y">✗ O(n) extra space</span>
+<span class="hi-y">✗ sortedness STILL unused</span>
+
+<span class="cm"># And then the interviewer mutates the question:</span>
+<span class="hi-r">"Count all pairs with sum LESS than target?"</span>
+<span class="hi-r">"Find the pair CLOSEST to target?"</span>
+<span class="hi-r">"3Sum — no duplicate triplets?"</span>
+<span class="cm"># ...and the trick collapses.</span>`},
+dia:null,
+callout:{type:'callout-warn',text:'A memorized trick answers ONE question. A pattern answers a FAMILY. The moment the question mutates, the trick has nothing to say.'}
+},
+{phase:'pill-ohno',phaseTxt:'We\'re stuck!',title:'Neither approach survives the interview',desc:'Brute force is correct but hopeless. The hash trick is fast but wasteful, blind to sortedness, and brittle under follow-ups. We need all three properties at once.',
+code:{h:'The dilemma',b:`<span class="cm">// BRUTE FORCE:</span>
+<span class="hi-g">✓ Correct, simple</span>
+<span class="hi-r">✗ O(n&sup2;) — dead on real input</span>
+
+<span class="cm">// HASH MAP:</span>
+<span class="hi-g">✓ O(n) time</span>
+<span class="hi-r">✗ O(n) space, ignores sortedness</span>
+<span class="hi-r">✗ collapses when the question mutates</span>
+
+<span class="cm">// We need ALL THREE:
+//   ✓ Fast     — linear, uses the structure
+//   ✓ Lean     — O(1) extra space
+//   ✓ Adaptive — survives follow-up mutations
+//
+// Time for rules...</span>`},
+dia:null,
+callout:{type:'callout-bad',text:'Speed alone is not the goal. We need an APPROACH that adapts when the question changes — and that requires rules, not tricks.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1',title:'Name the invariant',desc:'Place <code>l</code> at the start and <code>r</code> at the end. Now make a promise — a property that will be true after <strong>every single step</strong>, no matter what. This promise is the actual pattern; the code is just bookkeeping.',
+code:{h:'The promise',b:`l, r = 0, len(nums) - 1
+
+<span class="cm"># INVARIANT — true after EVERY step:</span>
+<span class="hi-b">#  "If an answer pair exists, BOTH of its
+#   elements lie inside nums[l..r]."</span>
+
+<span class="cm"># Corollary: anything outside [l, r] has been
+# PROVEN unable to participate.
+# Not skipped. Not guessed away. Proven.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac live">4</div><div class="ac live">6</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>r</b></div></div>
+<div class="av-cap">At the start the promise is trivially true:<br>the answer — if it exists — is somewhere in [l, r].</div>`,
+callout:{type:'callout-info',text:'The invariant is a promise. But a promise alone doesn\'t move — how do we make progress WITHOUT ever breaking it? →'},
+principle:{lbl:'Rule #1 — Name the invariant',txt:'Before writing a line of code, state the property that holds after every step. The invariant IS the pattern. The code is just bookkeeping that preserves it.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2',title:'Define the move',desc:'One deterministic step. It must (a) make <strong>irreversible progress</strong> and (b) <strong>preserve the invariant</strong> — which means each discard needs a one-line proof.',
+code:{h:'The move — with proofs attached',b:`s = nums[l] + nums[r]
+
+if s < target:
+    <span class="cm"># nums[r] is the LARGEST partner nums[l]
+    # will ever get. Even that was too small.</span>
+    <span class="hi-y"># &rarr; nums[l] can be in NO answer. Retire it.</span>
+    l += 1        <span class="cm"># invariant preserved ✓</span>
+
+elif s > target:
+    <span class="cm"># nums[l] is the SMALLEST partner nums[r]
+    # will ever get. Even that was too big.</span>
+    <span class="hi-y"># &rarr; nums[r] can be in NO answer. Retire it.</span>
+    r -= 1        <span class="cm"># invariant preserved ✓</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac live">4</div><div class="ac live">6</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>r</b></div></div>
+<div class="av-cap">1 + 6 was compared against target... suppose it fell short.<br>Then 1 is retired FOREVER — with a proof, not a guess.<br>Each step kills exactly one element &rarr; at most n steps &rarr; <b>O(n)</b>.</div>`,
+callout:{type:'callout-info',text:'The proof that discarded work can never hide the answer IS your correctness argument — and it doubles as your complexity bound. One question left: when do we actually grab the answer? →'},
+principle:{lbl:'Rule #2 — Define the move',txt:'Define one deterministic step that (a) makes irreversible progress and (b) preserves the invariant. If you cannot say in one line WHY the discard is safe, you do not have a move yet.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3',title:'Mark the harvest',desc:'There is an exact moment when a candidate answer becomes visible. Record it <strong>at that moment</strong> — because the move will destroy the evidence.',
+code:{h:'The harvest — and where it lives in variants',b:`else:   <span class="cm"># s == target</span>
+    <span class="hi-g">return (l, r)</span>       <span class="cm"># HARVEST — grab it NOW</span>
+
+<span class="cm"># Same skeleton, different harvest placements:</span>
+
+<span class="cm"># "Pair CLOSEST to target"</span>
+<span class="hi-g">best = min(best, abs(s - target))</span>  <span class="cm"># EVERY step,
+                                     # before moving</span>
+
+<span class="cm"># "COUNT pairs with sum &lt; target"</span>
+if s < target:
+    <span class="hi-g">count += (r - l)</span>   <span class="cm"># l pairs with EVERYTHING
+                       # in (l, r] — all at once</span>
+    l += 1`},
+dia:null,
+callout:{type:'callout-info',text:'Notice what just happened: the follow-up mutations that killed the hash trick are now ONE-LINE edits — you only relocate the harvest. The invariant and the move don\'t change at all.'},
+principle:{lbl:'Rule #3 — Mark the harvest',txt:'Identify the exact moment a candidate answer becomes visible, and record it then. The move always destroys evidence — windows shrink, elements retire, pointers pass. Harvest before you move.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete solution, with each line labeled by the rule it serves. Follow the trace: three steps, done.',
+code:{h:'pair_sum.py — final',b:`def pair_sum(nums, target):
+    l, r = 0, len(nums) - 1     <span class="cm"># INVARIANT set up</span>
+    while l < r:
+        s = nums[l] + nums[r]
+        if s == target:
+            <span class="hi-g">return (l, r)</span>       <span class="cm"># HARVEST</span>
+        if s < target:
+            <span class="hi-y">l += 1</span>              <span class="cm"># MOVE + proof</span>
+        else:
+            <span class="hi-y">r -= 1</span>              <span class="cm"># MOVE + proof</span>
+    return None
+
+<span class="cm"># O(n) time · O(1) space · sortedness fully spent</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac live">4</div><div class="ac live">6</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>r</b></div></div>
+<div class="av-cap">1 + 6 = 7 &gt; 6 &rarr; retire 6 (r&minus;&minus;)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">1</div><div class="ac live">2</div><div class="ac live">3</div><div class="ac live">4</div><div class="ac dead">6</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>r</b></div><div class="ptr"></div></div>
+<div class="av-cap">1 + 4 = 5 &lt; 6 &rarr; retire 1 (l++)</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">1</div><div class="ac win">2</div><div class="ac live">3</div><div class="ac win">4</div><div class="ac dead">6</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"><b>r</b></div><div class="ptr"></div></div>
+<div class="av-cap">2 + 4 = 6 = target &rarr; <b>HARVEST (1, 3)</b></div>`,
+callout:{type:'callout-ok',text:'Three comparisons instead of ten. On a million elements: a million steps instead of five hundred billion.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Converging pointers — Container With Most Water',desc:'Two lines hold water; maximize area between them. The skeleton is identical to pair sum — <strong>only the MOVE\'s proof changes</strong>, and the harvest fires every step.',
+code:{h:'max_area.py',b:`def max_area(h):
+    l, r = 0, len(h) - 1
+    best = 0
+    while l < r:
+        <span class="hi-g">best = max(best,
+             (r - l) * min(h[l], h[r]))</span>  <span class="cm"># HARVEST first</span>
+        if h[l] < h[r]:
+            <span class="hi-y">l += 1</span>   <span class="cm"># MOVE: retire the SHORTER wall.
+             # Keeping it, the width only shrinks
+             # and the height stays capped by it
+             # &rarr; it can never do better. Proven.</span>
+        else:
+            <span class="hi-y">r -= 1</span>
+    return best`},
+dia:null,
+extra:()=>rulesCard('Rules card — converging, different move proof',
+ 'The best container not yet harvested still has both walls inside <code>[l, r]</code>.',
+ 'Retire the <strong>shorter</strong> wall: with any narrower width its area is already capped — a one-line proof, just a different one.',
+ 'Every step, <strong>before</strong> the move — the width shrinks each iteration, so today\'s candidate is gone tomorrow.'),
+callout:{type:'callout-ok',text:'Same invariant shape, same convergence, same O(n). The only thing you had to re-derive was the one-line proof inside the move.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Reader / writer — Remove Duplicates in place',desc:'Both pointers now run in the <strong>same direction</strong>. The code looks nothing like pair sum — but check the rules card: all three rules are right there, wearing different clothes.',
+code:{h:'dedupe.py — sorted input, O(1) space',b:`def dedupe(nums):
+    w = 1                        <span class="cm"># writer</span>
+    for r in range(1, len(nums)):     <span class="cm"># reader</span>
+        if nums[r] != nums[w - 1]:
+            <span class="hi-g">nums[w] = nums[r]</span>    <span class="cm"># settle it — final</span>
+            w += 1
+    return w   <span class="cm"># length of the deduped prefix</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">2</div><div class="ac win">3</div><div class="ac live">3</div><div class="ac live">6</div><div class="ac live">9</div><div class="ac live">9</div>
+</div>
+<div class="ptr-row"><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>w</b></div><div class="ptr"><b>r</b></div><div class="ptr"></div><div class="ptr"></div></div>
+<div class="av-cap">Green prefix [0..w) is the FINAL answer so far — settled, never touched again.<br>The reader scouts ahead; the writer only advances when a new value earns a slot.</div>`,
+extra:()=>rulesCard('Rules card — reader/writer',
+ '<code>nums[0..w)</code> is the final, deduplicated answer — settled and never touched again.',
+ 'The reader <strong>always</strong> advances (irreversible); the writer advances only when a new value earns a slot.',
+ 'The array itself: every write is final. Return <code>w</code> at the end.'),
+callout:{type:'callout-ok',text:'Same-direction pointers, completely different-looking code — yet the invariant, the move, and the harvest are all present and accounted for.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Two ends &rarr; output — Squares of a Sorted Array',desc:'A sorted array with negatives; return the sorted squares. Largest squares live at the <strong>ends</strong> — so compare the ends and fill the output <strong>from the back</strong>.',
+code:{h:'sorted_squares.py',b:`def sorted_squares(nums):
+    n = len(nums)
+    out = [0] * n
+    l, r, k = 0, n - 1, n - 1
+    while l <= r:
+        a, b = nums[l]**2, nums[r]**2
+        if a > b:
+            <span class="hi-g">out[k] = a</span>; <span class="hi-y">l += 1</span>   <span class="cm"># MOVE: bigger end
+                               # is the global max
+                               # of what remains</span>
+        else:
+            <span class="hi-g">out[k] = b</span>; <span class="hi-y">r -= 1</span>
+        k -= 1                 <span class="cm"># every write = HARVEST</span>
+    return out`},
+dia:()=>`<div class="av">
+  <div class="ac live">-4</div><div class="ac live">-1</div><div class="ac live">0</div><div class="ac live">3</div><div class="ac live">5</div>
+</div>
+<div class="ptr-row"><div class="ptr"><b>l</b></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"></div><div class="ptr"><b>r</b></div></div>
+<div class="av-cap">16 vs 25 &rarr; 25 wins &rarr; placed at out[4], final</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">_</div><div class="ac">_</div><div class="ac">_</div><div class="ac win">16</div><div class="ac win">25</div>
+</div>
+<div class="av-cap">out: the green suffix is settled forever — the invariant lives in the OUTPUT now</div>`,
+extra:()=>rulesCard('Rules card — two ends into output',
+ '<code>out[k+1..]</code> already holds the largest squares in final position; everything unplaced still lies within <code>nums[l..r]</code>.',
+ 'The bigger of the two ends is the global max of what remains — place it, retire it. One-line proof.',
+ 'Every single step: each write into <code>out</code> is permanent.'),
+callout:{type:'callout-ok',text:'The invariant even changed WHERE it lives — from the input to the output — and the pattern didn\'t blink.'}
+},
+{phase:'pill-pattern',phaseTxt:'The Pattern',title:'Two Pointers — the complete picture',desc:'You just built the <strong>Two Pointers pattern</strong> — four times. Four bodies of code that look nothing alike, held together by three rules that never changed.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Variation</th><th class="col-inv">Invariant</th><th class="col-mov">Move</th><th class="col-har">Harvest</th></tr>
+<tr><td>Converging<br><span style="font-weight:400;color:var(--text-tertiary)">pair sum</span></td><td class="col-inv">answer lies inside [l, r]</td><td class="col-mov">retire the end that is provably useless</td><td class="col-har">the moment the predicate fires</td></tr>
+<tr><td>Converging<br><span style="font-weight:400;color:var(--text-tertiary)">max water</span></td><td class="col-inv">best pair still inside [l, r]</td><td class="col-mov">retire the shorter wall (new proof)</td><td class="col-har">every step, before moving</td></tr>
+<tr><td>Reader / writer<br><span style="font-weight:400;color:var(--text-tertiary)">dedupe</span></td><td class="col-inv">prefix [0..w) is final</td><td class="col-mov">reader always; writer on merit</td><td class="col-har">every write is final</td></tr>
+<tr><td>Ends &rarr; output<br><span style="font-weight:400;color:var(--text-tertiary)">sorted squares</span></td><td class="col-inv">suffix of out is final</td><td class="col-mov">take the bigger end</td><td class="col-har">every write is final</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Three rules, one pattern: (1) NAME THE INVARIANT — the property that survives every step. (2) DEFINE THE MOVE — irreversible progress with a one-line safety proof, which doubles as your complexity bound. (3) MARK THE HARVEST — grab the answer the instant it is visible, before the move destroys it. Next chapter: Sliding Window keeps ALL THREE rules and changes every implementation — the invariant moves INSIDE the pointers, the move becomes expand-and-repair, and the harvest relocates depending on the variant.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next \u2192';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

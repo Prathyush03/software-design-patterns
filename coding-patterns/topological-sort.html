@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 15 — Topological Sort | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 15 — Topological Sort</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Course Schedule II',desc:'New shape of data: a set of courses <code>0..n-1</code> and a list of prerequisite pairs. Pair <code>[a, b]</code> means <strong>you must take b before a</strong>. Return ANY order that lets you finish every course — or <code>[]</code> if it is impossible. The gift hiding in plain sight: <strong>dependencies form a directed graph</strong>.',
+code:{h:'The problem',b:`numCourses = 4
+prerequisites = [[1,0],[2,0],
+                 [3,1],[3,2]]
+<span class="cm"># pair [a, b] = take b BEFORE a</span>
+
+<span class="cm"># return ANY valid order:</span>
+find_order(4, prereqs)
+  <span class="cm"># &rarr; [0, 1, 2, 3]  (or [0, 2, 1, 3])</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">0</div><div class="ac">1</div><div class="ac">2</div><div class="ac">3</div>
+</div>
+<div class="av-cap">4 courses. Edges <code>0&rarr;1</code>, <code>0&rarr;2</code>, <code>1&rarr;3</code>, <code>2&rarr;3</code> (arrow = &ldquo;unlocks&rdquo;).<br>Indegrees: 0:0 &middot; 1:1 &middot; 2:1 &middot; 3:2. Only course <code>0</code> is free to start.</div>`,
+callout:{type:'callout-info',text:'Dependencies form a directed graph. If it is acyclic (a DAG) an order exists; if it hides a cycle, none can. Hold that: the graph structure IS the problem.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — try every ordering',desc:'The obvious idea: generate every permutation of the courses; for each, check that every prerequisite is respected; return the first that passes. Correct, dead simple, passes the samples.',
+code:{h:'find_order.py — the naive attempt',b:`from itertools import permutations
+
+def find_order(n, prereqs):
+    <span class="cm"># try EVERY ordering of the courses</span>
+    for order in permutations(range(n)):
+        pos = {c: i for i, c in enumerate(order)}
+        if all(pos[b] &lt; pos[a]         <span class="cm"># b before a?</span>
+               for a, b in prereqs):
+            return list(order)          <span class="cm"># first legal wins</span>
+    return []                           <span class="cm"># none &rarr; a cycle</span>
+
+<span class="cm"># n = 20 &rarr; 20! &approx; 2.4e18 orders &rarr; hopeless</span>`},
+dia:()=>`<div class="av">
+  <div class="ac bad2">1</div><div class="ac">0</div><div class="ac">2</div><div class="ac">3</div>
+</div>
+<div class="av-cap">try [1,0,2,3]: but <code>1</code> needs <code>0</code> first &rarr; illegal, discard.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac win">1</div><div class="ac win">2</div><div class="ac win">3</div>
+</div>
+<div class="av-cap">try [0,1,2,3]: every prerequisite holds &rarr; legal.<br>But we may sift through up to <code>n!</code> orders to reach it.</div>`,
+callout:{type:'callout-ok',text:'It is correct — it always finds an order when one exists. But it validates orders WHOLESALE at the end and blindly enumerates all n! of them. The pain here is a factorial big-O, pure and simple.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'The earlier chapters handed us three rules. This brute force is exponentially slow — so audit it against them: the factorial cost is not bad luck, it is the direct signature of three broken rules.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> No property is maintained as courses are placed. A partial order is never KNOWN to be legal until the whole permutation is checked at the end — so nothing can be pruned, and every dead branch is explored in full.',
+ '<span class="viol">&#10007; VIOLATED.</span> Appending the next course in a permutation is not a safe step: it ignores whether that course is actually FREE (all its prerequisites already placed). Most of the n! branches are dead from the first pick, yet we still generate them.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> The legality check fires only after a FULL ordering exists — the answer is read once per complete permutation, never incrementally, so it cannot cut the search short.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force never maintains a legality invariant, so its move cannot be safe and its harvest cannot be early. We need a new IMPLEMENTATION of the same three rules, not a new idea.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant is a partition of the nodes',desc:'Stop guessing orderings. Track one number per course — its <strong>indegree</strong>, the count of prerequisites not yet placed — and maintain a single fact: <strong>the queue holds exactly the currently-free (indegree-0) nodes, and everything already emitted is legal by construction.</strong>',
+code:{h:'The promise — a live partition',b:`indeg = [0]*n                    <span class="cm"># unmet prereqs / node</span>
+
+<span class="hi-b"># INVARIANT — true after every emit:</span>
+<span class="hi-b">#  the emitted prefix violates NO dependency,</span>
+<span class="hi-b">#  and the queue = exactly the nodes whose</span>
+<span class="hi-b">#  indegree is now 0 (all prereqs placed).</span>
+
+<span class="cm"># Nodes split three ways at all times:</span>
+<span class="cm">#  emitted &middot; free (in queue) &middot; blocked.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">free = {0} &rarr; queue. blocked = {1,2,3}. emitted = [].<br>Ch.2's invariant was a legal window; Ch.3's a speed ratio;<br>here it is a <b>partition</b>: emitted / free-frontier / blocked.</div>`,
+callout:{type:'callout-info',text:'Same rule as every chapter: name what stays true after each step. Here it is neither a region nor a ratio — it is "the queue holds precisely the free nodes, and everything emitted is already legal."'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a PARTITION of the nodes — already-emitted, currently-free (the queue is exactly the indegree-0 nodes), and still-blocked. The emitted prefix is legal by construction, so nothing ever needs re-checking.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: pop a free node, cut its edges',desc:'Each step, pop one node from the queue, emit it, and decrement the indegree of every child; any child whose count reaches 0 becomes free and joins the queue. Why it is irreversible progress: <strong>an emitted node never returns, and each edge is decremented exactly once</strong> — which is also the whole complexity proof.',
+code:{h:'The move — relax one edge at a time',b:`node = q.popleft()          <span class="cm"># take any free node</span>
+order.append(node)          <span class="cm"># emit it (irreversible)</span>
+for nxt in adj[node]:       <span class="cm"># cut each out-edge ONCE</span>
+    indeg[nxt] -= 1
+    <span class="hi-y">if indeg[nxt] == 0:     # child now free</span>
+        <span class="hi-y">q.append(nxt)       # &rarr; joins the queue</span>
+
+<span class="cm"># PROOF: each EDGE is decremented exactly once,</span>
+<span class="cm"># each NODE enqueued once &rarr; O(V + E) total.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">0</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">pop <code>0</code> (amber) — emit it, then walk its out-edges 0&rarr;1, 0&rarr;2.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac live">1</div><div class="ac live">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">indeg[1]:1&rarr;0, indeg[2]:1&rarr;0 &rarr; both join the queue. Each edge cut once.</div>`,
+callout:{type:'callout-info',text:'Ch.3\'s move advanced two pointers; here the move consumes one node and relaxes its out-edges. The one-line proof — every edge decremented once — is literally the complexity: O(V + E).'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: pop a free node, emit it, decrement every child; a child hitting indegree 0 joins the queue. Irreversibility: an emitted node never returns and each edge is relaxed exactly once — that single fact is the O(V+E) bound.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest IS the emission',desc:'No separate answer-extraction phase. The moment a node is popped free, <strong>appending it to the order IS the harvest</strong> — grab it now, because one step later its out-edges are already cut and it is indistinguishable from any other placed node. And the leftover count is a free cycle-detector.',
+code:{h:'The harvest — emit now, count later',b:`order.append(node)   <span class="hi-g"># HARVEST: emitting IS the answer</span>
+<span class="cm">#          — grabbed at pop-time, in the</span>
+<span class="cm">#          very step it becomes free.</span>
+
+<span class="cm"># ...and the TWIN harvest, after the loop:</span>
+<span class="hi-g">return order if len(order) == n else []</span>
+<span class="cm"># emitted &lt; n &rarr; some node never freed</span>
+<span class="cm">#            &rarr; a CYCLE &rarr; no valid order.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.1 harvested when a value predicate fired; here the harvest is the emit itself — read the node the instant it becomes free. And the leftover count is a built-in cycle test: fewer than n emitted means no order exists at all.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the harvest is the emission — append at the exact moment a node is popped free; one step later its edges are already cut and the evidence is gone. The twin harvest is the final count: emitted &lt; n means a cycle blocked the rest.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together — Kahn\'s algorithm',desc:'The complete topological sort: build indegrees, seed the queue with every free node, then drain it. The factorial that killed the brute force is gone — each node and edge is touched exactly once.',
+code:{h:'find_order.py — final (Kahn / BFS)',b:`from collections import deque
+
+def find_order(n, prereqs):
+    indeg = [0] * n
+    adj = [[] for _ in range(n)]
+    for a, b in prereqs:              <span class="cm"># edge b &rarr; a</span>
+        adj[b].append(a); indeg[a] += 1
+    <span class="hi-b">q = deque(i for i in range(n) if indeg[i] == 0)</span>
+    order = []
+    while q:
+        node = q.popleft()            <span class="cm"># MOVE: a free node</span>
+        order.append(node)            <span class="hi-g"># HARVEST: emit now</span>
+        for nxt in adj[node]:
+            indeg[nxt] -= 1
+            <span class="hi-y">if indeg[nxt] == 0: q.append(nxt)</span>
+    return order if len(order) == n else []   <span class="cm"># &lt; n &rarr; cycle</span>
+
+<span class="cm"># O(V + E) time &middot; O(V + E) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">0</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">seed: queue = [0] (only indegree-0 node). order = []</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac live">1</div><div class="ac live">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">emit 0 &rarr; free 1 &amp; 2. order = [0]. queue = [1, 2]</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac win">1</div><div class="ac win">2</div><div class="ac win">3</div>
+</div>
+<div class="av-cap">emit 1, then 2 &rarr; frees 3 &rarr; emit 3. order = [0,1,2,3]. count = 4 = n &rarr; valid.</div>`,
+callout:{type:'callout-ok',text:'The brute force ground through up to n! orderings; Kahn\'s algorithm touches each node and edge once — O(V + E). The factorial collapsed the instant we kept a legality invariant instead of checking it at the end.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Course Schedule — can you finish at all?',desc:'The lighter question: not the order, just whether ALL courses are finishable. Keep the identical invariant and move; the only change is the <strong>harvest shrinks to a counter</strong> — did everyone get placed?',
+code:{h:'can_finish.py — harvest is just a count',b:`def can_finish(n, prereqs):
+    indeg = [0]*n; adj = [[] for _ in range(n)]
+    for a, b in prereqs:
+        adj[b].append(a); indeg[a] += 1
+    q = deque(i for i in range(n) if indeg[i] == 0)
+    seen = 0
+    while q:
+        node = q.popleft(); seen += 1   <span class="hi-g"># HARVEST: just COUNT</span>
+        for nxt in adj[node]:
+            indeg[nxt] -= 1
+            if indeg[nxt] == 0: q.append(nxt)
+    return seen == n        <span class="cm"># all placed &rarr; no cycle</span>`},
+dia:()=>`<div class="av">
+  <div class="ac win">0</div><div class="ac win">1</div><div class="ac win">2</div>
+</div>
+<div class="av-cap">DAG 0&rarr;1&rarr;2: emit all 3 &rarr; seen = 3 = n &rarr; <b>can finish</b>.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac bad2">0</div><div class="ac bad2">1</div>
+</div>
+<div class="av-cap">cycle 0&rarr;1&rarr;0: no node ever reaches indegree 0 &rarr; queue starts empty &rarr; seen = 0 &lt; 2 &rarr; <b>cannot</b>.</div>`,
+extra:()=>rulesCard('Rules card — course schedule (can finish?)',
+ 'Identical partition: queue = indegree-0 nodes — but we keep only a COUNTER, never the order list.',
+ 'Identical — pop a free node, decrement its children, enqueue any new zeros.',
+ 'Shifted: nothing is emitted. The harvest is a single test, <code>seen == n</code>. The count IS the answer.'),
+callout:{type:'callout-ok',text:'Only the harvest changed — from "record the order" to "count that everyone got placed." Same invariant, same move. This is the leanest topo-sort: a yes/no verdict on the cycle.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Alien Dictionary — build the graph first',desc:'Given words sorted in an unknown alphabet, recover a letter order. There is no graph handed to you: <strong>you must BUILD it</strong> by comparing adjacent words — the first differing letter gives one precedence edge — and only then run the base algorithm.',
+code:{h:'alien_order.py — construct, then Kahn',b:`def alien_order(words):
+    adj = {c: set() for w in words for c in w}
+    indeg = {c: 0 for c in adj}
+    for w1, w2 in zip(words, words[1:]):   <span class="cm"># adjacent pair</span>
+        for a, b in zip(w1, w2):
+            if a != b:                      <span class="cm"># first diff = edge</span>
+                if b not in adj[a]:
+                    adj[a].add(b); indeg[b] += 1
+                break                        <span class="cm"># only the FIRST diff</span>
+    q = deque(c for c in indeg if indeg[c] == 0)
+    out = []
+    while q:                                 <span class="cm"># then base Kahn</span>
+        c = q.popleft(); out.append(c)
+        for d in adj[c]:
+            indeg[d] -= 1
+            if indeg[d] == 0: q.append(d)
+    return "".join(out) if len(out) == len(indeg) else ""`},
+dia:()=>`<div class="av">
+  <div class="ac">w</div><div class="ac">r</div><div class="ac">t</div><div class="ac">f</div><div class="ac">e</div>
+</div>
+<div class="av-cap">words: <code>wrt, wrf, er, ett, rftt</code>. Compare each adjacent pair;<br>first differing letter gives one edge: <code>t&rarr;f</code>, <code>w&rarr;e</code>, <code>r&rarr;t</code>, <code>e&rarr;r</code>.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">w</div><div class="ac win">e</div><div class="ac win">r</div><div class="ac win">t</div><div class="ac win">f</div>
+</div>
+<div class="av-cap">then run base Kahn on that graph &rarr; order <code>w e r t f</code>.</div>`,
+extra:()=>rulesCard('Rules card — alien dictionary (build then sort)',
+ 'Same partition invariant — but the graph does not exist yet; it is BUILT from adjacent-word comparisons first.',
+ 'Two phases: (1) each adjacent pair contributes one edge at its first differing char; (2) the identical Kahn move.',
+ 'Emit letters in order; if fewer than all distinct letters come out, the ordering was contradictory (a cycle) &rarr; return "".'),
+callout:{type:'callout-ok',text:'The pattern was never about courses. The hard part here is RECOGNIZING that letter precedence is a dependency graph. Build the edges, then the same three rules finish the job.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Minimum Height Trees — peel the leaves inward',desc:'Given an undirected tree, find every root that minimizes the tree\'s height (there are 1 or 2). Invert the machinery: <strong>the queue holds current LEAVES (degree 1), not sources</strong>, and you peel a whole layer at a time until 1-2 nodes remain — the centers.',
+code:{h:'min_height_trees.py — inverted Kahn',b:`def min_height_trees(n, edges):
+    if n == 1: return [0]
+    adj = [set() for _ in range(n)]
+    for a, b in edges:
+        adj[a].add(b); adj[b].add(a)
+    <span class="hi-b"># INVARIANT: queue = current LEAVES (degree 1)</span>
+    leaves = deque(i for i in range(n) if len(adj[i]) == 1)
+    remaining = n
+    while remaining &gt; 2:            <span class="cm"># peel to 1-2 centers</span>
+        remaining -= len(leaves)
+        for _ in range(len(leaves)):
+            leaf = leaves.popleft()
+            nb = adj[leaf].pop()     <span class="cm"># its one neighbor</span>
+            adj[nb].discard(leaf)
+            if len(adj[nb]) == 1:    <span class="cm"># neighbor now a leaf</span>
+                leaves.append(nb)
+    return list(leaves)              <span class="hi-g"># HARVEST: last layer</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">0</div><div class="ac hot">1</div><div class="ac hot">2</div><div class="ac">3</div><div class="ac">4</div><div class="ac hot">5</div>
+</div>
+<div class="av-cap">tree: 0,1,2&mdash;3, 3&mdash;4, 4&mdash;5. Layer-1 leaves (degree 1): <code>0,1,2,5</code> (amber).</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">0</div><div class="ac dead">1</div><div class="ac dead">2</div><div class="ac win">3</div><div class="ac win">4</div><div class="ac dead">5</div>
+</div>
+<div class="av-cap">peel that layer &rarr; only <code>3, 4</code> remain (&le; 2) &rarr; the tree's centers.</div>`,
+extra:()=>rulesCard('Rules card — minimum height trees (peel leaves)',
+ 'Inverted partition: the queue holds current LEAVES (degree 1), not sources. Peeling never changes which nodes are central.',
+ 'Remove a whole leaf-layer at once; a neighbor dropping to degree 1 becomes the next layer\'s leaf. Each edge removed once.',
+ 'Stop when &le; 2 nodes remain — that final layer IS the 1 or 2 centers.'),
+callout:{type:'callout-ok',text:'Same machinery, flipped: instead of draining indegree-0 SOURCES, we peel degree-1 LEAVES inward. The harvest is not an emission order — it is whoever survives the peeling.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'All Topological Orders — hybridize with backtracking',desc:'Enumerate EVERY valid order, not just one. The deterministic pop becomes a choice: <strong>try each free node, recurse, then undo</strong>. The move gains a mirror-image un-move so a sibling branch sees the same free set.',
+code:{h:'all_orders.py — topo-sort + backtracking',b:`def all_orders(n, prereqs):
+    indeg = [0]*n; adj = [[] for _ in range(n)]
+    for a, b in prereqs:
+        adj[b].append(a); indeg[a] += 1
+    res, path = [], []
+
+    def backtrack():
+        if len(path) == n:
+            res.append(path[:]); return   <span class="hi-g"># HARVEST a full order</span>
+        for v in range(n):
+            if indeg[v] == 0:             <span class="cm"># v is free &amp; unused</span>
+                indeg[v] = -1             <span class="hi-y"># CHOOSE: mark used</span>
+                for w in adj[v]: indeg[w] -= 1
+                path.append(v)
+                backtrack()
+                path.pop()                <span class="hi-y"># UNCHOOSE: restore</span>
+                for w in adj[v]: indeg[w] += 1
+                indeg[v] = 0
+    backtrack()
+    return res`},
+dia:()=>`<div class="av">
+  <div class="ac win">0</div><div class="ac live">1</div><div class="ac live">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">after emitting <code>0</code>, TWO nodes are free: <code>1</code> and <code>2</code>. Branch on the choice.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">0</div><div class="ac win">1</div><div class="ac win">2</div><div class="ac win">3</div>
+</div>
+<div class="av-cap">choose 1&rarr;2&rarr;3 gives [0,1,2,3]; unchoose, choose 2 first gives [0,2,1,3].</div>`,
+extra:()=>rulesCard('Rules card — all topological orders (backtracking)',
+ 'Same partition, but now REVERSIBLE: after exploring a choice we restore indegrees so a sibling choice sees the same free set.',
+ 'CHOOSE any free node (mark used, decrement children) &rarr; recurse &rarr; UNCHOOSE (restore). The queue becomes a for-loop over all free nodes.',
+ 'Harvest a whole order each time the path length hits n; collect every one instead of returning the first.'),
+callout:{type:'callout-ok',text:'Enumerating ALL orders hybridizes topo-sort with Backtracking: the single deterministic pop becomes "try every free node, then undo." The move grows a mirror-image un-move; the invariant and harvest hold.'}
+},
+{phase:'pill-pattern',phaseTxt:'Same rulebook, a graph this time',title:'Sliding Window vs. Fast & Slow vs. Topological Sort',desc:'Different chapters, different structures — an array window, two linked-list walkers, a directed graph — and still zero new rules. Watch the invariant reshape to fit each structure while the three roles stay fixed.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Sliding Window (Ch.2)</th><th>Fast &amp; Slow (Ch.3)</th><th>Topological Sort (Ch.15)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The legal <strong>window</strong> + O(1) aux state</td><td>A fixed <strong>speed ratio</strong> between two walkers</td><td>A <strong>partition</strong>: emitted / free-frontier / blocked — the queue is exactly the indegree-0 nodes</td></tr>
+<tr><td class="col-mov">Move</td><td>Expand always, repair to restore</td><td><code>fast += 2</code>, <code>slow += 1</code></td><td>Pop a free node, emit, decrement children; each <strong>edge cut once</strong></td></tr>
+<tr><td class="col-har">Harvest</td><td>After repair / during shrink</td><td>On collision or exhaustion</td><td>The <strong>emission</strong> itself; count &lt; n at the end &rarr; a cycle</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; 2n</td><td>&le; n &middot; O(1) space</td><td>O(V + E) &mdash; every node &amp; edge touched once</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, fifteen chapters on: the RULES are the constant, the IMPLEMENTATION is the variable. Topological sort\'s invariant is a partition of a graph; its move relaxes one edge; its harvest is the emission — but it is still Rule 1, Rule 2, Rule 3.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 15',desc:'Add topological sort\'s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>, so the next dependency problem names itself.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property true after every step.</span>
+  topo-sort: a PARTITION of the nodes —
+    emitted &middot; free (queue = indegree-0)
+    &middot; blocked; the emitted prefix is legal.
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line proof.</span>
+  topo-sort: pop a free node, emit it,
+    decrement each child; a child hitting 0
+    joins the queue. Each edge cut once
+    &rarr; O(V + E).
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it appears.</span>
+  topo-sort: the EMISSION is the harvest;
+    emitted &lt; n at the end &rarr; a cycle,
+    so no valid order exists.
+
+<span class="cm">RECOGNITION SIGNAL — reach for Topological Sort when:</span>
+  prerequisites / dependencies / "build order" /
+  "can all courses be finished" / ordering under
+  constraints on a directed graph (a DAG).`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem asks for an order that respects dependencies — or merely whether one exists — do not hand-roll a search. Ask: what are the nodes, what are the edges, which start free? Drain the indegree-0 frontier and the order writes itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

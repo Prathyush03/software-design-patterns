@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 18 — Stacks | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 18 — Stacks</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Daily Temperatures',desc:'New chapter, new shape of data. Given an array <code>temps</code> of daily temperatures, return <code>answer</code> where <code>answer[i]</code> is how many days you must wait after day <code>i</code> for a <strong>warmer</strong> temperature. If none ever comes, leave <code>0</code>. The structural gift: every day is resolved by <strong>the first later day that beats it</strong>.',
+code:{h:'The problem',b:`temps  = [73, 74, 75, 71, 69, 72, 76, 73]
+answer = [ 1,  1,  4,  2,  1,  1,  0,  0]
+
+<span class="cm"># day 0 (73): day 1 is warmer   &rarr; wait 1
+# day 2 (75): warmer only day 6  &rarr; 4
+# day 6 (76): nothing hotter after &rarr; 0</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">73</div><div class="ac">74</div><div class="ac">75</div><div class="ac">71</div><div class="ac">69</div><div class="ac">72</div><div class="ac">76</div><div class="ac">73</div>
+</div>
+<div class="av-cap">eight days of temperatures. Each day waits for the <b>first</b> later day that is warmer &mdash;<br>a cold run like 75,71,69 all wait on the same future spike.</div>`,
+callout:{type:'callout-ok',text:'Each element is answered by the FIRST later element that dominates it. Hold that phrase — "first later one that beats it" is the whole recognition signal for this chapter.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — rescan forward from every day',desc:'The obvious idea: for each day <code>i</code>, scan forward until you hit a warmer day, record the gap, stop. Correct, trivial, passes every sample. And on the wrong input it quietly explodes.',
+code:{h:'daily_temps.py — the naive attempt',b:`def daily_temps(t):
+    n = len(t)
+    ans = [0] * n
+    for i in range(n):              <span class="cm"># each day</span>
+        for j in range(i + 1, n):   <span class="cm"># scan forward</span>
+            if t[j] &gt; t[i]:         <span class="cm"># first warmer</span>
+                ans[i] = j - i
+                break
+    return ans
+
+<span class="cm"># O(n&sup2;) TIME. A strictly DESCENDING run
+# (73,72,71,&hellip;) rescans to the end every day.
+# n = 1e5  &rarr;  ~1e10 ops  &rarr;  TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">75</div><div class="ac live">74</div><div class="ac live">73</div><div class="ac live">72</div><div class="ac live">71</div><div class="ac live">70</div>
+</div>
+<div class="av-cap">worst case: a falling staircase. Day 0 scans all n-1 others and finds nothing;<br>day 1 rescans the same tail&hellip; the same cold cells are walked again and again.</div>`,
+callout:{type:'callout-ok',text:'Correct, but it throws away everything it learns each day and rescans from scratch. On a descending array that is quadratic — the classic O(n&sup2;) trap this chapter exists to kill.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'Chapters 1&ndash;3 handed us three rules. This brute force is slow for a specific reason — so audit it against the rules. The failure is repeated work, and the rules point straight at the missing ledger.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED.</span> The brute keeps NO state between days — each <code>i</code> starts its scan from zero. Nothing is carried across steps, so the same unresolved prefix is re-walked over and over.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> The "step" is a whole inner scan — O(n) work per element — and it re-does work already done. Days are not permanently retired; many scans revisit them.',
+ '<span style="color:var(--text-success);font-weight:500">&#10003; SURVIVES.</span> "first later day that is warmer" is the right answer — but it is bought with a fresh O(n) hunt each time.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute discards what it learns each day. We need one SHARED structure that remembers the still-unresolved days — same three rules, implemented with a stack.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes a ledger of unresolved days',desc:'Stop rescanning. Keep one stack of the days still <em>waiting</em> for a warmer temperature — and keep it <strong>strictly decreasing</strong> from bottom to top. That ordered ledger is the entire invariant, and each day enters it at most once.',
+code:{h:'The promise — a monotonic stack',b:`stack = []      <span class="cm"># indices of UNRESOLVED days</span>
+
+<span class="hi-b"># INVARIANT — true after every step:
+#  stack holds exactly the days not yet
+#  given an answer, and their temps are
+#  STRICTLY DECREASING bottom &rarr; top.</span>
+
+<span class="cm"># The instant a day's answer is known it
+# LEAVES the stack. At most n days inside.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">75</div><div class="ac live">71</div><div class="ac live">69</div>
+</div>
+<div class="av-cap">the stack, bottom &rarr; top: 75, 71, 69 &mdash; strictly decreasing, all still waiting.<br>Ch.1's invariant lived OUTSIDE the pointers; Ch.2's INSIDE the window;<br>here it is an <b>ordered ledger of the unresolved</b>.</div>`,
+callout:{type:'callout-info',text:'Same rule as before: name the property that survives every step. What changed is its shape — from a scan restarting each day to one monotonic stack every day shares.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is a STACK of unresolved elements held in monotonic order. Everything below the top is still waiting; the order guarantees the next resolver pops a contiguous run.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: each newcomer pops everything it dominates',desc:'When day <code>i</code> arrives, it pops every day on top whose temperature it beats — those days just found their answer — then pushes itself. Why it is cheap: <strong>every index is pushed once and popped at most once</strong>, so the inner loop is amortized O(1).',
+code:{h:'The move — pop-dominated, then push',b:`while stack and t[i] &gt; t[stack[-1]]:  <span class="cm"># dominate</span>
+    j = stack.pop()                   <span class="cm"># resolve j</span>
+    ans[j] = i - j
+stack.append(i)                       <span class="cm"># i now waits</span>
+
+<span class="hi-y"># PROOF: each index enters the stack once and
+# leaves at most once &rarr; &le; 2n stack ops total.
+# The while is amortized O(1). O(n) overall.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">75</div><div class="ac win">71</div><div class="ac win">69</div><div class="ac hot">72</div>
+</div>
+<div class="av-cap">newcomer 72 pops 69 then 71 (both colder) &rarr; they are resolved;<br>72 stops below 75 and pushes. Each cell is popped exactly once.</div>`,
+callout:{type:'callout-info',text:'Ch.1 retired one end per step; here one newcomer may retire a whole run at once — but across the algorithm each element is retired only once. That single-pop-per-element fact IS the O(n) bound.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: the newcomer pops every element it dominates, then pushes itself. Irreversibility: a popped element is resolved forever. One push + one pop per element gives amortized O(n).'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest happens AT POP TIME',desc:'The answer for day <code>j</code> becomes visible at the exact instant it is popped: the day doing the popping, <code>i</code>, is the first warmer day, so <code>answer[j] = i - j</code>. Read it one step later and the resolver is buried under fresh pushes — <strong>the pop is the only moment the link is exposed</strong>.',
+code:{h:'The harvest — read it as the element leaves',b:`j = stack.pop()     <span class="hi-g"># HARVEST: i resolves j</span>
+ans[j] = i - j      <span class="cm"># i is j's next-warmer day</span>
+
+<span class="cm"># WHY at pop, not later: popping j is the
+# precise instant it meets the first temp
+# hotter than it — that is the current i.
+# Push i, move on, and you would have to
+# hunt for that link all over again.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.3 harvested on a pointer collision; here it fires the moment an element is POPPED. The popper is always the popped element\'s resolution — that is the signature harvest of every monotonic-stack problem.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: harvest AT POP TIME. The element being popped has just met the newcomer that resolves it. Whether you store a distance, a value, or an area is the only thing variations change.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete solution: one stack, one pass. The quadratic rescan that killed the brute force is gone — each index enters and leaves the stack exactly once.',
+code:{h:'daily_temps.py — final',b:`def daily_temps(t):
+    n = len(t)
+    ans = [0] * n
+    stack = []                       <span class="cm"># unresolved days</span>
+    for i in range(n):               <span class="cm"># MOVE: newcomer i</span>
+        while stack and t[i] &gt; t[stack[-1]]:
+            j = stack.pop()          <span class="hi-g"># HARVEST: i warms j</span>
+            ans[j] = i - j
+        stack.append(i)              <span class="cm"># i now unresolved</span>
+    return ans                       <span class="cm"># leftovers stay 0</span>
+
+<span class="cm"># O(n) time · O(n) space · each index in/out once.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">73</div><div class="ac dead">74</div><div class="ac live">75</div><div class="ac live">71</div><div class="ac live">69</div><div class="ac hot">72</div><div class="ac">76</div><div class="ac">73</div>
+</div>
+<div class="av-cap">stack = [75,71,69] (idx 2,3,4). Newcomer 72 arrives.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">73</div><div class="ac dead">74</div><div class="ac live">75</div><div class="ac win">71</div><div class="ac win">69</div><div class="ac hot">72</div><div class="ac">76</div><div class="ac">73</div>
+</div>
+<div class="av-cap">72 &gt; 69 and 72 &gt; 71 &rarr; pop both. HARVEST: ans[4]=1, ans[3]=2. 72 pushes below 75.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">73</div><div class="ac dead">74</div><div class="ac win">75</div><div class="ac dead">71</div><div class="ac dead">69</div><div class="ac win">72</div><div class="ac hot">76</div><div class="ac">73</div>
+</div>
+<div class="av-cap">76 pops 72 (ans[5]=1) then 75 (ans[2]=4). Final: [1,1,4,2,1,1,0,0].</div>`,
+callout:{type:'callout-ok',text:'The brute rescanned the tail every day; this touches each day twice — one push, one pop. Same answer, O(n&sup2;) collapses to O(n), purely because the unresolved days now live in a shared ledger.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Next Greater Element',desc:'The base monotonic form. For each element, find the first larger value to its right (or <code>-1</code>). Identical skeleton to Daily Temperatures — the harvest just stores the <em>value</em> instead of a distance.',
+code:{h:'next_greater.py',b:`def next_greater(a):
+    n = len(a)
+    res = [-1] * n
+    stack = []                       <span class="cm"># indices, vals decreasing</span>
+    for i in range(n):
+        while stack and a[i] &gt; a[stack[-1]]:
+            res[stack.pop()] = a[i]  <span class="hi-g"># HARVEST at pop</span>
+        stack.append(i)
+    return res
+
+<span class="cm"># res[i] = first value right of i that exceeds a[i].
+# O(n): each index pushed &amp; popped once.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">2</div><div class="ac live">1</div><div class="ac hot">2</div><div class="ac">4</div><div class="ac">3</div>
+</div>
+<div class="av-cap">a = [2,1,2,4,3]. Newcomer 2 (idx 2) pops the 1 &rarr; res[1] = 2.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">2</div><div class="ac">1</div><div class="ac win">2</div><div class="ac hot">4</div><div class="ac">3</div>
+</div>
+<div class="av-cap">4 pops both 2's &rarr; res[0]=4, res[2]=4. Final res = [4,2,4,-1,-1].</div>`,
+extra:()=>rulesCard('Rules card — next greater element',
+ 'Same ledger: stack holds indices whose next-greater is still unknown, values strictly decreasing top &rarr; bottom.',
+ 'Identical — newcomer pops every smaller value it dominates, then pushes. Each index in/out once.',
+ 'AT POP: the newcomer <em>is</em> the popped index\'s next-greater value (stored, not a distance).'),
+callout:{type:'callout-ok',text:'Daily Temperatures and Next Greater Element are the SAME algorithm. Only the harvest payload changed: a day-gap became the resolving value. (Circular variant? Loop the index twice, mod n.)'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'Largest Rectangle in Histogram',desc:'Now the invariant flips to strictly <strong>increasing</strong> and the harvest computes an <em>area</em>. When a shorter bar arrives, each taller bar it pops can no longer extend right — so its rectangle is final: <code>height &times; (span the pop reveals)</code>.',
+code:{h:'largest_rect.py',b:`def largest_rect(h):
+    h = h + [0]                      <span class="cm"># sentinel flushes the rest</span>
+    stack, best = [], 0              <span class="cm"># indices, heights increasing</span>
+    for i, x in enumerate(h):
+        while stack and h[stack[-1]] &gt; x:
+            top = stack.pop()        <span class="hi-g"># HARVEST: close this bar</span>
+            left = stack[-1] if stack else -1
+            width = i - left - 1     <span class="cm"># span the pop reveals</span>
+            best = max(best, h[top] * width)
+        stack.append(i)
+    return best
+
+<span class="cm"># O(n): each bar pushed &amp; popped once.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac dead">2</div><div class="ac live">1</div><div class="ac win">5</div><div class="ac win">6</div><div class="ac hot">2</div><div class="ac">3</div>
+</div>
+<div class="av-cap">heights = [2,1,5,6,2,3]. Bar 2 (idx 4) is shorter than 6 and 5 &rarr; pop both.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac dead">2</div><div class="ac dead">1</div><div class="ac win">5</div><div class="ac win">6</div><div class="ac hot">2</div><div class="ac dead">3</div>
+</div>
+<div class="av-cap">HARVEST at pop of 5: height 5 &times; width 2 = <b>10</b> &mdash; the largest rectangle.</div>`,
+extra:()=>rulesCard('Rules card — largest rectangle',
+ 'INVARIANT flipped: stack holds bars in strictly INCREASING height — each still hoping to stretch right.',
+ 'A shorter newcomer pops every taller bar (it walls them in), then pushes. Each bar in/out once.',
+ 'AT POP the bar\'s rectangle is fixed: <code>h[top] &times; (i - stack[-1] - 1)</code>, the width the pop exposes.'),
+callout:{type:'callout-ok',text:'Same three rules, two dials turned: the monotonic order flips to increasing, and the harvest reads an AREA off the span a pop reveals instead of a single neighbor.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Valid Parentheses',desc:'The invariant is no longer about ordered values — it is the set of <strong>unresolved opening brackets</strong>. Push every opener; a closer must pop its exact partner. The string is valid iff nothing is left open at the end.',
+code:{h:'valid.py',b:`def valid(s):
+    pair = {')': '(', ']': '[', '}': '{'}
+    stack = []                       <span class="cm"># UNRESOLVED opens</span>
+    for c in s:
+        if c in '([{':
+            stack.append(c)          <span class="cm"># a new unresolved open</span>
+        elif not stack or stack.pop() != pair[c]:
+            return False             <span class="cm"># closer with no match</span>
+    return <span class="hi-g">not stack</span>               <span class="cm"># HARVEST: none left open</span>
+
+<span class="cm"># O(n): each bracket pushed/popped at most once.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">(</div><div class="ac live">[</div><div class="ac hot">]</div><div class="ac">)</div>
+</div>
+<div class="av-cap">s = "([])". Stack of opens = [ (, [ ]. Closer ] pops its match [.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">(</div><div class="ac win">[</div><div class="ac win">]</div><div class="ac win">)</div>
+</div>
+<div class="av-cap">) pops ( &rarr; stack empty at end &rarr; <b>valid</b>. Any leftover open &rarr; invalid.</div>`,
+extra:()=>rulesCard('Rules card — valid parentheses',
+ 'INVARIANT re-cast: the stack holds exactly the OPENS not yet closed — monotonic by NESTING, not by value.',
+ 'Push each opener; a closer pops its partner (or fails). Each bracket touched once.',
+ 'AT POP each closer must match; and at the END an empty stack means every open was resolved.'),
+callout:{type:'callout-ok',text:'The "ledger of unresolved elements" idea outlives monotonic values: here order means nesting depth. Same skeleton — push the unresolved, pop at resolution, harvest when the ledger clears.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Remove K Digits',desc:'A monotonic stack with a <strong>budget</strong>. To make <code>num</code> smallest after deleting <code>k</code> digits, keep the stack non-decreasing — but only pop a larger top while <code>k</code> deletions remain. The move gains a greedy guard.',
+code:{h:'remove_k.py',b:`def remove_k(num, k):
+    stack = []                       <span class="cm"># digits kept non-decreasing</span>
+    for d in num:
+        while k and stack and stack[-1] &gt; d:
+            stack.pop()              <span class="hi-y"># pop only if it improves</span>
+            k -= 1                   <span class="cm">#   AND budget remains</span>
+        stack.append(d)
+    stack = stack[:len(stack) - k]   <span class="cm"># spend leftover budget</span>
+    return <span class="hi-g">''.join(stack).lstrip('0') or '0'</span>
+
+<span class="cm"># O(n): each digit pushed &amp; popped once; k caps pops.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac win">4</div><div class="ac hot">3</div><div class="ac">2</div><div class="ac">2</div><div class="ac">1</div><div class="ac">9</div>
+</div>
+<div class="av-cap">num = "1432219", k = 3. Digit 3 arrives, top 4 is larger &rarr; pop 4 (k: 3&rarr;2).</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">1</div><div class="ac win">4</div><div class="ac win">3</div><div class="ac win">2</div><div class="ac live">2</div><div class="ac live">1</div><div class="ac live">9</div>
+</div>
+<div class="av-cap">greedy pops spend the budget on the biggest early digits &rarr; result "1219".</div>`,
+extra:()=>rulesCard('Rules card — remove K digits',
+ 'INVARIANT: the stack keeps digits NON-DECREASING — the smallest prefix reachable so far.',
+ 'MOVE gains a BUDGET: pop a larger top only while a smaller digit arrives AND k &gt; 0 (greedy). Bounded by k pops + n pushes.',
+ 'The stack itself (trimmed by leftover k, stripped of leading zeros) IS the answer.'),
+callout:{type:'callout-ok',text:'Monotonic stack meets greedy: the move is now conditional on a budget. Same push/pop-once accounting — k simply caps how many pops one newcomer may trigger. (The same trick builds Remove Duplicate Letters.)'}
+},
+{phase:'pill-pattern',phaseTxt:'Four patterns, one rulebook',title:'Two Pointers vs. Sliding Window vs. Stacks',desc:'Four chapters in, still zero new rules. The stack is simply the first invariant that keeps a whole <strong>ledger</strong> of unresolved work instead of one or two pointers.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Sliding Window (Ch.2)</th><th>Stacks (Ch.18)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>The living <strong>inside</strong> the window + O(1) aux state</td><td>A <strong>ledger of unresolved</strong> elements, kept monotonic (or the open brackets)</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td>Expand always, repair to restore</td><td>Newcomer pops all it dominates, then pushes — each element in/out once</td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>After repair / during shrink</td><td><strong>AT POP TIME</strong> — the popper resolves the popped</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; 2n — both pointers monotone</td><td>&le; 2n — each element pushed once, popped once</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, four chapters deep: the RULES are constant, the IMPLEMENTATION varies. A stack is what the invariant becomes when many elements must wait, each resolved by the first newcomer that beats it.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 18',desc:'Add the stack\'s implementations to the running lists — and above all, lock in its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  seen so far: outside-the-pointers,
+               inside-the-window, speed-ratio,
+               <span class="hi-b">monotonic stack of UNRESOLVED
+               elements (or unresolved opens)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  seen so far: retire-an-end, expand-and-repair,
+               fast+2 / slow+1,
+               <span class="hi-y">newcomer pops all it dominates,
+               then pushes (each elem in/out once)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  seen so far: on-predicate, during-shrink,
+               on-collision,
+               <span class="hi-g">AT POP TIME — the popper is the
+               popped element's resolution</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for a Stack when:</span>
+  "next greater / next smaller", spans, or
+  histogram areas · nested structure to match
+  (brackets, tags) · each element is resolved
+  by the FIRST later one that beats it.`},
+dia:null,
+callout:{type:'callout-purple',text:'When each element waits to be resolved by the first later element that dominates it — a next-greater, a span, an enclosing bracket — do not scan forward repeatedly. Ask: can a monotonic stack hold the unresolved and harvest each one AT POP? The pattern will name itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

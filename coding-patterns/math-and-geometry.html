@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 28 — Math &amp; Geometry | Grokking Patterns, The Rules Way</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  .av { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+  .ac { min-width: 32px; padding: 6px 4px; text-align: center; border: 0.5px solid var(--border-secondary); border-radius: 5px; font-family: var(--font-mono); font-size: 12px; background: var(--bg-primary); }
+  .ac.dead { opacity: 0.35; background: var(--bg-secondary); }
+  .ac.live { background: var(--bg-info); border-color: var(--border-info); color: var(--text-info); }
+  .ac.hot  { background: var(--bg-warning); border-color: var(--border-warning); color: var(--text-warning); }
+  .ac.win  { background: var(--bg-success); border-color: var(--border-success); color: var(--text-success); }
+  .ac.bad2 { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .ptr-row { display: flex; gap: 3px; justify-content: center; margin-top: 3px; flex-wrap: wrap; }
+  .ptr { min-width: 32px; text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+  .ptr b { color: var(--text-info); font-weight: 500; }
+  .av-cap { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+  .av-gap { height: 12px; }
+
+  .rules-card { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .rules-card .rc-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--purple-50); color: var(--purple-800); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rules-card .rc-h.rc-bad { background: var(--bg-danger); color: var(--text-danger); }
+  .rc-row { display: grid; grid-template-columns: 96px 1fr; border-bottom: 0.5px solid var(--border-tertiary); }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-tag { padding: 8px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; }
+  .rc-tag.t-inv { background: var(--bg-info); color: var(--text-info); }
+  .rc-tag.t-mov { background: var(--bg-warning); color: var(--text-warning); }
+  .rc-tag.t-har { background: var(--bg-success); color: var(--text-success); }
+  .rc-txt { padding: 8px 12px; font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+  .rc-txt code { font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-secondary); padding: 1px 4px; border-radius: 3px; }
+  .rc-txt .viol { color: var(--text-danger); font-weight: 500; }
+
+  .sum-wrap { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; overflow-x: auto; margin-bottom: 14px; }
+  .sum-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  .sum-tbl th { text-align: left; padding: 8px 10px; background: var(--bg-secondary); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); }
+  .sum-tbl td { padding: 8px 10px; border-bottom: 0.5px solid var(--border-tertiary); vertical-align: top; line-height: 1.5; color: var(--text-primary); }
+  .sum-tbl tr:last-child td { border-bottom: none; }
+  .sum-tbl td:first-child { font-weight: 500; white-space: nowrap; }
+  .col-inv { color: var(--text-info) !important; }
+  .col-mov { color: var(--text-warning) !important; }
+  .col-har { color: var(--text-success) !important; }
+
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Chapter 28 — Math &amp; Geometry</h1>
+      <p>Grokking Patterns, The Rules Way — same three rules, every implementation changes</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+function rulesCard(title, inv, mov, har, bad){
+  return '<div class="rules-card"><div class="rc-h'+(bad?' rc-bad':'')+'">'+title+'</div>'
+    +'<div class="rc-row"><div class="rc-tag t-inv">Invariant</div><div class="rc-txt">'+inv+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-mov">Move</div><div class="rc-txt">'+mov+'</div></div>'
+    +'<div class="rc-row"><div class="rc-tag t-har">Harvest</div><div class="rc-txt">'+har+'</div></div></div>';
+}
+
+const S=[
+{phase:'pill-try',phaseTxt:'The Brief',title:'Pow(x, n) — x raised to the n',desc:'A fresh interview, and this time there is no array to scan and no list to walk — just two numbers. Given a float <code>x</code> and an integer <code>n</code>, compute <code>x<sup>n</sup></code>. The structural gift: <strong>the exponent has a binary structure</strong> you can exploit. The killer clause: <strong>n can be as large as 2<sup>31</sup></strong>, so anything linear in n is dead on arrival.',
+code:{h:'The problem',b:`pow(2.0, 10)  = 1024.0
+pow(2.0, -2)  = 0.25        <span class="cm"># negative n &rarr; reciprocal</span>
+pow(3.0,  0)  = 1.0
+
+<span class="cm"># n up to 2**31 = 2,147,483,648
+# a loop that multiplies n times
+# is ~2e9 ops &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">x</div><div class="ac">x</div><div class="ac">x</div><div class="ac dead">&hellip;</div><div class="ac">x</div>
+</div>
+<div class="av-cap">the naive picture: n copies of <code>x</code> multiplied together.<br>When n = 2<sup>31</sup> that row has two billion cells — no interview budget survives it.</div>`,
+callout:{type:'callout-info',text:'Two numbers, one exponent, and a constraint that forbids touching n one unit at a time. Hold that: the whole chapter is about replacing a step-by-step walk with a mathematical identity.'}
+},
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Brute force — multiply x by itself n times',desc:'The obvious idea: start at 1 and multiply by <code>x</code>, n times. Handle a negative exponent by taking the reciprocal up front. It is correct for every input — and utterly linear.',
+code:{h:'my_pow.py — the naive attempt',b:`def my_pow(x, n):
+    if n &lt; 0:                    <span class="cm"># negative &rarr; reciprocal</span>
+        x, n = 1 / x, -n
+    result = 1.0
+    for _ in range(n):            <span class="cm"># INVARIANT: result =</span>
+        result *= x               <span class="cm">#   x multiplied k times</span>
+    return result
+
+<span class="cm"># O(n) TIME. For n = 2**31 that is
+# ~2.1e9 multiplications &rarr; TLE.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">1</div><div class="ac hot">&times;x</div><div class="ac hot">&times;x</div><div class="ac hot">&times;x</div><div class="ac dead">&times;x&hellip;</div>
+</div>
+<div class="av-cap">one multiply per step, n steps deep. Correct — but the loop length IS n.<br>The exponent's binary structure is completely ignored.</div>`,
+callout:{type:'callout-info',text:'Correct, and not even numerically silly — just linear. The hurt here is pure big-O: O(n) time where the exponent\'s bits beg for O(log n). No memory problem this time, only speed.'}
+},
+{phase:'pill-ohno',phaseTxt:'Diagnose!',title:'Which rule is violated?',desc:'The earlier chapters handed us three rules. This brute force is not fat — it is <strong>slow</strong>. Audit it: the failure is time, and the rules point straight at a running product that refuses to compress.',
+code:null,
+dia:null,
+extra:()=>rulesCard('Rule audit — brute force vs. the three rules',
+ '<span class="viol">&#10007; VIOLATED (time).</span> "<code>result</code> = x multiplied k times so far" is a running SIMULATION. It faithfully re-enacts every one of the n multiplications; no mathematical identity compresses the walk.',
+ '<span style="color:var(--text-warning);font-weight:500">~ WEAK.</span> One multiply is irreversible progress, but it shrinks the exponent by only <code>1</code>. A linear reduction can never beat O(n).',
+ '<span style="color:var(--text-warning);font-weight:500">~ SURVIVES.</span> "after n steps, <code>result</code> = x<sup>n</sup>" is correct — but it is only reachable once all n moves have happened.',
+ true),
+callout:{type:'callout-bad',text:'The rules did not change. The brute force simply reduces the instance one unit at a time. We do not need a new idea — we need a MOVE that halves the problem instead of decrementing it: a mathematical identity in place of simulation.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #1 — new implementation',title:'The invariant becomes an algebraic identity',desc:'Stop tracking "how many times have I multiplied." Keep three numbers — <code>result</code>, <code>base</code>, <code>exp</code> — and maintain one equation: <strong><code>result &times; base<sup>exp</sup> = x<sup>n</sup></code></strong>, true after every step. That equation IS the invariant, and it lets us rewrite the instance instead of replaying it.',
+code:{h:'The promise — an identity, not a counter',b:`result, base, exp = 1.0, x, n
+
+<span class="cm"># INVARIANT — true after every step:</span>
+<span class="hi-b">#  result &times; base**exp  ==  x**n</span>
+
+<span class="cm"># We never count multiplications. We keep an
+# EQUATION balanced while shrinking exp. When
+# exp hits 0, base**0 = 1 and result IS x**n.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">result</div><div class="ac hot">base<sup>exp</sup></div><div class="ac">=</div><div class="ac win">x<sup>n</sup></div>
+</div>
+<div class="av-cap">the invariant is an equation, not a region.<br>Ch.1's invariant described a discarded OUTSIDE; Ch.2's the living INSIDE a window;<br>here it is a <b>mathematical identity</b> that stays balanced as we rewrite the problem.</div>`,
+callout:{type:'callout-info',text:'Same Rule #1 as every chapter: name the property that survives every step. What changed is its nature — from a spatial region to an algebraic identity a math fact keeps true.'},
+principle:{lbl:'Rule #1 — Name the invariant (reused)',txt:'Same rule, new implementation: the invariant is an EQUATION (<code>result &times; base<sup>exp</sup> = x<sup>n</sup></code>), not a region or a pointer ratio. A mathematical property, held balanced, replaces the step-by-step simulation.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #2 — new implementation',title:'The move: halve the exponent, square the base',desc:'Each step, fold today\'s bit into <code>result</code>, then <strong>square the base and halve the exponent</strong>. Why it is provable progress: <strong>exp loses one binary digit every step</strong>, so it reaches 0 in at most log&#8322;n steps. Each application of the identity <code>x<sup>2k</sup> = (x<sup>2</sup>)<sup>k</sup></code> shrinks the instance by half.',
+code:{h:'The move — apply the identity',b:`while exp &gt; 0:
+    if exp &amp; 1:                  <span class="cm"># odd bit &rarr; bank it</span>
+        result *= base
+    base *= base                  <span class="cm"># the x**2 identity</span>
+    exp &gt;&gt;= 1                     <span class="cm"># drop one bit</span>
+
+<span class="cm"># PROOF: exp loses a bit per step &rarr; &le; log2(n)
+# steps. n = 2**31 &rarr; just 31 iterations.
+# O(log n) time, O(1) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac hot">exp=10</div><div class="ac">&rarr;</div><div class="ac hot">5</div><div class="ac">&rarr;</div><div class="ac hot">2</div><div class="ac">&rarr;</div><div class="ac hot">1</div><div class="ac">&rarr;</div><div class="ac win">0</div>
+</div>
+<div class="av-cap">the exponent is halved each step: 10 &rarr; 5 &rarr; 2 &rarr; 1 &rarr; 0.<br>Five steps instead of ten — and for n = 2<sup>31</sup>, 31 steps instead of two billion.</div>`,
+callout:{type:'callout-info',text:'Ch.3\'s move closed a gap by ONE per step (O(n)); here the identity HALVES the instance each step (O(log n)). Same rule — irreversible progress with a one-line proof — but the reduction is exponentially faster.'},
+principle:{lbl:'Rule #2 — Define the move (reused)',txt:'Same rule, new implementation: apply a closed-form identity (<code>base &times;= base</code>, <code>exp &gt;&gt;= 1</code>) that HALVES the instance. The one-line proof — one bit lost per step — is exactly the O(log n) bound.'}
+},
+{phase:'pill-principle',phaseTxt:'Rule #3 — new implementation',title:'The harvest is the fixed point exp = 0',desc:'No predicate to test, no collision to watch for. The answer becomes visible the instant <strong><code>exp</code> reaches 0</strong> — the identity\'s fixed point. There, <code>base<sup>0</sup> = 1</code>, so the invariant collapses to <code>result = x<sup>n</sup></code>. Read it the moment the loop ends; the very next square would just churn a base nobody will use.',
+code:{h:'The harvest — read at the fixed point',b:`while exp &gt; 0:
+    ...
+<span class="hi-g">return result</span>   <span class="cm"># HARVEST: exp == 0 now, so</span>
+                 <span class="cm">#   base**0 = 1 and the invariant</span>
+                 <span class="cm">#   result &times; 1 = x**n holds exactly.</span>
+
+<span class="cm"># The fixed point IS the closed form. One step
+# later, base has squared into a wasted number.</span>`},
+dia:null,
+callout:{type:'callout-info',text:'Ch.3 harvested on a pointer collision; here it fires at a numeric FIXED POINT (exp = 0). The identity guarantees that at the fixed point the invariant equals the answer — grab it there.'},
+principle:{lbl:'Rule #3 — Mark the harvest (reused)',txt:'Same rule, new implementation: the answer surfaces at the FIXED POINT the identity drives toward (<code>exp = 0</code>, or later <code>b = 0</code> for GCD). Read the invariant exactly when the reduction bottoms out.'}
+},
+{phase:'pill-solution',phaseTxt:'Integration',title:'Wire the three rules together',desc:'The complete fast-power: an equation held balanced, halved to its fixed point, harvested there. The O(n) wall that killed the brute force is gone — replaced by log&#8322;n iterations.',
+code:{h:'my_pow.py — final',b:`def my_pow(x, n):
+    if n &lt; 0:                    <span class="cm"># reciprocal for n &lt; 0</span>
+        x, n = 1 / x, -n
+    result, base, exp = 1.0, x, n
+    while exp &gt; 0:                <span class="cm"># INVARIANT: result *</span>
+        if exp &amp; 1:              <span class="cm">#   base**exp == x**n</span>
+            result *= base       <span class="cm"># MOVE: bank the bit,</span>
+        base *= base             <span class="cm">#   square the base,</span>
+        exp &gt;&gt;= 1                 <span class="cm">#   drop one bit</span>
+    return <span class="hi-g">result</span>            <span class="cm"># HARVEST: exp==0 &rarr; x**n</span>
+
+<span class="cm"># O(log n) time · O(1) space.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">r=1</div><div class="ac hot">b=2</div><div class="ac">e=10</div>
+</div>
+<div class="av-cap">start: 2<sup>10</sup>. bit0 of 10 is 0 &rarr; skip; square &rarr; b=4; e=5</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac live">r=4</div><div class="ac hot">b=16</div><div class="ac">e=2</div>
+</div>
+<div class="av-cap">e was 5 (odd) &rarr; r = 1&times;4 = 4; squaring marches b up as e falls to 2, 1&hellip;</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac win">r=1024</div><div class="ac">b=&mdash;</div><div class="ac win">e=0</div>
+</div>
+<div class="av-cap">e hits 0 &rarr; harvest: r = 1024 = 2<sup>10</sup>. Four steps, not ten.</div>`,
+callout:{type:'callout-ok',text:'The brute force replayed n multiplications; this one applies an identity log&#8322;n times. Same answer — but O(n) collapses to O(log n), purely because a math fact replaced the simulation.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #1',title:'Happy Number — a digit-square orbit',desc:'Define <code>next(k) = sum of the squares of k\'s digits</code>. Follow it: a number is <strong>happy</strong> if the orbit reaches 1, and unhappy if it falls into a cycle. Here the identity is the digit-square map, and — a genuine cross-chapter reuse — the cycle is caught with <strong>Fast &amp; Slow from Chapter 3</strong>.',
+code:{h:'is_happy.py — Fast/Slow on a number orbit',b:`def nxt(k):
+    return sum(int(d)**2 for d in str(k))
+
+def is_happy(n):
+    slow, fast = n, nxt(n)
+    while fast != 1 and slow != fast:
+        slow = nxt(slow)              <span class="cm"># +1 step in orbit</span>
+        fast = nxt(nxt(fast))         <span class="cm"># +2 steps</span>
+    return <span class="hi-g">fast == 1</span>                 <span class="cm"># 1 &rarr; happy;
+                                      # collision &rarr; loop</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">19</div><div class="ac">82</div><div class="ac">68</div><div class="ac">100</div><div class="ac win">1</div>
+</div>
+<div class="av-cap">next(k) = &Sigma; digit&sup2;:  19 &rarr; 82 &rarr; 68 &rarr; 100 &rarr; 1 &rarr; <b>happy</b>.<br>An unhappy number orbits a fixed cycle forever — and fast laps slow before either sees 1.</div>`,
+extra:()=>rulesCard('Rules card — happy number',
+ 'The invariant is a MATHEMATICAL ORBIT: the deterministic map <code>next(k) = &Sigma; digit&sup2;</code>, walked by two pointers at a fixed speed ratio.',
+ 'Apply <code>next</code>: slow once, fast twice. Digit-square-sum IS the pointer-follow — no list exists.',
+ 'fast reaches 1 &rarr; happy; fast collides with slow first &rarr; trapped in a cycle &rarr; unhappy.'),
+callout:{type:'callout-ok',text:'The MOVE shifted: instead of halving an exponent, we iterate a number-theoretic map. Chapter 3\'s Fast &amp; Slow detects the cycle unchanged — the same rulebook spanning two chapters.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #2',title:'GCD & LCM — Euclid\'s identity',desc:'Euclid\'s theorem: <strong><code>gcd(a, b) = gcd(b, a mod b)</code></strong>. The <code>mod</code> is the irreversible move — it strictly shrinks the pair while leaving the gcd untouched. When <code>b</code> hits 0, <code>a</code> is the answer; LCM falls out as <code>a &times; b / gcd</code>.',
+code:{h:'gcd.py — Euclid\'s reduction',b:`def gcd(a, b):
+    while b:                       <span class="cm"># INVARIANT: gcd(a,b)</span>
+        a, b = b, a % b            <span class="cm">#   is unchanged by mod</span>
+    return <span class="hi-g">a</span>                      <span class="cm"># HARVEST: b==0 &rarr; a</span>
+
+def lcm(a, b):
+    return a // gcd(a, b) * b
+
+<span class="cm"># a % b &lt; b, so b strictly shrinks &rarr;
+# O(log(min(a,b))) steps (Fibonacci worst case).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">48</div><div class="ac hot">18</div><div class="ac">&rarr;</div><div class="ac live">18</div><div class="ac hot">12</div><div class="ac">&rarr;</div><div class="ac live">12</div><div class="ac hot">6</div><div class="ac">&rarr;</div><div class="ac win">6</div><div class="ac dead">0</div>
+</div>
+<div class="av-cap">gcd(48, 18): (48,18) &rarr; (18,12) &rarr; (12,6) &rarr; (6,0).<br>Each <code>mod</code> strictly shrinks b; at the fixed point b = 0 the surviving <code>a = 6</code> is the gcd.</div>`,
+extra:()=>rulesCard('Rules card — GCD (Euclid)',
+ 'The invariant is Euclid\'s IDENTITY: <code>gcd(a,b) = gcd(b, a mod b)</code> — the gcd is preserved across every reduction.',
+ 'The MOVE is the <code>mod</code>: <code>(a,b) &rarr; (b, a % b)</code>. Since <code>a % b &lt; b</code>, the instance strictly shrinks — irreversible.',
+ 'At the fixed point <code>b = 0</code>, the surviving <code>a</code> IS the gcd; LCM harvests from it as <code>a &times; b / gcd</code>.'),
+callout:{type:'callout-ok',text:'The MOVE is the star here: one modulo replaces a whole loop of subtractions. The identity guarantees the gcd never changes while the numbers collapse — pure reduction, no simulation.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #3',title:'Orientation of three points — the cross product',desc:'Three points, one question: do they turn left, turn right, or lie on a line? Simulating slopes invites division and divide-by-zero. Instead the <strong>cross product\'s sign</strong> is a closed-form identity that decides orientation with pure multiplication — and the <strong>sign itself is the harvest</strong>.',
+code:{h:'orientation.py — sign of the cross product',b:`def orient(p, q, r):
+    <span class="cm"># cross of (q-p) and (r-p):</span>
+    cross = ((q[0]-p[0]) * (r[1]-p[1])
+             - (q[1]-p[1]) * (r[0]-p[0]))
+    if cross &gt; 0: return <span class="hi-g">"left"</span>   <span class="cm"># CCW turn</span>
+    if cross &lt; 0: return <span class="hi-g">"right"</span>  <span class="cm"># CW turn</span>
+    return <span class="hi-g">"collinear"</span>            <span class="cm"># on a line</span>
+
+<span class="cm"># O(1) — no loop, no division. Also the
+# 90-deg rotation identity: (x,y) &rarr; (-y, x).</span>`},
+dia:()=>`<div class="av">
+  <div class="ac">p(0,0)</div><div class="ac">q(4,0)</div><div class="ac live">r(4,3)</div>
+</div>
+<div class="av-cap">cross = (4&minus;0)(3&minus;0) &minus; (0&minus;0)(4&minus;0) = 12 &gt; 0 &rarr; <b>left turn</b> (counter-clockwise).</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac hot">&gt; 0 left</div><div class="ac dead">0 collinear</div><div class="ac hot">&lt; 0 right</div>
+</div>
+<div class="av-cap">the SIGN is the whole answer — the magnitude is twice the triangle's area, but only its sign is harvested.</div>`,
+extra:()=>rulesCard('Rules card — orientation (cross product)',
+ 'The invariant is a GEOMETRIC IDENTITY: the cross product <code>(q&minus;p) &times; (r&minus;p)</code> encodes turn direction independent of scale.',
+ 'The MOVE is a single closed-form evaluation — two multiplies and a subtract, O(1). There is no iteration to reduce.',
+ 'The HARVEST is the SIGN: <code>&gt; 0</code> left, <code>&lt; 0</code> right, <code>0</code> collinear. Reading the sign is the entire answer.'),
+callout:{type:'callout-ok',text:'The HARVEST is the star here: the answer is not a number but the SIGN of one. A cross product turns a geometry question into a single multiply-and-compare — the building block of convex hulls and segment intersection.'}
+},
+{phase:'pill-solution',phaseTxt:'Same rules, new body #4',title:'Excel Column Number — bijective base-26',desc:'Columns run <code>A, B, &hellip;, Z, AA, AB, &hellip;</code> — that is <strong>base-26 with a 1-offset</strong> (there is no digit zero). Convert a title to its number by folding one letter at a time. No grid, no counting up from A: a single positional identity does it.',
+code:{h:'excel.py — a positional identity',b:`def title_to_number(s):
+    col = 0
+    for ch in s:                   <span class="cm"># INVARIANT: col = value</span>
+        digit = ord(ch) - ord('A') + 1
+        col = col * 26 + digit     <span class="cm"># MOVE: fold one "digit"</span>
+    return <span class="hi-g">col</span>                    <span class="cm"># HARVEST: after last char</span>
+
+<span class="cm"># "A"=1, "Z"=26, "AA"=27, "AB"=28.
+# O(len) — one pass, no simulation.</span>`},
+dia:()=>`<div class="av">
+  <div class="ac live">A</div><div class="ac hot">A</div>
+</div>
+<div class="av-cap">"AA": start col=0 &rarr; fold 'A' &rarr; col = 0&times;26 + 1 = 1 &rarr; fold 'A' &rarr; col = 1&times;26 + 1 = <b>27</b>.</div>
+<div class="av-gap"></div>
+<div class="av">
+  <div class="ac">A=1</div><div class="ac">Z=26</div><div class="ac win">AA=27</div><div class="ac">AB=28</div>
+</div>
+<div class="av-cap">base-26 with a 1-offset — a closed-form positional value, never a count-up loop.</div>`,
+extra:()=>rulesCard('Rules card — Excel column number',
+ 'The invariant is a POSITIONAL NUMERAL IDENTITY: <code>col</code> is the bijective base-26 value of the prefix read so far.',
+ 'The MOVE folds one letter: <code>col = col &times; 26 + digit</code> (with <code>digit = ord(ch) &minus; 64</code>). One irreversible step per character.',
+ 'The HARVEST: after the final letter, <code>col</code> is the closed-form answer — no loop counting up over columns is ever needed.'),
+callout:{type:'callout-ok',text:'The INVARIANT is the star here: a numeral system, not a simulation. Recognizing "bijective base-26" turns a scary lettering scheme into one line of Horner\'s rule. (The reverse, number &rarr; title, is repeated divmod with the same offset.)'}
+},
+{phase:'pill-pattern',phaseTxt:'One rulebook, math edition',title:'Math & Geometry vs. Two Pointers vs. Fast & Slow',desc:'A new pattern, still zero new rules — only the implementation changes. Set the identity-driven trio beside two foundation patterns and watch each rule keep its job while swapping its body.',
+code:null,
+dia:()=>`<div class="sum-wrap"><table class="sum-tbl">
+<tr><th>Rule</th><th>Two Pointers (Ch.1)</th><th>Fast &amp; Slow (Ch.3)</th><th>Math &amp; Geometry (Ch.28)</th></tr>
+<tr><td class="col-inv">Invariant</td><td>The discarded <strong>outside</strong>: "the answer is not out there"</td><td>A fixed <strong>speed ratio</strong> between two walkers</td><td>A <strong>mathematical identity</strong> holds — an equation, an orbit, a preserved gcd, a cross-sign</td></tr>
+<tr><td class="col-mov">Move</td><td>Retire a proven-useless end</td><td><code>fast += 2</code>, <code>slow += 1</code></td><td>Apply the identity to <strong>shrink the instance</strong> — halve exp, take <code>a mod b</code></td></tr>
+<tr><td class="col-har">Harvest</td><td>When the value predicate fires</td><td>On collision (cycle) or exhaustion (middle)</td><td>At the <strong>fixed point / closed form</strong>: <code>exp=0</code>, <code>b=0</code>, or a sign</td></tr>
+<tr><td style="color:var(--text-secondary)">Complexity</td><td>&le; n — one retired per step</td><td>&le; n — gap closes 1/step</td><td>Often <strong>O(log n)</strong> — each move halves — or O(1) closed form</td></tr>
+</table></div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Rule 1 — Invariant</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-warning);border:0.5px solid var(--border-warning)"></div>Rule 2 — Move</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>Rule 3 — Harvest</div>
+</div>`,
+callout:{type:'callout-purple',text:'Same thesis, math edition: the RULES are the constant, the IMPLEMENTATION is the variable. Here the invariant is an identity, the move applies it to shrink the instance, and the harvest waits at the fixed point — and the reduction is often exponentially faster.'}
+},
+{phase:'pill-pattern',phaseTxt:'Toolbox Update',title:'Your rules toolbox after Chapter 28',desc:'A new pattern joins the shelf. Add Math &amp; Geometry\'s implementations to the running lists — and, most importantly, its <strong>recognition signal</strong>.',
+code:{h:'The toolbox',b:`<span class="cm">RULE #1 — NAME THE INVARIANT</span>
+<span class="hi-b">The property that is true after every step.</span>
+  &hellip; outside-the-pointers, inside-the-window,
+      two-pointer speed ratio,
+      <span class="hi-b">a mathematical identity (equation /
+      orbit / preserved gcd / cross-sign)</span>
+
+<span class="cm">RULE #2 — DEFINE THE MOVE</span>
+<span class="hi-y">Irreversible progress + a one-line safety proof.</span>
+  &hellip; retire-an-end, expand-and-repair,
+      fast +2 / slow +1,
+      <span class="hi-y">apply the identity to shrink the
+      instance (halve exp, take a mod b)</span>
+
+<span class="cm">RULE #3 — MARK THE HARVEST</span>
+<span class="hi-g">Grab the answer the moment it is visible.</span>
+  &hellip; on-predicate, during-shrink,
+      on-collision / on-exhaustion,
+      <span class="hi-g">at the fixed point / closed form
+      (exp=0, b=0, sign of a cross product)</span>
+
+<span class="cm">RECOGNITION SIGNAL — reach for Math &amp; Geometry when:</span>
+  a PURE-NUMBER or POINTS problem — powers,
+  digits, gcd/lcm, orientation, base-conversion —
+  where step-by-step simulation would TLE, and a
+  known identity collapses it to O(log n) or O(1).`},
+dia:null,
+callout:{type:'callout-purple',text:'When a problem is just numbers or coordinates and the naive loop is linear in a huge value, do not simulate. Ask: is there an identity — a halving, a modulo, a cross product, a numeral system — that rewrites the instance instead of replaying it? If yes, the pattern has named itself.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent=`Step ${n+1} of ${S.length}`;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h=`<div class="s-content"><span class="pill ${s.phase}">${s.phaseTxt}</span><div class="s-title">${s.title}</div><div class="s-desc">${s.desc}</div>`;
+  if(s.principle) h+=`<div class="principle-box"><div class="p-lbl">${s.principle.lbl}</div><div class="p-txt">${s.principle.txt}</div></div>`;
+  if(s.code&&s.dia){
+    h+=`<div class="two-panel"><div class="panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div><div class="panel"><div class="panel-h">Visualization</div><div style="padding:12px 10px">${s.dia()}</div></div></div>`;
+  } else if(s.code){
+    h+=`<div class="full-panel"><div class="panel-h">${s.code.h}</div><div class="panel-b">${s.code.b}</div></div>`;
+  } else if(s.dia){
+    h+=`<div style="margin-bottom:14px">${s.dia()}</div>`;
+  }
+  if(s.extra) h+=s.extra();
+  if(s.callout) h+=`<div class="callout ${s.callout.type}">${s.callout.text}</div>`;
+  h+=`</div>`;
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>
