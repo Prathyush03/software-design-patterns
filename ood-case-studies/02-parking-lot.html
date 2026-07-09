@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 2 — Design a Parking Lot | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 2 — Design a Parking Lot</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design a parking lot." Go.',desc:'Forty-five minutes, a whiteboard, and the most classic OOD interview question there is. A multi-floor parking lot: many entrances and exits, tickets, hourly fees, different spot types, electric charging, display boards. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new spot type, new payment method...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:220px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">A multi-floor parking lot</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Floor 3&nbsp;&nbsp;🚗 🏍️ ♿ ⚡ &nbsp;<span style="color:var(--text-secondary)">display board</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Floor 2&nbsp;&nbsp;🚗 🚚 🚗 🚗 &nbsp;<span style="color:var(--text-secondary)">display board</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Floor 1&nbsp;&nbsp;🚗 🚗 🏍️ ⚡ &nbsp;<span style="color:var(--text-secondary)">display board</span></div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Entrances → tickets</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Exits → payment</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one big class',desc:'The instinct under time pressure: skip the boring requirements talk and write code. One <code>ParkingLot</code> class, an array of spots, strings for vehicle types. Done in five minutes.',
+code:{h:'ParkingLot.java — the "just code it" design',b:`public class ParkingLot {
+    boolean[] spots = new boolean[200];
+    String[] parkedType = new String[200];
+    long[] entryTime = new long[200];
+
+    int park(<span class="hi-y">String vehicleType</span>) {
+        for (int i = 0; i &lt; spots.length; i++) {
+            if (!spots[i]) {
+                spots[i] = true;
+                parkedType[i] = vehicleType;
+                entryTime[i] = now();
+                return i;   <span class="cm">// spot number = ticket?</span>
+            }
+        }
+        return -1;  <span class="cm">// full... I guess?</span>
+    }
+
+    double unpark(int spot) {
+        spots[spot] = false;
+        long hours = hoursSince(entryTime[spot]);
+        return hours * 4.0;  <span class="cm">// flat $4/hour</span>
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">ParkingLot</div><div class="cd-b">boolean[] spots<br>String[] parkedType<br>long[] entryTime</div><div class="cd-m">+ park(String type)<br>+ unpark(int spot)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, one array, one price</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a toy lot this works. It parks cars, it charges money. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: five spot types, five vehicle types, four floors, multiple entrance <em>and</em> exit panels, per-floor display boards, tiered hourly pricing, electric charging panels, cash <em>and</em> card payment, attendants, a capacity limit with a "FULL" sign. Patch the class!',
+code:{h:'ParkingLot.java — the God object grows',b:`int park(String vehicleType) {
+  int start, end;
+  <span class="hi-y">if (vehicleType.equals("motorcycle"))</span> {
+      start = 0; end = 19;      <span class="cm">// bike spots</span>
+  } <span class="hi-y">else if (vehicleType.equals("car"))</span> {
+      start = 20; end = 139;    <span class="cm">// compact</span>
+  } <span class="hi-y">else if (vehicleType.equals("truck")
+          || vehicleType.equals("van"))</span> {
+      start = 140; end = 179;   <span class="cm">// large</span>
+  } <span class="hi-y">else if (vehicleType.equals("electric"))</span> {
+      start = 180; end = 199;   <span class="cm">// + charging?!</span>
+  } else { return -1; }
+  ...
+}
+double fee(long hours) {
+  <span class="hi-r">// $4 first hr, $3.5 hrs 2-3, $2.5 after —
+  // but attendants take cash, portals take card,
+  // and electric spots also bill for charging...</span>
+}
+<span class="cm">// TODO: floors. TODO: display boards. TODO: 6
+// entrance panels writing to the same arrays. 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">ParkingLot <span class="st">the God object</span></div><div class="cd-b">spots, types, times, floors,<br>rates, panels, boards, cash,<br>cards, chargers, attendants...</div><div class="cd-m">+ park() <span style="color:var(--text-danger)">50 lines of if/else</span><br>+ unpark()<br>+ fee() <span style="color:var(--text-danger)">every rule inline</span><br>+ showBoard()? + charge()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another if/else to methods that already do too much. Smell it yet?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The God object collapses',desc:'Then the interviewer asks three innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Three questions that kill Attempt #1',b:`<span class="cm">// Q1: "Add a handicapped spot type."</span>
+<span class="hi-r">→ Edit park(), unpark(), fee(), the array
+  layout, and every if/else chain. One change,
+  five blast sites.</span>
+
+<span class="cm">// Q2: "What if someone types 'moto rcycle'?"</span>
+<span class="hi-r">→ Strings compile fine and fail at runtime.
+  No type safety anywhere.</span>
+
+<span class="cm">// Q3: "Two cars enter at different gates
+//      at the same moment."</span>
+<span class="hi-r">→ Both scan the same boolean[] and grab
+  spot #7. Shared mutable arrays + multiple
+  entrances = race condition.</span>
+
+<span class="cm">// And testing? You can't test the pricing
+// rules without building an entire lot.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every change touches<br>the same giant class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed,<br>race conditions</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">pricing, capacity, display<br>logic all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — behavior that varies is welded to code that doesn\'t. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the parking lot — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Multiple <b>floors</b>, each with many <b>spots</b> <span class="obj">ParkingFloor, ParkingSpot</span></li>
+<li data-n="R2">Multiple <b>entry / exit points</b> <span class="obj">EntrancePanel, ExitPanel</span></li>
+<li data-n="R3">Collect a <b>ticket</b> on entry; pay at exit <span class="obj">ParkingTicket</span></li>
+<li data-n="R4">Pay at the automated panel <em>or</em> to an <b>attendant</b> <span class="obj">ParkingAttendant</span></li>
+<li data-n="R5">Pay via <b>cash or credit card</b> <span class="obj">Payment hierarchy</span></li>
+<li data-n="R6">Pay early at a per-floor <b>info portal</b> <span class="obj">CustomerInfoPortal</span></li>
+<li data-n="R7">Enforce <b>max capacity</b>; show FULL at entrance <span class="obj">ParkingLot.isFull()</span></li>
+<li data-n="R8">Spot types: <b>Compact, Large, Handicapped, Motorcycle</b> <span class="obj">ParkingSpotType</span></li>
+<li data-n="R9"><b>Electric</b> spots with a charging/payment panel <span class="obj">ElectricPanel</span></li>
+<li data-n="R10">Vehicle types: <b>car, truck, van, motorcycle, electric</b> <span class="obj">VehicleType</span></li>
+<li data-n="R11">Per-floor <b>display board</b> of free spots per type <span class="obj">ParkingDisplayBoard</span></li>
+<li data-n="R12"><b>Tiered hourly fee</b>: $4 first hr, $3.5 hrs 2–3, $2.5 after <span class="obj">ParkingRate</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Two minutes of requirements talk just produced our entire vocabulary. Attempt #1 skipped this — and had to invent it mid-code as if/else branches.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Four actors touch this system. Listing their use cases tells us which operations our classes must expose — before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Customer / Attendant</span>
+take ticket        <span class="cm">— issued at entrance</span>
+scan ticket        <span class="cm">— compute charge at exit</span>
+pay ticket         <span class="cm">— cash or credit card</span>
+
+<span class="cm">// Admin</span>
+add/remove floor, spot, display board,
+entrance/exit panel, attendant
+add/modify <span class="hi-b">parking rate</span>
+
+<span class="cm">// System (yes, the system is an actor)</span>
+show FULL on entrance panel + ground-floor board
+assign / free a parking spot
+update per-floor display boards`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Customer</span><span class="does">parks &amp; pays</span></div>
+  <div class="actor"><span class="who">🧑‍✈️ Attendant</span><span class="does">acts for customer,<br>takes cash</span></div>
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">configures lot,<br>spots, rates</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">boards, FULL sign,<br>spot assignment</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Take ticket</span><span class="uc">Scan ticket</span><span class="uc">Cash payment</span><span class="uc">Card payment</span><span class="uc">Add/edit floor</span><span class="uc">Add/edit spot</span><span class="uc">Add attendant</span><span class="uc">Add/modify rate</span><span class="uc">Update display board</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice "System" is an actor: display boards updating themselves is a use case — that hint becomes the Observer pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The physical world</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">ParkingLot</div></div>
+    <div class="cd-box ctx"><div class="cd-h">ParkingFloor</div></div>
+    <div class="cd-box abstract"><div class="cd-h">ParkingSpot</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Vehicle</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The paper trail</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">ParkingTicket</div></div>
+    <div class="cd-box"><div class="cd-h">ParkingRate</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Payment</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Account</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The touchpoints (hardware / UI)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box fly"><div class="cd-h">EntrancePanel</div></div>
+    <div class="cd-box fly"><div class="cd-h">ExitPanel</div></div>
+    <div class="cd-box fly"><div class="cd-h">DisplayBoard</div></div>
+    <div class="cd-box fly"><div class="cd-h">InfoPortal</div></div>
+    <div class="cd-box fly"><div class="cd-h">ElectricPanel</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Boundary objects</div>
+</div>`,
+callout:{type:'callout-ok',text:'Thirteen small classes instead of one God object. Next: which of these vary? That decides where the hierarchies (and patterns) go.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: spots & vehicles',desc:'What kept breaking Attempt #1? <strong>Spot types and vehicle types vary</strong>; everything else is stable. So each becomes an abstract base + subclasses, keyed by a type-safe enum — no more magic strings.',
+code:{h:'ParkingSpot.java — the varying thing gets a hierarchy',b:`public enum ParkingSpotType {
+  HANDICAPPED, COMPACT, LARGE, MOTORBIKE, ELECTRIC
+}
+
+public abstract class ParkingSpot {
+  private String number;
+  private boolean free;
+  private Vehicle vehicle;
+  private final ParkingSpotType type;
+
+  public ParkingSpot(ParkingSpotType type) {
+    this.type = type;
+  }
+  public boolean isFree() { return free; }
+
+  public boolean <span class="hi-g">assignVehicle(Vehicle v)</span> {
+    this.vehicle = v; free = false;
+  }
+  public boolean <span class="hi-g">removeVehicle()</span> {
+    this.vehicle = null; free = true;
+  }
+}
+
+public class CompactSpot extends ParkingSpot {
+  public CompactSpot() { super(ParkingSpotType.COMPACT); }
+}
+public class ElectricSpot extends ParkingSpot {
+  public ElectricSpot() { super(ParkingSpotType.ELECTRIC); }
+}
+<span class="cm">// HandicappedSpot, LargeSpot, MotorbikeSpot — same shape</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:170px"><div class="cd-h"><span class="st">abstract</span>ParkingSpot</div><div class="cd-b">number, free, vehicle<br>type: ParkingSpotType</div><div class="cd-m">+ isFree()<br>+ assignVehicle(v)<br>+ removeVehicle()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Handicapped</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Compact</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Large</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Motorbike</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Electric</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">same shape for vehicles ↓</div>
+<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:150px"><div class="cd-h"><span class="st">abstract</span>Vehicle</div><div class="cd-b">licenseNumber<br>type: VehicleType</div><div class="cd-m">+ assignTicket(t)</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Car</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Truck</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Van</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Motorcycle</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Electric</div></div>
+</div>`,
+callout:{type:'callout-info',text:'Adding a new spot type is now a new subclass + enum value — Q1 that killed Attempt #1 no longer touches existing code. That\'s the Open/Closed principle in action.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. Spot types and vehicle types vary — so they get their own hierarchies.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: payments & accounts',desc:'"Cash or credit card" and "admin or attendant" are the same story: callers should depend on the <em>abstraction</em>, never the concrete class. The exit panel just calls <code>payment.initiateTransaction()</code> — it neither knows nor cares which kind.',
+code:{h:'Payment.java + Account.java — depend on the supertype',b:`public abstract class <span class="hi-b">Payment</span> {
+  private double amount;
+  private PaymentStatus status;
+  private Date createdOn;
+
+  public abstract boolean <span class="hi-b">initiateTransaction()</span>;
+}
+
+public class CreditCardTransaction extends Payment {
+  public boolean initiateTransaction() { <span class="cm">/* gateway */</span> }
+}
+public class CashTransaction extends Payment {
+  public boolean initiateTransaction() { <span class="cm">/* drawer */</span> }
+}
+
+public abstract class <span class="hi-b">Account</span> {
+  private String userName, password;
+  private AccountStatus status;
+  private Person person;
+  public boolean resetPassword();
+}
+
+public class Admin extends Account {
+  public bool addParkingFloor(ParkingFloor floor);
+  public bool addParkingSpot(String floor, ParkingSpot s);
+  public bool addEntrancePanel(EntrancePanel panel);
+}
+public class ParkingAttendant extends Account {
+  public bool processTicket(String ticketNumber);
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Payment</div><div class="cd-m">+ initiateTransaction()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CreditCard</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Cash</div></div>
+  </div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Account</div><div class="cd-m">+ resetPassword()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Admin</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Attendant</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">ExitPanel holds a <b>Payment</b> — never a CreditCardTransaction</div>`,
+callout:{type:'callout-info',text:'Interchangeable payment algorithms behind one interface — that\'s the Strategy pattern from Chapter 1 wearing a parking vest. Adding Apple Pay later = one new subclass.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The declared type (Payment, Account, ParkingSpot, Vehicle) should be a supertype so runtime objects aren\'t locked into the code.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: the lot HAS floors HAS spots',desc:'The God object owned everything in one body. The fix: a composition chain where each class has <strong>one job</strong> — the lot coordinates floors, a floor manages its spots and its display board, a spot holds one vehicle.',
+code:{h:'ParkingFloor.java — one floor, one job',b:`public class ParkingFloor {
+  private String name;
+  <span class="hi-g">private HashMap&lt;String, HandicappedSpot&gt; handicappedSpots;</span>
+  <span class="hi-g">private HashMap&lt;String, CompactSpot&gt; compactSpots;</span>
+  <span class="hi-g">private HashMap&lt;String, LargeSpot&gt; largeSpots;</span>
+  <span class="hi-g">private HashMap&lt;String, MotorbikeSpot&gt; motorbikeSpots;</span>
+  <span class="hi-g">private HashMap&lt;String, ElectricSpot&gt; electricSpots;</span>
+  private HashMap&lt;String, CustomerInfoPortal&gt; infoPortals;
+  <span class="hi-g">private ParkingDisplayBoard displayBoard;</span>
+
+  public void addParkingSpot(ParkingSpot spot) {
+    <span class="cm">// route by spot.getType() into the right map</span>
+  }
+
+  public void assignVehicleToSpot(Vehicle v, ParkingSpot s) {
+    s.assignVehicle(v);
+    <span class="hi-y">updateDisplayBoard(s);</span>  <span class="cm">// keep the board honest</span>
+  }
+
+  public void freeSpot(ParkingSpot spot) {
+    spot.removeVehicle();
+    <span class="cm">// increment free count for spot.getType()</span>
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:170px"><div class="cd-h">ParkingLot</div><div class="cd-m">name, address, rate<br>entrance/exit panels</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:170px"><div class="cd-h">ParkingFloor</div><div class="cd-m">spots by type<br>displayBoard, infoPortals</div></div></div>
+<div style="display:flex;gap:40px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1</div>
+</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box abstract" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>ParkingSpot</div><div class="cd-m">vehicle: Vehicle</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">ParkingDisplayBoard</div><div class="cd-m">free spot per type<br>+ showEmptySpotNumber()</div></div>
+</div>
+<div class="has-a-lbl" style="margin-left:-140px"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 0..1</div>
+<div class="cd-row" style="margin-left:-140px"><div class="cd-box abstract" style="min-width:110px"><div class="cd-h"><span class="st">abstract</span>Vehicle</div></div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Now "add a floor" touches ParkingLot only, "add a spot" touches one floor, and pricing lives in ParkingRate — each class has exactly one reason to change.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. The lot is an aggregate of floors; a floor is an aggregate of spots — nothing owns everything.'}
+},
+// ============ STEP 11 — PATTERN: SINGLETON ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Singleton',title:'One lot, many panels — Singleton',desc:'Six entrance panels and four exit panels must agree on capacity and active tickets. They all need <em>the same</em> ParkingLot instance — and Q3 (the race condition) is solved by synchronizing ticket issue on it.',
+code:{h:'ParkingLot.java — singleton + synchronized entry',b:`public class ParkingLot {
+  private String name;
+  private Address address;
+  private ParkingRate parkingRate;
+  private HashMap&lt;String, EntrancePanel&gt; entrancePanels;
+  private HashMap&lt;String, ExitPanel&gt; exitPanels;
+  private HashMap&lt;String, ParkingTicket&gt; activeTickets;
+
+  <span class="hi-b">private static ParkingLot parkingLot = null;</span>
+
+  <span class="hi-b">private ParkingLot()</span> {
+    <span class="cm">// read name, address, rate, floors from DB;
+    // restrict construction — singleton</span>
+  }
+
+  public static ParkingLot <span class="hi-b">getInstance()</span> {
+    if (parkingLot == null) {
+      parkingLot = new ParkingLot();
+    }
+    return parkingLot;
+  }
+
+  <span class="cm">// synchronized: many entrance panels, no races</span>
+  public <span class="hi-g">synchronized</span> ParkingTicket
+      getNewParkingTicket(Vehicle vehicle)
+      throws ParkingFullException {
+    if (this.isFull(vehicle.getType())) {
+      <span class="hi-r">throw new ParkingFullException();</span>  <span class="cm">// R7!</span>
+    }
+    ParkingTicket ticket = new ParkingTicket();
+    vehicle.assignTicket(ticket);
+    ticket.saveInDB();
+    this.incrementSpotCount(vehicle.getType());
+    this.activeTickets.put(ticket.getNumber(), ticket);
+    return ticket;
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Entrance 1</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Entrance 2</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Exit 1</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Exit 2</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>all call getInstance()</div></div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:190px"><div class="cd-h">ParkingLot <span class="st">singleton</span></div><div class="cd-b">- static instance<br>- private constructor</div><div class="cd-m">+ getInstance()<br>+ <b>synchronized</b> getNewParkingTicket(v)<br>+ isFull(type)</div></div></div>
+<div class="cd-arr" style="padding-top:4px">one shared source of truth for capacity + tickets</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: Singleton — one instance, globally accessible, lazily created. The private constructor makes "new ParkingLot()" a compile error everywhere else; synchronized getNewParkingTicket() kills the race from Q3.'}
+},
+// ============ STEP 12 — PATTERN: OBSERVER + STRATEGY ============
+{phase:'pill-pattern',phaseTxt:'Patterns spotted · Observer & Strategy',title:'Boards that watch, payments that swap',desc:'R11 said display boards must always show a free spot per type. So every spot assignment <em>notifies</em> the floor\'s board — a hand-rolled <strong>Observer</strong>. And the payment hierarchy from Principle #2 is a textbook <strong>Strategy</strong>.',
+code:{h:'ParkingFloor.java — the board observes spot changes',b:`public void assignVehicleToSpot(Vehicle v, ParkingSpot s) {
+  s.assignVehicle(v);
+  switch (s.getType()) {              <span class="cm">// subject changed →</span>
+    case HANDICAPPED:
+      <span class="hi-y">updateDisplayBoardForHandicapped(s);</span> <span class="cm">// notify</span>
+      break;
+    case COMPACT:
+      <span class="hi-y">updateDisplayBoardForCompact(s);</span>     <span class="cm">// notify</span>
+      break;
+    <span class="cm">/* large, motorbike, electric ... */</span>
+  }
+}
+
+private void updateDisplayBoardForCompact(ParkingSpot s) {
+  <span class="cm">// if the board was advertising THIS spot,
+  // find another free compact spot and re-point</span>
+  if (displayBoard.getCompactFreeSpot().getNumber()
+        == s.getNumber()) {
+    for (String key : compactSpots.keySet()) {
+      if (compactSpots.get(key).isFree()) {
+        displayBoard.setCompactFreeSpot(
+            compactSpots.get(key));
+      }
+    }
+    <span class="hi-g">displayBoard.showEmptySpotNumber();</span>
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:160px"><div class="cd-h">ParkingSpot <span class="st">subject</span></div><div class="cd-m">assignVehicle() / removeVehicle()<br>= state change</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>floor notifies</div></div>
+<div class="cd-row"><div class="cd-box fly" style="min-width:170px"><div class="cd-h">ParkingDisplayBoard <span class="st">observer</span></div><div class="cd-m">re-points to a free spot,<br>re-renders the board</div></div></div>
+<div class="cd-arr" style="padding-top:8px">and from Principle #2 ↓</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface" style="min-width:110px"><div class="cd-h"><span class="st">strategy</span>Payment</div><div class="cd-m">initiateTransaction()</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CreditCard</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Cash</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — spots are subjects, boards are observers. The course hand-rolls it with a switch; mention in the interview that a subscribe/notify interface would remove that switch. Pattern #3: Strategy (<a href="../ch1-strategy-pattern.html">Chapter 1</a>) — interchangeable payment algorithms.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, four hierarchies for what varies, aggregates for the structure. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum VehicleType     { CAR, TRUCK, ELECTRIC, VAN, MOTORBIKE }
+enum ParkingSpotType { HANDICAPPED, COMPACT, LARGE,
+                       MOTORBIKE, ELECTRIC }
+enum ParkingTicketStatus { ACTIVE, PAID, LOST }
+
+<span class="cm">// WHAT VARIES — hierarchies</span>
+abstract class ParkingSpot  <span class="cm">// 5 subclasses</span>
+abstract class Vehicle      <span class="cm">// 5 subclasses</span>
+abstract class Payment      <span class="cm">// Cash | CreditCard</span>
+abstract class Account      <span class="cm">// Admin | Attendant</span>
+
+<span class="cm">// THE STRUCTURE — composition</span>
+class ParkingLot   <span class="hi-b">// SINGLETON</span> { floors, panels,
+                   activeTickets, isFull(), rates }
+class ParkingFloor { spots by type, displayBoard,
+                     assignVehicleToSpot(), freeSpot() }
+class ParkingTicket { number, issuedAt, payedAt,
+                      amount, status }
+class ParkingRate  { hourNumber, rate }  <span class="cm">// R12 tiers</span>
+
+<span class="cm">// TOUCHPOINTS</span>
+class EntrancePanel { printTicket() }
+class ExitPanel     { scanTicket(), processPayment() }
+class ParkingDisplayBoard { showEmptySpotNumber() }
+class CustomerInfoPortal, ElectricPanel { ... }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">ParkingLot <span class="st">singleton</span></div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> floors 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> panels 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> tickets 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">ParkingFloor</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Entrance/ExitPanel</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">ParkingTicket</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> spots 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> board 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> payment 0..1</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">ParkingSpot ▸5</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">DisplayBoard</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Payment ▸2</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Vehicle ▸5</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Account ▸2</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">ParkingRate</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but every axis of change now has its own home. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One car, end to end',desc:'A design is only convincing if you can run a scenario through it. Narrate this flow in the interview — it proves the classes actually collaborate.',
+code:{h:'ExitPanel.java — the exit side (sketch)',b:`public class ExitPanel {
+  public void scanTicket(String ticketNumber) {
+    ParkingTicket t = ParkingLot.getInstance()
+        .getTicket(ticketNumber);
+    double amount = <span class="hi-b">parkingRate.calculate(</span>
+        t.getIssuedAt(), now()<span class="hi-b">)</span>;
+    <span class="cm">// $4 first hr, $3.5 hrs 2-3, $2.5 after (R12)</span>
+    t.setAmount(amount);
+  }
+
+  public void processPayment(ParkingTicket t,
+                             <span class="hi-b">Payment payment</span>) {
+    if (<span class="hi-g">payment.initiateTransaction()</span>) {  <span class="cm">// Strategy!</span>
+      t.setStatus(ParkingTicketStatus.PAID);
+      ParkingLot.getInstance().freeSpot(t);
+      <span class="cm">// → floor updates counts + display board</span>
+    }
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Customer</span><br>Drives up to any entrance panel</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">EntrancePanel</span><br><code>ParkingLot.getInstance().getNewParkingTicket(vehicle)</code> — synchronized; throws <code>ParkingFullException</code> if at capacity (FULL sign lights up)</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">ParkingFloor</span><br>Free spot of the right type assigned: <code>assignVehicleToSpot(v, spot)</code></div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">DisplayBoard</span><br>Board no longer advertises that spot — re-points to another free one (Observer)</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Customer</span><br>...shops for 3 hours... (optionally pre-pays at the info portal, R6)</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">ExitPanel</span><br><code>scanTicket()</code> → ParkingRate computes $4 + $3.5 + $3.5 = <b>$11</b></div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Payment</span><br><code>payment.initiateTransaction()</code> — cash or card, panel doesn't care (Strategy)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">System</span><br>Ticket PAID → spot freed → counts &amp; boards update → gate opens</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and no step needs code that doesn\'t exist. That\'s how you know the design is complete enough.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 20 classes — one recipe, three principles, three patterns. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The parking lot in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → ParkingSpot ▸5, Vehicle ▸5 hierarchies
+2. Program to an interface
+   → Payment, Account abstractions
+3. Composition + single responsibility
+   → Lot ▸ Floors ▸ Spots; Rate, Ticket separate
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Singleton</span>  ParkingLot: one instance, all panels,
+           synchronized ticket issue
+<span class="hi-b">Observer</span>   spot changes → display board updates
+<span class="hi-b">Strategy</span>   Payment: cash / card interchangeable
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Hotel (rooms≈spots, booking≈ticket)
+Car Rental (vehicles + reservations)
+Movie Tickets (seats≈spots + Strategy payments)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h">Singleton</div><div class="cd-m">ParkingLot —<br>one source of truth</div></div>
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Observer</div><div class="cd-m">spot → display board<br>notifications</div></div>
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h">Strategy</div><div class="cd-m">Payment: cash/card<br>swap freely</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Coordination</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable behavior</div>
+</div>`,
+callout:{type:'callout-purple',text:'The God object failed because everything that could vary was welded together. The recipe separated the axes of change — and the patterns appeared exactly where the requirements demanded flexibility: one shared lot (Singleton), live boards (Observer), swappable payments (Strategy).'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 1 — Design a Library Management System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 1 — Design a Library Management System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design a library management system." Go.',desc:'Forty-five minutes and a whiteboard. Thousands of titles, multiple copies of each, members who search, check out, reserve, renew and return; due dates, fines, notifications, barcodes on everything. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new search axis, new account type,
+    new notification channel...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:220px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">A public library</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Rack 12&nbsp;&nbsp;📕 📕 📕 📕 📕 &nbsp;<span style="color:var(--text-secondary)">5 copies, one title</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Rack 13&nbsp;&nbsp;📗 📘 📙 📗 &nbsp;<span style="color:var(--text-secondary)">reference only</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Catalog&nbsp;&nbsp;🔍 title · author · subject · pub-date</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Check-out desk → barcodes</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Late returns → fines</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one big class',desc:'The instinct under time pressure: skip the boring requirements talk and write code. One <code>Library</code> class, an array of titles, a checked-out flag, the borrower\'s name. Done in five minutes.',
+code:{h:'Library.java — the "just code it" design',b:`public class Library {
+    String[] bookTitles = new String[1000];
+    boolean[] checkedOut = new boolean[1000];
+    String[] borrowerName = new String[1000];
+
+    boolean checkout(<span class="hi-y">String title</span>, String member) {
+        for (int i = 0; i &lt; bookTitles.length; i++) {
+            if (title.equals(bookTitles[i])
+                  &amp;&amp; !checkedOut[i]) {
+                checkedOut[i] = true;
+                borrowerName[i] = member;
+                return true;   <span class="cm">// row i = the loan?</span>
+            }
+        }
+        return false;  <span class="cm">// no such book... or all out?</span>
+    }
+
+    void returnBook(String title) {
+        for (int i = 0; i &lt; bookTitles.length; i++) {
+            if (title.equals(bookTitles[i])
+                  &amp;&amp; checkedOut[i]) {
+                checkedOut[i] = false;  <span class="cm">// which copy??</span>
+                return;
+            }
+        }
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">Library</div><div class="cd-b">String[] bookTitles<br>boolean[] checkedOut<br>String[] borrowerName</div><div class="cd-m">+ checkout(title, member)<br>+ returnBook(title)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, three parallel arrays, the title as identity</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a one-shelf church library this works. Books go out, books come back. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: search by <em>title, author, subject and publication date</em>; multiple copies of each book; a 5-book limit per member; 10-day loans; fines for late returns; reservations on unavailable books; notifications when they free up; barcodes on every book and member card. Patch the class!',
+code:{h:'Library.java — the God object grows',b:`boolean checkout(String title, String member) {
+  <span class="hi-y">int count = 0;</span>                 <span class="cm">// rule: max 5 books</span>
+  for (int i = 0; i &lt; bookTitles.length; i++)
+    if (member.equals(borrowerName[i])) count++;
+  if (count &gt;= 5) return false;
+
+  <span class="hi-y">if (isReference[i])</span> ...         <span class="cm">// new array #4</span>
+  <span class="hi-y">if (reservedBy[i] != null
+      &amp;&amp; !reservedBy[i].equals(member))</span> ...  <span class="cm">// #5</span>
+  <span class="hi-y">dueDate[i] = now() + days(10);</span>  <span class="cm">// array #6</span>
+  ...
+}
+List&lt;String&gt; searchByAuthor(String author) {
+  <span class="hi-r">// we only stored titles. Add authors[],
+  // subjects[], pubDates[] — and scan every
+  // row of every array, on every query.</span>
+}
+<span class="cm">// TODO: fines. TODO: notify Alice when her
+// reserved copy comes back. TODO: barcodes.
+// TODO: which COPY of "Clean Code" is due? 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">Library <span class="st">the God object</span></div><div class="cd-b">titles, checkedOut, borrowers,<br>authors, subjects, pubDates,<br>dueDates, reservedBy, fines...</div><div class="cd-m">+ checkout() <span style="color:var(--text-danger)">6 rules inline</span><br>+ returnBook() <span style="color:var(--text-danger)">which copy?!</span><br>+ searchBy...() <span style="color:var(--text-danger)">full scans</span><br>+ notify()? + fine()?</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another parallel array + another branch</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another parallel array that must never drift out of sync with the others. Smell it yet?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'Title-as-identity collapses',desc:'Then the interviewer asks three innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Three questions that kill Attempt #1',b:`<span class="cm">// Q1: "We own five copies of Clean Code. A member
+//      just returned one — which copy came back?"</span>
+<span class="hi-r">→ The title is the identity. Five rows share it;
+  the arrays can't tell copies apart. No barcode,
+  no per-copy due date. Unanswerable.</span>
+
+<span class="cm">// Q2: "Find every book by Robert Martin."</span>
+<span class="hi-r">→ We never stored authors. Every new search
+  axis = another parallel array + a full scan
+  of every row, on every query.</span>
+
+<span class="cm">// Q3: "Alice reserved this book. Notify her when
+//      it's back — and fine ME if I return late."</span>
+<span class="hi-r">→ returnBook() must now know reservations,
+  fines, due dates, and Alice's email. One
+  method, five reasons to change.</span>
+
+<span class="cm">// And testing? You can't test the fine rule
+// without constructing an entire library.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every new search axis =<br>another parallel array</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">title-as-identity;<br>arrays drift apart</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">limits, fines, reservations<br>all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — things that vary independently (the record vs. the copy, the loan vs. the member) are welded into one identity. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the library — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Search books by <b>title, author, subject, publication date</b> <span class="obj">Search, Catalog</span></li>
+<li data-n="R2">Each book has a <b>unique ID</b> + a <b>rack number</b> to locate it physically <span class="obj">BookItem, Rack</span></li>
+<li data-n="R3">Multiple <b>copies</b> per book; check out / reserve <em>any copy</em> — "each copy is a <b>book item</b>" <span class="obj">Book vs BookItem</span></li>
+<li data-n="R4">Retrieve <b>who took a book</b> / what a member has out <span class="obj">BookLending</span></li>
+<li data-n="R5">Max <b>5 books</b> checked out per member <span class="obj">Constants</span></li>
+<li data-n="R6">Max <b>10 days</b> per checkout <span class="obj">MAX_LENDING_DAYS</span></li>
+<li data-n="R7">Collect <b>fines</b> for books returned after the due date <span class="obj">Fine</span></li>
+<li data-n="R8"><b>Reserve</b> books that are not currently available <span class="obj">BookReservation</span></li>
+<li data-n="R9"><b>Notify</b> when a reserved book is available / a book is overdue <span class="obj">Notification</span></li>
+<li data-n="R10"><b>Barcodes</b> on every book and member card <span class="obj">barcode, LibraryCard</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'R3 is the sentence that kills Attempt #1 and names the fix in one breath: "we will call each copy of a book, a book item." The interviewer literally hands you the class — if you\'re listening.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Three actors touch this system. Listing their use cases tells us which operations our classes must expose — before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Member (librarian can act on their behalf)</span>
+search catalog    <span class="cm">— title, author, subject, date</span>
+check-out book    <span class="cm">— max 5 out, 10 days (R5, R6)</span>
+reserve book      <span class="cm">— when no copy is available</span>
+renew book        <span class="cm">— unless another member reserved it</span>
+return book       <span class="cm">— late → fine (R7)</span>
+
+<span class="cm">// Librarian</span>
+add/remove/edit book &amp; book item
+register account / cancel membership
+block / unblock a member
+
+<span class="cm">// System (yes, the system is an actor)</span>
+notify: reserved book now <span class="hi-b">available</span>
+notify: book <span class="hi-b">overdue</span>
+cancel expired reservations`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">🧑‍💼 Librarian</span><span class="does">adds books &amp; members,<br>issues &amp; returns</span></div>
+  <div class="actor"><span class="who">👤 Member</span><span class="does">searches, checks out,<br>reserves, renews, returns</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">overdue &amp; reservation<br>notifications</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Add/Remove/Edit book</span><span class="uc">Search catalog</span><span class="uc">Register account</span><span class="uc">Cancel membership</span><span class="uc">Check-out book</span><span class="uc">Reserve book</span><span class="uc">Renew book</span><span class="uc">Return book</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice "System" is an actor: sending overdue and reservation notifications is a use case with no human behind it — that hint becomes a hand-rolled Observer in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The collection</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Library</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Rack</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Book</div></div>
+    <div class="cd-box"><div class="cd-h">BookItem</div></div>
+    <div class="cd-box"><div class="cd-h">Author</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Account</div></div>
+    <div class="cd-box"><div class="cd-h">Librarian</div></div>
+    <div class="cd-box"><div class="cd-h">Member</div></div>
+    <div class="cd-box fly"><div class="cd-h">LibraryCard</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The paper trail &amp; services</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">BookLending</div></div>
+    <div class="cd-box"><div class="cd-h">BookReservation</div></div>
+    <div class="cd-box"><div class="cd-h">Fine</div></div>
+    <div class="cd-box iface"><div class="cd-h">Catalog : Search</div></div>
+    <div class="cd-box fly"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Boundary objects</div>
+</div>`,
+callout:{type:'callout-ok',text:'Fourteen small classes instead of one God object. Next: which of these vary? That decides where the hierarchies — and this case\'s signature move — go.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: Book vs. BookItem',desc:'What kept breaking Attempt #1? <strong>One identity for two different things.</strong> "Clean Code" the bibliographic record is one stable object; the library\'s five physical copies are five churning ones — each with its own barcode, status, due date, and rack. Requirement R3 names the split: <code>Book</code> vs <code>BookItem</code>. This is the case\'s signature insight.',
+code:{h:'Book.java + BookItem.java — the record vs. the copy',b:`<span class="cm">// The vocabulary first — enums, not strings</span>
+public enum BookFormat {
+  HARDCOVER, PAPERBACK, AUDIO_BOOK, EBOOK,
+  NEWSPAPER, MAGAZINE, JOURNAL
+}
+public enum BookStatus {
+  AVAILABLE, RESERVED, LOANED, LOST
+}
+
+public abstract class <span class="hi-b">Book</span> {     <span class="cm">// the WORK — stable</span>
+  private String ISBN;
+  private String title;
+  private String subject;
+  private String publisher;
+  private String language;
+  private int numberOfPages;
+  private List&lt;Author&gt; authors;
+}
+
+public class <span class="hi-g">BookItem</span> extends Book {  <span class="cm">// the COPY — churns</span>
+  private String <span class="hi-g">barcode</span>;      <span class="cm">// identity of THIS copy (R10)</span>
+  private boolean isReferenceOnly;
+  private Date borrowed;
+  private Date <span class="hi-g">dueDate</span>;        <span class="cm">// this copy's clock (R6)</span>
+  private double price;
+  private BookFormat format;
+  private BookStatus <span class="hi-g">status</span>;   <span class="cm">// AVAILABLE|RESERVED|LOANED|LOST</span>
+  private Date dateOfPurchase;
+  private Rack <span class="hi-g">placedAt</span>;       <span class="cm">// this copy's location (R2)</span>
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Book <span class="st">the record — stable</span></div><div class="cd-b">ISBN, title, subject,<br>publisher, language</div><div class="cd-m">authors: List&lt;Author&gt;</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A — one record, many copies</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">BookItem B-001</div><div class="cd-m">LOANED<br>due Jul 19</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">BookItem B-002</div><div class="cd-m">AVAILABLE<br>Rack 12</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">BookItem B-003</div><div class="cd-m">RESERVED<br>held at desk</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">same title, three different lives — the barcode is the identity</div>`,
+callout:{type:'callout-info',text:'Q1 is now unaskable: a member returns barcode B-002, not "a copy of Clean Code". Five copies = one Book + five BookItems. The title never was the identity — the barcode is.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. The bibliographic record (ISBN, title, authors) never changes; a copy\'s state (status, due date, location) changes every day — so the copy gets its own class and its own identity.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: Search & Account',desc:'"Search by title, author, subject or publication date" is an abstraction seam: callers should depend on <em>what searching means</em>, never on how the catalog stores its indexes. Same story for people: the system talks to an <code>Account</code>; whether it\'s a <code>Librarian</code> or a <code>Member</code> decides what it may do.',
+code:{h:'Search.java + Catalog.java + the Account hierarchy',b:`public interface <span class="hi-b">Search</span> {
+  public List&lt;Book&gt; searchByTitle(String title);
+  public List&lt;Book&gt; searchByAuthor(String author);
+  public List&lt;Book&gt; searchBySubject(String subject);
+  public List&lt;Book&gt; searchByPubDate(Date publishDate);
+}
+
+public class Catalog <span class="hi-b">implements Search</span> {
+  private HashMap&lt;String, List&lt;Book&gt;&gt; bookTitles;
+  private HashMap&lt;String, List&lt;Book&gt;&gt; bookAuthors;
+  private HashMap&lt;String, List&lt;Book&gt;&gt; bookSubjects;
+  private HashMap&lt;String, List&lt;Book&gt;&gt; bookPublicationDates;
+
+  public List&lt;Book&gt; searchByTitle(String query) {
+    return <span class="hi-g">bookTitles.get(query)</span>;  <span class="cm">// index, not a scan</span>
+  }
+  public List&lt;Book&gt; searchByAuthor(String query) {
+    return bookAuthors.get(query);
+  }
+}
+
+public abstract class <span class="hi-b">Account</span> {
+  private String id;
+  private String password;
+  private AccountStatus status;
+  private Person person;
+  public boolean resetPassword();
+}
+public class Librarian extends Account {
+  public boolean addBookItem(BookItem bookItem);
+  public boolean blockMember(Member member);
+  public boolean unBlockMember(Member member);
+}
+public class Member extends Account {
+  private Date dateOfMembership;
+  private int totalBooksCheckedout;
+  public boolean checkoutBookItem(BookItem bookItem);
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:130px"><div class="cd-h"><span class="st">interface</span>Search</div><div class="cd-m">+ searchByTitle()<br>+ searchByAuthor()<br>+ searchBySubject()<br>+ searchByPubDate()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>implements</div></div>
+  <div class="cd-row"><div class="cd-box fly" style="min-width:110px"><div class="cd-h">Catalog</div><div class="cd-m">4 HashMap indexes</div></div></div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:130px"><div class="cd-h"><span class="st">abstract</span>Account</div><div class="cd-m">id, password, status<br>+ resetPassword()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Librarian</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Member</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">the UI holds a <b>Search</b> — never a Catalog</div>`,
+callout:{type:'callout-info',text:'Q2 died twice: the Search interface hides HOW (swap the HashMaps for a database index tomorrow — no caller changes), and each lookup is now O(1) instead of a full scan of parallel arrays.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The UI depends on Search; the system depends on Account. Runtime objects (Catalog, Librarian, Member) plug in behind those declared types.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: reify the paper trail',desc:'Attempt #1 pinned loans onto the book row (<code>borrowerName[i]</code>). But a loan isn\'t a property of the book <em>or</em> the member — it\'s a <strong>relationship</strong> between one copy and one member, with its own dates. So it becomes an object. Same for reservations and fines.',
+code:{h:'BookLending.java, BookReservation.java, Fine.java',b:`public class <span class="hi-g">BookLending</span> {      <span class="cm">// WHO has WHICH copy (R4)</span>
+  private Date creationDate;
+  private Date <span class="hi-g">dueDate</span>;           <span class="cm">// creation + 10 days (R6)</span>
+  private Date returnDate;
+  private String bookItemBarcode;  <span class="cm">// the copy...</span>
+  private String memberId;         <span class="cm">// ...and the person</span>
+
+  public static void lendBook(String barcode,
+                              String memberId);
+  public static BookLending fetchLendingDetails(
+                              String barcode);
+}
+
+public class <span class="hi-g">BookReservation</span> {   <span class="cm">// a stored "I'm waiting"</span>
+  private Date creationDate;
+  private ReservationStatus status;  <span class="cm">// WAITING|PENDING|...</span>
+  private String bookItemBarcode;
+  private String memberId;
+
+  public static BookReservation fetchReservationDetails(
+                              String barcode);
+}
+
+public class <span class="hi-g">Fine</span> {              <span class="cm">// late return → money (R7)</span>
+  private Date creationDate;
+  private String bookItemBarcode;
+  private String memberId;
+
+  public static void collectFine(String memberId,
+                                 long days) {}
+}
+
+public class Rack {              <span class="cm">// physical location (R2)</span>
+  private int number;
+  private String locationIdentifier;
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:170px"><div class="cd-h">Library</div><div class="cd-m">name, address</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:170px"><div class="cd-h">Rack</div><div class="cd-m">number, locationIdentifier</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HOLDS 0..*</div>
+<div class="cd-row"><div class="cd-box" style="min-width:170px"><div class="cd-h">BookItem</div><div class="cd-m">barcode, status, dueDate</div></div></div>
+<div class="cd-arr" style="padding-top:6px">and the paper trail connects people to copies ↓</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Member</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">BookLending</div><div class="cd-m">barcode ↔ memberId<br>dueDate</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">BookReservation</div><div class="cd-m">barcode ↔ memberId<br>status</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Fine</div><div class="cd-m">memberId, days</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'"Who has barcode B-4231?" — one BookLending lookup (R4). "What does member 88 owe?" — a Fine query. Each question now has exactly one class that answers it.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition, and give each class a single responsibility. Library HAS racks; racks HOLD book items; and every relationship worth tracking (lending, reservation, fine) is its own object — not a flag on Member or BookItem.'}
+},
+// ============ STEP 11 — PATTERN: OBSERVER ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Observer',title:'Reservations that watch, returns that notify',desc:'R9: notify members when a reserved book becomes available. Watch the return path — the returning member has no idea who\'s waiting. The <em>reservation record</em> knows. The state change looks up its pending reservation and pushes a notification to the right member. That\'s a hand-rolled <strong>Observer</strong>.',
+code:{h:'Member.java — the return event notifies the waiter',b:`public void returnBookItem(BookItem bookItem) {
+  this.checkForFine(bookItem.getBarcode());
+  BookReservation bookReservation =
+      BookReservation.fetchReservationDetails(
+          bookItem.getBarcode());
+  if (bookReservation != null) {
+    <span class="cm">// someone is waiting on THIS barcode → hold it</span>
+    bookItem.updateBookItemStatus(BookStatus.RESERVED);
+    <span class="hi-g">bookReservation.sendBookAvailableNotification();</span>
+  }
+  bookItem.updateBookItemStatus(BookStatus.AVAILABLE);
+  <span class="cm">// ⚠ course bug worth calling out in the interview:
+  // that line needs an ELSE — as written it
+  // overwrites RESERVED for the waiting member.</span>
+}
+
+<span class="cm">// renewBookItem — the same event, other direction:</span>
+public bool renewBookItem(BookItem bookItem) {
+  ...
+  if (bookReservation != null &amp;&amp;
+      bookReservation.getMemberId() != this.getMemberId()) {
+    <span class="cm">// another member reserved it: renewal denied —
+    // and THEY get the availability ping</span>
+    bookItem.updateBookItemState(BookStatus.RESERVED);
+    <span class="hi-g">bookReservation.sendBookAvailableNotification();</span>
+    return false;
+  }
+  ...
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">BookItem <span class="st">subject</span></div><div class="cd-m">returned / renewed =<br>state change on a barcode</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>fetchReservationDetails(barcode)</div></div>
+<div class="cd-row"><div class="cd-box iface" style="min-width:180px"><div class="cd-h">BookReservation <span class="st">stored subscription</span></div><div class="cd-m">memberId waiting on<br>this barcode</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>sendBookAvailableNotification()</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Notification</div><div class="cd-m">email / post</div></div>
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Member <span class="st">observer</span></div><div class="cd-m">"your book is ready"</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">the System actor reuses the same pipe for overdue alerts (R9)</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — a BookReservation is literally a stored subscription: "tell me when this barcode changes state." The course hand-rolls the notify with a fetch + send; in the interview, mention that a subscribe/notify interface on BookItem would also carry the overdue alerts.'}
+},
+// ============ STEP 12 — DESIGN MOVE: ONE RULE, ONE HOME ============
+{phase:'pill-pattern',phaseTxt:'Design move · One rule, one home',title:'The guarded checkout',desc:'Max 5 books. Ten-day loans. Reference-only copies never leave the building. A copy reserved by another member can\'t be checked out. In Attempt #1 these rules were doomed to be copy-pasted branches. Here, each rule lives in exactly one method — on the object that owns the data it guards.',
+code:{h:'Member.java + BookItem.java — the checkout use case',b:`public boolean checkoutBookItem(BookItem bookItem) {
+  if (this.getTotalBooksCheckedOut() &gt;=
+      <span class="hi-b">Constants.MAX_BOOKS_ISSUED_TO_A_USER</span>) {  <span class="cm">// R5: 5</span>
+    ShowError("The user has already checked-out
+               maximum number of books");
+    return false;
+  }
+  BookReservation res = BookReservation
+      .fetchReservationDetails(bookItem.getBarcode());
+  if (res != null &amp;&amp; res.getMemberId() != this.getId()) {
+    <span class="hi-r">ShowError("This book is reserved by another member");</span>
+    return false;                  <span class="cm">// reservations win</span>
+  } else if (res != null) {
+    res.updateStatus(ReservationStatus.COMPLETED);
+  }
+  if (!bookItem.checkout(this.getId())) return false;
+  this.incrementTotalBooksCheckedout(); <span class="cm">// invariant kept</span>
+  return true;
+}
+
+<span class="cm">// BookItem guards ITS OWN rule:</span>
+public boolean checkout(String memberId) {
+  if (getIsReferenceOnly()) {
+    <span class="hi-r">ShowError("This book is Reference only
+               and can't be issued");</span>
+    return false;
+  }
+  if (!BookLending.lendBook(this.getBarCode(), memberId))
+    return false;
+  this.updateBookItemStatus(BookStatus.LOANED);
+  return true;
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box" style="min-width:130px"><div class="cd-h" style="font-size:10px">max 5 books (R5)</div><div class="cd-m">Member.<br>checkoutBookItem()</div></div>
+  <div class="cd-box" style="min-width:130px"><div class="cd-h" style="font-size:10px">reserved by another (R8)</div><div class="cd-m">Member.<br>checkoutBookItem()</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box" style="min-width:130px"><div class="cd-h" style="font-size:10px">reference-only</div><div class="cd-m">BookItem.<br>checkout()</div></div>
+  <div class="cd-box" style="min-width:130px"><div class="cd-h" style="font-size:10px">10-day due date (R6)</div><div class="cd-m">BookLending<br>+ Constants</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">one rule, one home — on the object that owns the guarded data</div>
+</div>`,
+callout:{type:'callout-purple',text:'Not a GoF pattern — but it\'s what this case study really tests. Member guards member state (the 5-book limit); BookItem guards copy state (reference-only); Constants owns the numbers. When the limit becomes 7, one constant changes and zero methods do.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, the Book/BookItem split for what varies, one interface seam, aggregates for the structure, and the reified paper trail. (Getters/setters omitted — the course says exactly that; say it out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum BookFormat  { HARDCOVER, PAPERBACK, AUDIO_BOOK, EBOOK,
+                   NEWSPAPER, MAGAZINE, JOURNAL }
+enum BookStatus  { AVAILABLE, RESERVED, LOANED, LOST }
+enum ReservationStatus { WAITING, PENDING, CANCELED, NONE }
+enum AccountStatus { ACTIVE, CLOSED, CANCELED, BLACKLISTED }
+class Constants  { MAX_BOOKS_ISSUED_TO_A_USER = 5;
+                   MAX_LENDING_DAYS = 10; }  <span class="cm">// R5, R6</span>
+
+<span class="cm">// WHAT VARIES — hierarchies</span>
+abstract class Book          <span class="cm">// ISBN, title, authors — the record</span>
+class BookItem extends Book  <span class="hi-b">// barcode, status, dueDate, rack</span>
+abstract class Account       <span class="cm">// Librarian | Member</span>
+
+<span class="cm">// THE SEAM — program to an interface</span>
+interface Search { searchByTitle / Author / Subject / PubDate }
+class Catalog implements Search  <span class="cm">// 4 HashMap indexes</span>
+
+<span class="cm">// THE STRUCTURE — composition</span>
+class Library { name, address }  <span class="cm">// HAS racks, catalog</span>
+class Rack    { number, locationIdentifier }
+
+<span class="cm">// THE PAPER TRAIL — reified relationships</span>
+class BookLending     { barcode, memberId, dueDate }
+class BookReservation { barcode, memberId, status }
+class Fine            { collectFine(memberId, days) }
+class LibraryCard     { barcode, issuedAt }        <span class="cm">// R10</span>
+class Notification    { book-available, overdue }  <span class="cm">// R9</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Library</div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> racks 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> catalog 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> accounts 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Rack</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Catalog : Search</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Account ▸2</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> items 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> indexes Books</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> card 1</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Book → BookItem</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Author</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">LibraryCard</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">BookLending</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">BookReservation</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Fine</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Notification</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but every axis of change now has its own home. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One book, end to end',desc:'A design is only convincing if you can run a scenario through it. Narrate this in the interview: a checkout that survives every guard, then a late return that triggers a fine and wakes up a reservation.',
+code:{h:'Member.java — the fine path on return',b:`private void checkForFine(String bookItemBarcode) {
+  BookLending bookLending =
+      BookLending.fetchLendingDetails(bookItemBarcode);
+  Date dueDate = bookLending.getDueDate();
+  Date today = new Date();
+  <span class="cm">// the lending record — not the member's memory —
+  // knows when THIS copy was due (R4, R6)</span>
+  if (today.compareTo(dueDate) &gt; 0) {
+    long diff = today.getTime() - dueDate.getTime();
+    long diffDays = diff / (24 * 60 * 60 * 1000);
+    <span class="hi-y">Fine.collectFine(memberId, diffDays);</span>  <span class="cm">// R7</span>
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Member</span><br>Hands over a copy of Clean Code + library card; both <code>barcodes</code> scanned (R10)</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Member.checkoutBookItem</span><br>Guard: <code>totalBooksCheckedout &gt;= 5</code>? → deny (R5)</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">BookReservation</span><br><code>fetchReservationDetails(barcode)</code> — reserved by another member? → deny; my own reservation? → COMPLETED</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">BookItem</span><br><code>checkout(memberId)</code> — reference-only? → deny; else <code>BookLending.lendBook(barcode, memberId)</code></div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">BookLending</span><br>Record created: <code>dueDate = today + MAX_LENDING_DAYS (10)</code>; status → LOANED; count incremented</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">12 days later...</span><br>Member returns the copy — <code>checkForFine</code>: 2 days late → <code>Fine.collectFine(memberId, 2)</code> (R7)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Observer</span><br>Pending reservation on this barcode? → status RESERVED + <code>sendBookAvailableNotification()</code> (R9)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">System</span><br>No reservation → AVAILABLE, back to its <code>Rack</code>; lending record closed, member count decremented</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and no step needs code that doesn\'t exist. That\'s how you know the design is complete enough.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 14 classes — one recipe, three principles, one pattern, one signature move. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The library in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → <span class="hi-b">Book</span> (stable record) vs <span class="hi-b">BookItem</span> (churning copy)
+2. Program to an interface
+   → Search ⇽ Catalog; Account ⇽ Librarian | Member
+3. Composition + single responsibility
+   → Library ▸ Racks ▸ BookItems;
+     Lending / Reservation / Fine are objects, not flags
+
+<span class="cm">// THE PATTERN (it emerged — never forced)</span>
+<span class="hi-b">Observer</span>   reservation = stored subscription;
+           return event → sendBookAvailableNotification()
+
+<span class="cm">// THE SIGNATURE MOVE</span>
+one rule, one home: max 5 → Member.checkoutBookItem,
+reference-only → BookItem.checkout, 10 days → Constants
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Hotel (rooms ≈ book items, booking ≈ lending)
+Car Rental (reserve / lend / fine — identical paper trail)
+Parking Lot (ticket ≈ lending, spot ≈ book item)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box abstract" style="min-width:130px"><div class="cd-h">Split identity</div><div class="cd-m">Book = the record<br>BookItem = the copy</div></div>
+  <div class="cd-box iface" style="min-width:130px"><div class="cd-h">Search seam</div><div class="cd-m">Catalog behind an<br>interface — swappable</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Observer</div><div class="cd-m">reservation = stored<br>subscription → notify</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Encapsulate what varies</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Program to an interface</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+</div>`,
+callout:{type:'callout-purple',text:'The naive Library failed because it welded two identities into one string and scattered every rule across parallel arrays. The recipe split the identities (Book vs BookItem), put searching behind an interface, reified the paper trail — and the one pattern the requirements demanded (Observer, for reservation and overdue notifications) appeared exactly where it belonged.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

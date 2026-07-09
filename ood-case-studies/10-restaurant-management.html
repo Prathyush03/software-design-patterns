@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 10 — Design a Restaurant Management System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 10 — Design a Restaurant Management System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design a restaurant management system." Go.',desc:'Forty-five minutes and a whiteboard. A restaurant chain: branches, menus with sections, tables with seats, reservations and walk-ins, waiters and chefs, checks with tip and tax. The interviewer leans back and waits. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (seasonal menu section, new payment method,
+    a sixth staff role...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:230px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">One busy Saturday night</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Reception 📋 &nbsp;7 PM booking · walk-in party of 4</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Dining room 🍽️ &nbsp;T1 T2 T3… seats, split checks</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Kitchen 👨‍🍳 &nbsp;orders in → meals out</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Menu → sections → items</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Check → tip + tax → pay</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one big class',desc:'The instinct under time pressure: skip the requirements talk and write code. One <code>Restaurant</code> class. The menu is a string array, tables are booleans, and an order is a free-text ticket you shove at the kitchen. Done in five minutes.',
+code:{h:'Restaurant.java — the "just code it" design',b:`public class Restaurant {
+    <span class="hi-y">String[] menu</span> = {
+        "Garlic Bread  $6", "Burger  $11",
+        "Pasta  $14", "Tiramisu  $8" };
+    <span class="hi-y">boolean[] tables</span> = new boolean[20];
+    <span class="hi-y">List&lt;String&gt; kitchenTickets</span> = new ArrayList&lt;&gt;();
+
+    int seatParty(int size) {
+        for (int i = 0; i &lt; tables.length; i++)
+            if (!tables[i]) { tables[i] = true; return i; }
+        return -1;  <span class="cm">// "45 minute wait, sorry"</span>
+    }
+
+    void order(int table, String ticket) {
+        <span class="cm">// "T7: 2 burgers, 1 pasta, no onions"</span>
+        kitchenTickets.add("T" + table + ": " + ticket);
+    }
+
+    double payBill(int table) {
+        <span class="cm">// um... parse the ticket string and
+        // look each dish up in menu[]?</span>
+        tables[table] = false;
+        return total;
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:200px"><div class="cd-h">Restaurant</div><div class="cd-b">String[] menu<br>boolean[] tables<br>List&lt;String&gt; kitchenTickets</div><div class="cd-m">+ seatParty(int size)<br>+ order(int, String)<br>+ payBill(int table)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, two arrays, and a lot of yelling at the kitchen</div>`,
+callout:{type:'callout-ok',text:'For a food truck with six stools? Honestly fine. People get seated, food comes out, money comes in. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: multiple <em>branches</em>, each with its own menu; menus have <em>sections</em> that change seasonally; an order carries a <em>meal per seat</em>, each meal made of items that map to menu items; walk-ins need live availability; reservations by date/time with cancellation and reminder notifications; payment by credit card, check <em>or</em> cash; multiple seating charts per branch. Patch the class!',
+code:{h:'Restaurant.java — the God object grows',b:`boolean reserve(String name, Date at, int size) {
+  <span class="hi-r">// tables[] is a boolean — where does
+  // "table 4, Saturday 7 PM" even go?!</span>
+}
+void order(int table, String ticket) {
+  <span class="hi-y">if (ticket.contains("seat 1:"))</span> {
+      <span class="cm">// per-seat meals... substring surgery</span>
+  }
+  kitchenTickets.add("T" + table + ": " + ticket);
+}
+void updateMenu(String season) {
+  <span class="hi-y">if (season.equals("summer"))</span> {
+      menu = summerMenu;  <span class="cm">// open tickets now point
+                          // at prices that moved</span>
+  }
+}
+double payBill(int table, <span class="hi-y">String how</span>, boolean split) {
+  if (how.equals("cash")) { ... }
+  else if (how.equals("card")) { ... }
+  else if (how.equals("check")) { ... }
+  <span class="cm">// split by seat? re-parse "2 burgers,
+  // 1 pasta" and guess who ate what 😰</span>
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">Restaurant <span class="st">the God object</span></div><div class="cd-b">menu strings, table booleans,<br>ticket strings, seasons, seats,<br>reservations, notifications,<br>cash, cards, checks, branches...</div><div class="cd-m">+ order() <span style="color:var(--text-danger)">string surgery</span><br>+ reserve() <span style="color:var(--text-danger)">no time axis</span><br>+ payBill() <span style="color:var(--text-danger)">every rule inline</span><br>+ updateMenu()? + notify()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another if/else and another string format to parse. Smell it yet?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The free-text restaurant collapses',desc:'Then the interviewer asks four innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "Table 7 is two couples. They want
+//      separate checks — per seat."</span>
+<span class="hi-r">→ The order is ONE string. Nobody knows
+  which seat ordered the pasta.</span>
+
+<span class="cm">// Q2: "A walk-in took table 4 at 6:45.
+//      Table 4 is also reserved for 7 PM."</span>
+<span class="hi-r">→ boolean[] has no time axis. Both bookings
+  read "true". Two parties, one table.</span>
+
+<span class="cm">// Q3: "The chef 86\'s the salmon, and a
+//      seasonal section launches Monday."</span>
+<span class="hi-r">→ The menu is a String[]. Every edit means
+  re-parsing every open ticket against
+  text that just changed.</span>
+
+<span class="cm">// Q4: "Should the chef be able to cancel
+//      a reservation?"</span>
+<span class="hi-r">→ Waiter, chef, manager, receptionist all
+  poke the same God object. Permissions
+  are vibes, not types.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">menu, orders, billing<br>welded into one class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed tickets,<br>double-booked tables</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">can\'t test billing without<br>seating a whole restaurant</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — everything that varies (menu content, table state over time, who may do what) is welded to code that doesn\'t. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the restaurant — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">The restaurant has different <b>branches</b> <span class="obj">Restaurant, Branch</span></li>
+<li data-n="R2">Each branch has its own <b>menu</b> <span class="obj">Menu</span></li>
+<li data-n="R3">Menus have <b>sections</b>, sections have <b>items</b> <span class="obj">MenuSection, MenuItem</span></li>
+<li data-n="R4">Waiter creates an <b>order</b> for a table, with a <b>meal per seat</b> <span class="obj">Order, Meal, Waiter</span></li>
+<li data-n="R5">Meals hold <b>meal items</b>; each maps to a menu item <span class="obj">MealItem → MenuItem</span></li>
+<li data-n="R6">Show tables currently free for <b>walk-ins</b> <span class="obj">Table.isTableFree()</span></li>
+<li data-n="R7">Support <b>reservation</b> of tables <span class="obj">Reservation</span></li>
+<li data-n="R8">Receptionist <b>searches by date/time</b> and reserves <span class="obj">Table.search(), Receptionist</span></li>
+<li data-n="R9">Customers can <b>cancel</b> their reservation <span class="obj">ReservationStatus.CANCELED</span></li>
+<li data-n="R10"><b>Notify</b> when reservation time approaches <span class="obj">Notification</span></li>
+<li data-n="R11">Pay via <b>credit card, check or cash</b> <span class="obj">Payment hierarchy</span></li>
+<li data-n="R12">Branches have multiple <b>seating arrangements</b> <span class="obj">TableChart</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Twelve requirements, and every one points at an object. Attempt #1 tried to serve all twelve with two arrays and a list of strings.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what on the floor?',desc:'Five human roles work this system — plus the system itself. Listing their use cases tells us which operations our classes must expose, before we design a single class.',
+code:{h:'Top use cases, by actor',b:`<span class="cm">// Receptionist</span>
+add/modify tables &amp; layout
+create / cancel reservation, check-in
+
+<span class="cm">// Waiter</span>
+place order, update order
+(add/modify meals or meal items)
+
+<span class="cm">// Chef</span>
+view an order, work on its meals
+
+<span class="cm">// Manager</span>
+add new workers, modify the menu
+
+<span class="cm">// Cashier</span>
+generate checks, process payments
+
+<span class="cm">// System (yes, the system is an actor)</span>
+send notifications: reservation time
+approaching, cancellations, etc.`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">💁 Receptionist</span><span class="does">tables, layout,<br>reservations</span></div>
+  <div class="actor"><span class="who">🤵 Waiter</span><span class="does">takes / modifies<br>orders</span></div>
+  <div class="actor"><span class="who">👨‍🍳 Chef</span><span class="does">works on<br>orders</span></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">💼 Manager</span><span class="does">staff &amp; menu</span></div>
+  <div class="actor"><span class="who">💵 Cashier</span><span class="does">checks &amp;<br>payments</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">reservation<br>notifications</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Add/Modify tables</span><span class="uc">Search tables</span><span class="uc">Place order</span><span class="uc">Update order</span><span class="uc">Create reservation</span><span class="uc">Cancel reservation</span><span class="uc">Check-in</span><span class="uc">Make payment</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Every use case lands on exactly one role. That\'s the tell that Employee is an abstraction with five concrete subclasses — and that "who may do what" should be enforced by types, not by trust.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The venue</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Restaurant</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Branch</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Kitchen</div></div>
+    <div class="cd-box"><div class="cd-h">TableChart</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The floor</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Table</div></div>
+    <div class="cd-box"><div class="cd-h">TableSeat</div></div>
+    <div class="cd-box"><div class="cd-h">Reservation</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The paper trail</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">Menu</div></div>
+    <div class="cd-box"><div class="cd-h">MenuSection</div></div>
+    <div class="cd-box"><div class="cd-h">MenuItem</div></div>
+    <div class="cd-box"><div class="cd-h">Order</div></div>
+    <div class="cd-box"><div class="cd-h">Meal</div></div>
+    <div class="cd-box"><div class="cd-h">MealItem</div></div>
+    <div class="cd-box"><div class="cd-h">Check</div></div>
+    <div class="cd-box"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Person</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Employee</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Account</div></div>
+    <div class="cd-box fly"><div class="cd-h">Receptionist</div></div>
+    <div class="cd-box fly"><div class="cd-h">Waiter</div></div>
+    <div class="cd-box fly"><div class="cd-h">Manager</div></div>
+    <div class="cd-box fly"><div class="cd-h">Chef</div></div>
+    <div class="cd-box fly"><div class="cd-h">Cashier</div></div>
+    <div class="cd-box fly"><div class="cd-h">Customer</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Concrete roles</div>
+</div>`,
+callout:{type:'callout-ok',text:'Two dozen focused classes instead of one God object. And squint at the paper trail: two trees — Menu ▸ Section ▸ Item and Order ▸ Meal ▸ MealItem — are about to do most of the work.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the table and the clock',desc:'What kept double-booking table 4? Attempt #1 stored "is the table taken" as a boolean — but availability <strong>varies over time and by party size</strong>. So it becomes objects: a type-safe <code>TableStatus</code>, a <code>Reservation</code> with its own lifecycle, and a search that takes a date.',
+code:{h:'Table.java, Reservation.java — time becomes an object',b:`public enum TableStatus { FREE, RESERVED, OCCUPIED, OTHER }
+public enum ReservationStatus { REQUESTED, PENDING, CONFIRMED,
+                                CHECKED_IN, CANCELED, ABANDONED }
+
+public class Table {
+  private int tableID;
+  private <span class="hi-b">TableStatus status</span>;
+  private int maxCapacity;
+  private List&lt;TableSeat&gt; seats;  <span class="cm">// the seats matter later!</span>
+
+  public boolean isTableFree();     <span class="cm">// walk-ins ask "now" (R6)</span>
+
+  public static List&lt;Table&gt; <span class="hi-g">search(int capacity,
+                                   Date startTime)</span> {
+    <span class="cm">// all tables with the given capacity and
+    // availability — bookings ask "later" (R8)</span>
+  }
+}
+
+public class TableSeat {
+  private int tableSeatNumber;
+  private SeatType type;   <span class="cm">// REGULAR, KID, ACCESSIBLE</span>
+  public boolean updateSeatType(SeatType type);
+}
+
+public class Reservation {
+  private Date timeOfReservation;
+  private int peopleCount;
+  private <span class="hi-y">ReservationStatus status</span>;  <span class="cm">// its own lifecycle</span>
+  private Customer customer;
+  private Table[] tables;
+  private List&lt;Notification&gt; notifications;  <span class="cm">// R10 hook</span>
+  public boolean updatePeopleCount(int count);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box" style="min-width:130px"><div class="cd-h">Walk-in 🚶</div><div class="cd-m">asks about NOW<br>isTableFree()</div></div>
+  <div class="cd-box" style="min-width:130px"><div class="cd-h">Reservation 📅</div><div class="cd-m">asks about LATER<br>search(4, Sat 7 PM)</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>both resolve against</div></div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:190px"><div class="cd-h">Table</div><div class="cd-b">status: FREE → RESERVED<br>→ OCCUPIED</div><div class="cd-m">maxCapacity, seats ▸TableSeat</div></div></div>
+<div class="cd-arr" style="padding-top:6px">the reservation\'s own lifecycle ↓</div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">REQUESTED</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">CONFIRMED</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">CHECKED_IN</div></div>
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">CANCELED</div></div>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Q2 is dead: a walk-in checks isTableFree() right now; a booking runs search(capacity, startTime) against reservations. The boolean never knew what time it was.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. Table availability varies with the clock — so it becomes a Reservation object plus type-safe TableStatus / ReservationStatus, never a boolean.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: the staff',desc:'Receptionist, waiter, manager, chef, cashier — five roles, five different operation sets. Attempt #1 let anyone call anything. Give every employee the same abstract shape, and give each role <em>only its own methods</em>.',
+code:{h:'Person.java → Employee.java → the roles',b:`public abstract class <span class="hi-b">Person</span> {
+  private String name;
+  private String email;
+  private String phone;
+}
+
+public abstract class <span class="hi-b">Employee</span> extends Person {
+  private int employeeID;
+  private Date dateJoined;
+  private Account account;   <span class="cm">// login + AccountStatus</span>
+}
+
+public class Receptionist extends Employee {
+  public boolean <span class="hi-g">createReservation()</span>;
+  public List&lt;Customer&gt; searchCustomer(String name);
+}
+public class Manager extends Employee {
+  public boolean <span class="hi-g">addEmployee()</span>;   <span class="cm">// + modifies the menu</span>
+}
+public class Chef extends Employee {
+  public boolean <span class="hi-g">takeOrder()</span>;     <span class="cm">// pulls work to the kitchen</span>
+}
+<span class="cm">// Waiter (places orders) and Cashier (processes
+// payments) extend Employee the same way.</span>
+
+public class Account {
+  private String id;
+  private String password;
+  private AccountStatus status;  <span class="cm">// ACTIVE, BLACKLISTED...</span>
+  public boolean resetPassword();
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box abstract" style="min-width:150px"><div class="cd-h"><span class="st">abstract</span>Person</div><div class="cd-m">name, email, phone</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+<div class="cd-row"><div class="cd-box abstract" style="min-width:170px"><div class="cd-h"><span class="st">abstract</span>Employee</div><div class="cd-m">employeeID, dateJoined<br>account: Account</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Receptionist</div><div class="cd-m" style="font-size:9.5px">createReservation()</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Waiter</div><div class="cd-m" style="font-size:9.5px">placeOrder()</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Manager</div><div class="cd-m" style="font-size:9.5px">addEmployee()</div></div>
+</div>
+<div class="cd-row" style="gap:4px;margin-top:4px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Chef</div><div class="cd-m" style="font-size:9.5px">takeOrder()</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Cashier</div><div class="cd-m" style="font-size:9.5px">processPayment()</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">Customer extends Person too — guests aren\'t staff</div>
+</div>`,
+callout:{type:'callout-info',text:'Q4 answered: the chef physically cannot cancel a reservation — Chef has no such method. Authorization just became type structure instead of trust.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The system talks to the Employee and Account abstractions; Receptionist, Waiter, Manager, Chef and Cashier are interchangeable people with non-interchangeable powers.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: two mirrored trees',desc:'Here\'s the signature move of this case study. The menu is a tree: <strong>Menu HAS sections HAS items</strong>. And an order is a parallel tree: <strong>Order HAS a meal per seat HAS meal items</strong> — each meal item pointing back at a menu item with a quantity. Catalog and purchase never tangle.',
+code:{h:'Order.java, Meal.java, MealItem.java — the order tree',b:`public class MealItem {
+  private int mealItemID;
+  private <span class="hi-g">int quantity</span>;          <span class="cm">// "2×"</span>
+  private <span class="hi-b">MenuItem menuItem</span>;     <span class="cm">// points INTO the menu tree</span>
+  public boolean updateQuantity(int quantity);
+}
+
+public class Meal {
+  private int mealID;
+  private <span class="hi-g">TableSeat seat</span>;        <span class="cm">// one meal PER SEAT →
+                                 // split checks for free</span>
+  private List&lt;MealItem&gt; mealItems;
+  public boolean addMealItem(MealItem mealItem);
+}
+
+public class Order {
+  private int orderID;
+  private OrderStatus status;
+  private Date creationTime;
+  private <span class="hi-y">Meal[] meals</span>;          <span class="cm">// one per occupied seat</span>
+  private Table table;
+  private Check check;           <span class="cm">// the bill lives here</span>
+  private Waiter waiter;
+  private Chef chef;
+
+  public boolean addMeal(Meal meal);
+  public boolean removeMeal(Meal meal);
+  public boolean setStatus(OrderStatus status);
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The catalog</div>
+  <div class="cd-row"><div class="cd-box ctx" style="min-width:100px"><div class="cd-h">Menu</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 0..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:100px"><div class="cd-h">MenuSection</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 0..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:100px"><div class="cd-h">MenuItem</div><div class="cd-m">title, price</div></div></div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The purchase</div>
+  <div class="cd-row"><div class="cd-box ctx" style="min-width:100px"><div class="cd-h">Order</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:100px"><div class="cd-h">Meal</div><div class="cd-m">seat: TableSeat</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:100px"><div class="cd-h">MealItem</div><div class="cd-m">quantity: 2</div></div></div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:8px">MealItem ⇢ <b>references</b> MenuItem — the trees touch at exactly one point</div>`,
+callout:{type:'callout-ok',text:'Q1 is dead too: two couples at table 7 = one Order, four Meals keyed by seat — separate checks just group the meals. And when the menu changes, open orders don\'t care: MealItem holds a reference, not a copied string.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class one reason to change. The restaurant is trees of parts: Restaurant ▸ Branches, Menu ▸ Sections ▸ Items, Order ▸ Meals ▸ MealItems — nothing owns everything.'}
+},
+// ============ STEP 11 — PATTERN: COMPOSITE ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Composite',title:'The menu is literally the textbook example',desc:'Head First Chapter 9 teaches the Composite pattern with... a diner menu. Same tree, same reason: <code>Menu</code> holds <code>MenuSection</code>s, sections hold <code>MenuItem</code>s, and an operation like <code>print()</code> walks the whole structure. The manager edits any level without touching the ordering machinery.',
+code:{h:'Menu.java — a tree you can print',b:`public class MenuItem {                <span class="cm">// the leaf</span>
+  private int menuItemID;
+  private String title;
+  private String description;
+  private double price;
+  public boolean <span class="hi-g">updatePrice(double price)</span>;
+                    <span class="cm">// seasonal repricing = one call,
+                    // open orders unaffected (Q3!)</span>
+}
+
+public class MenuSection {             <span class="cm">// the composite node</span>
+  private int menuSectionID;
+  private String title;
+  private String description;
+  private List&lt;MenuItem&gt; menuItems;
+  public boolean addMenuItem(MenuItem menuItem);
+}
+
+public class Menu {                    <span class="cm">// the root</span>
+  private int menuID;
+  private String title;
+  private List&lt;MenuSection&gt; menuSections;
+  public boolean addMenuSection(MenuSection menuSection);
+  public boolean <span class="hi-b">print()</span>;   <span class="cm">// walks sections → items —
+                            // one call renders the whole tree</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:150px"><div class="cd-h">Menu <span class="st">"Dinner"</span></div><div class="cd-m">+ print()</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>sections 0..*</div></div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Appetizers</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Mains</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Desserts</div></div>
+  <div class="cd-box dup"><div class="cd-h" style="font-size:10px">Summer Specials ☀️</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>items 0..*</div></div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Burger $11</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Pasta $14</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Tiramisu $8</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">seasonal section = one addMenuSection() call — zero code changes</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: Composite (<a href="../ch9-iterator-composite-patterns.html">Chapter 9</a>) — where Head First literally uses a diner menu. The course pins the tree to two fixed levels instead of one MenuComponent interface; worth saying out loud that a true Composite would let sections nest sub-sections (Wine list ▸ Reds ▸ ...) for free.'}
+},
+// ============ STEP 12 — PATTERNS: STATE + OBSERVER + STRATEGY ============
+{phase:'pill-pattern',phaseTxt:'Patterns spotted · State, Observer & Strategy',title:'Order lifecycle, reminder pings, three ways to pay',desc:'Three more requirements, three more patterns hiding in plain sight: every order marches <code>RECEIVED → PREPARING → COMPLETED</code> (or gets <code>CANCELED</code>); the system pings customers as reservation time approaches (R10); and the check is payable by credit card, check, or cash (R11).',
+code:{h:'Order status, Notification, Payment',b:`public enum OrderStatus { RECEIVED, PREPARING, COMPLETED,
+                          CANCELED, NONE }
+
+public class Order {
+  private OrderStatus status;
+  public boolean <span class="hi-y">setStatus(OrderStatus s)</span> {
+    <span class="cm">// guard the moves: RECEIVED→PREPARING→COMPLETED;
+    // CANCELED only before COMPLETED. The chef drives
+    // it forward; the waiter only reads it.</span>
+  }
+}
+
+<span class="cm">// R10: "notify when reservation time approaches"</span>
+public class Reservation {
+  private List&lt;Notification&gt; notifications; <span class="cm">// registered pings</span>
+}
+public abstract class <span class="hi-b">Notification</span> {
+  private Date createdOn;
+  private String content;
+  public abstract boolean send();  <span class="cm">// SMS? email? subclass decides</span>
+}
+
+<span class="cm">// R11: credit card, check or cash — one seam</span>
+public abstract class <span class="hi-b">Payment</span> {
+  private double amount;
+  private PaymentStatus status;
+  public abstract boolean <span class="hi-g">initiateTransaction()</span>;
+}
+class CreditCardTransaction extends Payment { <span class="cm">/* gateway  */</span> }
+class CheckTransaction      extends Payment { <span class="cm">/* register */</span> }
+class CashTransaction       extends Payment { <span class="cm">/* drawer   */</span> }`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">RECEIVED</div></div>
+  <div style="align-self:center;font-size:10px;color:var(--text-tertiary)">→</div>
+  <div class="cd-box dup"><div class="cd-h" style="font-size:10px">PREPARING</div></div>
+  <div style="align-self:center;font-size:10px;color:var(--text-tertiary)">→</div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">COMPLETED</div></div>
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">CANCELED</div></div>
+</div>
+<div class="cd-arr" style="padding-top:2px">order lifecycle — guarded moves only (State)</div>
+<div class="cd-row" style="gap:6px;margin-top:6px">
+  <div class="cd-box ctx" style="min-width:130px"><div class="cd-h">Reservation <span class="st">subject</span></div><div class="cd-m">7 PM approaching…</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Notification <span class="st">observer</span></div><div class="cd-m">SMS / email ping<br>to the customer</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">and the money ↓</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface" style="min-width:110px"><div class="cd-h"><span class="st">strategy</span>Payment</div><div class="cd-m">initiateTransaction()</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CreditCard</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Check</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Cash</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: State (<a href="../ch10-state-pattern.html">Chapter 10</a>) — the course stores an OrderStatus enum and guards transitions in setStatus(); full State objects would be overkill for four states, and saying <em>why</em> is worth points. Pattern #3: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — reservations notify customers as the hour approaches. Pattern #4: Strategy (<a href="../ch1-strategy-pattern.html">Chapter 1</a>) — the cashier calls initiateTransaction() and never asks which kind it is.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, one people hierarchy, two mirrored trees, and clean seams for notifications and payments. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum ReservationStatus { REQUESTED, PENDING, CONFIRMED,
+                         CHECKED_IN, CANCELED, ABANDONED }
+enum TableStatus   { FREE, RESERVED, OCCUPIED, OTHER }
+enum OrderStatus   { RECEIVED, PREPARING, COMPLETED,
+                     CANCELED, NONE }
+enum SeatType      { REGULAR, KID, ACCESSIBLE, OTHER }
+enum PaymentStatus { UNPAID, PENDING, COMPLETED, ... }
+
+<span class="cm">// THE PEOPLE — one abstraction, five roles</span>
+abstract class Person;  abstract class Employee
+class Receptionist, Waiter, Manager, Chef, Cashier
+class Account { id, password, status }   class Customer
+
+<span class="cm">// THE VENUE — composition</span>
+class Restaurant  { List&lt;Branch&gt; branches }
+class Branch      { kitchen, menu, tableCharts }
+class Kitchen     { Chef[] chefs, assignChef() }
+class Table       { status, maxCapacity, seats,
+                    isTableFree(), <span class="hi-b">search(capacity, time)</span> }
+class Reservation { status, timeOfReservation,
+                    tables, notifications }
+
+<span class="cm">// THE PAPER TRAIL — two mirrored trees</span>
+Menu ▸ MenuSection ▸ MenuItem            <span class="cm">// the catalog</span>
+Order ▸ Meal(seat) ▸ MealItem(item, qty) <span class="cm">// the purchase</span>
+class Check { amount, tip, tax, isPaid }
+
+<span class="cm">// TOUCHPOINTS</span>
+abstract class Notification { send() }        <span class="cm">// ▸ SMS, email</span>
+abstract class Payment { initiateTransaction() } <span class="cm">// ▸ 3 kinds</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Restaurant</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> branches 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Branch</div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> kitchen 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> menu 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> tables 1..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Kitchen ▸Chefs</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Menu ▸Sections ▸Items</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Table ▸Seats</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> orders 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> reservations 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Order ▸Meals ▸MealItems</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Reservation ▸Notifications</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Person ▸ Employee ▸5</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Payment ▸3</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Check · TableChart</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same restaurant, but the menu, the clock, the staff and the money each have their own home. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One dinner for four, end to end',desc:'A design is only convincing if you can run a scenario through it. Narrate this flow in the interview — reservation to freed table — and watch every step land on a class you designed.',
+code:{h:'Waiter.java + Cashier.java — the working side (sketch)',b:`public class Waiter extends Employee {
+  public Order createOrder(Table table, List&lt;Meal&gt; meals) {
+    Order order = new Order(table, this);
+    for (Meal meal : meals) {
+      order.addMeal(meal);        <span class="cm">// one meal per seat (R4)</span>
+    }
+    order.setStatus(OrderStatus.<span class="hi-b">RECEIVED</span>);
+    branch.getKitchen().assignChef(order);
+    <span class="cm">// chef pulls it: takeOrder() → PREPARING</span>
+    return order;
+  }
+}
+
+public class Cashier extends Employee {
+  public boolean processPayment(Order order,
+                                <span class="hi-b">Payment payment</span>) {
+    Check check = order.getCheck();
+    <span class="cm">// meals → meal items → menuItem.price × qty</span>
+    check.addTipAndTax();
+    if (<span class="hi-g">payment.initiateTransaction()</span>) { <span class="cm">// Strategy!</span>
+      check.setPaid(true);
+      order.getTable().setStatus(TableStatus.<span class="hi-g">FREE</span>);
+      <span class="cm">// the table re-enters the walk-in pool</span>
+    }
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Receptionist · Friday</span><br>Customer calls ahead — <code>Table.search(4, Sat 7 PM)</code> finds table 12; Reservation goes <code>CONFIRMED</code></div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">System · Saturday 6:30</span><br>Reservation time approaching → <code>notification.send()</code> pings the customer (Observer)</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Receptionist</span><br>Party arrives, check-in: reservation <code>CHECKED_IN</code>, table 12 <code>OCCUPIED</code> — walk-ins calling <code>isTableFree()</code> no longer see it</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Waiter</span><br><code>createOrder(table12, meals)</code> — a Meal per TableSeat; MealItems reference MenuItems (2× Pasta, 1× Burger)</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Chef</span><br>Kitchen assigns the order; <code>takeOrder()</code> → status <code>PREPARING</code> (State)</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">Kitchen</span><br>Meals plated → status <code>COMPLETED</code>; waiter serves each seat its own meal</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Cashier</span><br>Check built from meal items + tax + tip; <code>payment.initiateTransaction()</code> — card, check or cash (Strategy)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">System</span><br>Check paid → order closed → table 12 back to <code>FREE</code> for the next walk-in</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Reservation, reminder, seating, per-seat ordering, kitchen, check, payment — and the table\'s status comes full circle to FREE. A complete story with zero hand-waving.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 24 classes — one recipe, three principles, four patterns. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The restaurant in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → table state over time: TableStatus,
+     Reservation lifecycle, search(capacity, time)
+2. Program to an interface
+   → Employee ▸ 5 roles; Payment; Notification
+3. Composition + single responsibility
+   → Restaurant ▸ Branch ▸ Kitchen/Menu/Tables;
+     Menu ▸ Section ▸ Item ∥ Order ▸ Meal ▸ MealItem
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Composite</span>  Menu tree — Head First ch. 9\'s
+           actual diner menu
+<span class="hi-b">State</span>      OrderStatus: RECEIVED → PREPARING
+           → COMPLETED / CANCELED, guarded
+<span class="hi-b">Observer</span>   Reservation → Notification reminders
+<span class="hi-b">Strategy</span>   Payment: card / check / cash
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Hotel (rooms≈tables, booking≈reservation)
+Amazon (order lifecycle ≈ OrderStatus machine)
+Head First ch. 9 (the SAME menu, as Composite)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box iface" style="min-width:115px"><div class="cd-h">Composite</div><div class="cd-m">Menu ▸ Section ▸ Item<br>one tree, one print()</div></div>
+  <div class="cd-box ctx" style="min-width:115px"><div class="cd-h">State</div><div class="cd-m">order status marches,<br>transitions guarded</div></div>
+</div>
+<div class="cd-row" style="gap:8px;margin-top:8px">
+  <div class="cd-box fly" style="min-width:115px"><div class="cd-h">Observer</div><div class="cd-m">reservation → customer<br>reminder pings</div></div>
+  <div class="cd-box iface" style="min-width:115px"><div class="cd-h">Strategy</div><div class="cd-m">Payment: card/check/cash<br>swap freely</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Lifecycle</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable / tree structure</div>
+</div>`,
+callout:{type:'callout-purple',text:'Attempt #1 died because a menu, a clock, a kitchen and a cash drawer were welded into three arrays. The recipe pulled them apart — and the patterns appeared exactly where the requirements demanded flexibility: a tree-shaped menu (Composite), a marching order status (State), reservation pings (Observer), and three ways to pay (Strategy).'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

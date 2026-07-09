@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 6 — Design an ATM | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 6 — Design an ATM</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design an ATM." Go.',desc:'Forty-five minutes and a whiteboard. A cash machine on a street corner: card reader, keypad, screen, cash dispenser, deposit slot, receipt printer — all wired to a bank across a network. Five transaction types, two account types, one customer at a time. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn hardware + events into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new transaction type, new account type...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:220px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">One machine, six moving parts</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">🖥️ Screen — "Please insert your card"</div>
+      <div style="display:flex;gap:4px">
+        <span style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;flex:1">💳 Card reader</span>
+        <span style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;flex:1">🔢 Keypad</span>
+      </div>
+      <div style="display:flex;gap:4px">
+        <span style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;flex:1">💵 Cash dispenser</span>
+        <span style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;flex:1">🧾 Printer</span>
+      </div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">📥 Deposit slot — cash &amp; checks</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">⇄ network → Bank</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">one customer at a time</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns. Spoiler: you\'ve already met this machine\'s tiny cousin in Chapter 10.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one class, three flags',desc:'The instinct under time pressure: skip the boring requirements talk and write code. One <code>ATM</code> class, a couple of booleans to remember where we are, one <code>handleInput()</code> for everything the hardware sends. Done in five minutes.',
+code:{h:'ATM.java — the "just code it" design',b:`public class ATM {
+    <span class="hi-y">boolean cardInserted = false;</span>
+    <span class="hi-y">boolean pinVerified  = false;</span>
+    <span class="hi-y">String currentOperation = "";</span>  <span class="cm">// "withdraw"...</span>
+    int pinAttempts = 0;
+
+    void handleInput(String input) {
+        if (!cardInserted) {
+            cardInserted = true;       <span class="cm">// must be a card</span>
+        } else if (!pinVerified) {
+            if (bank.checkPin(input)) pinVerified = true;
+            else pinAttempts++;
+        } else if (currentOperation.equals("")) {
+            currentOperation = input;  <span class="cm">// menu choice</span>
+        } else if (currentOperation.equals("withdraw")) {
+            dispenseCash(Double.parseDouble(input));
+            <span class="cm">// reset everything for the next customer</span>
+            cardInserted = false; pinVerified = false;
+            currentOperation = "";
+        }
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:200px"><div class="cd-h">ATM</div><div class="cd-b">boolean cardInserted<br>boolean pinVerified<br>String currentOperation<br>int pinAttempts</div><div class="cd-m">+ handleInput(String input)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, three mode flags, one method for every event</div>`,
+callout:{type:'callout-ok',text:'Honestly? For the happy path this works. Card in, PIN checked, cash out. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: <em>five</em> transactions (balance inquiry, withdraw, deposit cash, deposit check, transfer), checking <em>and</em> savings accounts, a cancel button that ejects the card <em>at any moment</em>, three PIN attempts before the card is kept, check deposits that aren\'t credited until the bank verifies them, an operator key-switch, receipts, a hardware-failure log. Patch the method!',
+code:{h:'ATM.java — handleInput() grows modes',b:`void handleInput(String input) {
+  <span class="hi-y">if (input.equals("CANCEL"))</span> {
+      <span class="hi-r">// legal at ANY moment. Which flags do I reset?</span>
+      cardInserted = false; pinVerified = false;
+      currentOperation = ""; amountEntered = false;
+      destinationEntered = false;  <span class="cm">// ...all of them?</span>
+  } else if (!cardInserted) { ... }
+  else if (!pinVerified) {
+      if (bank.checkPin(input)) pinVerified = true;
+      else if (<span class="hi-y">++pinAttempts == 3</span>) { <span class="cm">/* keep card?! */</span> }
+  } else if (currentOperation.equals("")) {
+      currentOperation = input;
+  } <span class="hi-y">else if (currentOperation.equals("withdraw"))</span> { ... }
+  <span class="hi-y">else if (currentOperation.equals("depositCheck"))</span> {
+      <span class="cm">// not credited instantly — pending status?</span>
+  } <span class="hi-y">else if (currentOperation.equals("transfer"))</span> {
+      <span class="cm">// needs TWO inputs: destination, THEN amount →</span>
+      <span class="hi-r">boolean destinationEntered;  // another flag 😰</span>
+  }
+}
+<span class="cm">// TODO: operator key-switch. TODO: out of cash.
+// TODO: printer jam. TODO: hardware log...</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">ATM <span class="st">the God object</span></div><div class="cd-b">cardInserted, pinVerified,<br>pinAttempts, currentOperation,<br>amountEntered, destinationEntered,<br>outOfCash, printerJammed...</div><div class="cd-m">+ handleInput() <span style="color:var(--text-danger)">80 lines of if/else</span><br>+ every event × every flag</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every new feature = another flag × every existing branch</div>`,
+callout:{type:'callout-warn',text:'Each requirement doesn\'t add a class — it adds a flag, and every flag doubles the number of modes handleInput() can be in. Smell it yet?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The flag machine collapses',desc:'Then the interviewer asks three innocent follow-ups, and the flags fall apart on the whiteboard.',
+code:{h:'Three questions that kill Attempt #1',b:`<span class="cm">// Q1: "Customer presses cancel halfway through
+//      typing the withdrawal amount."</span>
+<span class="hi-r">→ Which of the six flags reset? Miss one and the
+  NEXT customer starts half-authenticated.</span>
+
+<span class="cm">// Q2: "The dispenser runs out of cash mid-session."</span>
+<span class="hi-r">→ A new outOfCash flag — that every existing
+  branch must now remember to check.</span>
+
+<span class="cm">// Q3: "Add a new transaction type: PIN change."</span>
+<span class="hi-r">→ Another currentOperation string, more branches,
+  more flag combinations — most of them illegal
+  (pinVerified &amp;&amp; !cardInserted ??).</span>
+
+<span class="cm">// And testing? You can't test "3 wrong PINs keeps
+// the card" without a whole machine + a fake bank.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every event touches<br>the same giant method</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">2ⁿ flag combos,<br>most of them illegal</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">PIN rules, cash rules,<br>UI all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the gumball machine from Chapter 10 all over again — behavior that depends on state, encoded as scattered booleans. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the ATM — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Six hardware parts: <b>card reader, keypad, screen, cash dispenser, deposit slot, printer</b> <span class="obj">one class each</span></li>
+<li data-n="R2">Communicates with the <b>bank</b> over a network for any transaction <span class="obj">Bank</span></li>
+<li data-n="R3">Two account types: <b>Checking</b> and <b>Savings</b> <span class="obj">Account hierarchy</span></li>
+<li data-n="R4">Five transactions: <b>balance inquiry, deposit cash, deposit check, withdraw, transfer</b> <span class="obj">Transaction hierarchy</span></li>
+<li data-n="R5">Authenticate with <b>card + PIN</b> before any service <span class="obj">Card, authenticateUser()</span></li>
+<li data-n="R6">Card is <b>kept until the session ends</b>; cancel ejects it at any time <span class="obj">session states!</span></li>
+<li data-n="R7">Check deposits <b>not credited instantly</b> — subject to bank verification <span class="obj">TransactionStatus</span></li>
+<li data-n="R8">Serves <b>one customer at a time</b>; must not shut down while serving <span class="obj">ATM</span></li>
+<li data-n="R9"><b>Operator</b>: key-switch ON/OFF, refill cash / receipts / ink, take out deposits <span class="obj">Operator actor</span></li>
+<li data-n="R10">Internal <b>log</b> of transactions and hardware failures <span class="obj">ATM log</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Two minutes of requirements talk, and R6 already whispered the biggest design clue of the whole case: the ATM has session states. Hold that thought.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Four actors touch this system — and one of them isn\'t human. Listing their use cases tells us which operations our classes must expose, before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Customer — one session at a time</span>
+balance inquiry     <span class="cm">— funds in each account</span>
+withdraw cash       <span class="cm">— if balance + bills allow</span>
+deposit cash/check  <span class="cm">— credited after verification</span>
+transfer funds      <span class="cm">— to another account</span>
+
+<span class="cm">// Operator</span>
+turn ATM ON/OFF via the key-switch,
+refill cash, refill receipts + ink,
+take out deposited cash and checks
+
+<span class="cm">// Bank Manager</span>
+total deposit / withdrawal reports,
+check remaining cash in the ATM
+
+<span class="cm">// Bank (the back end is an actor too)</span>
+authenticate card + PIN, approve or
+reject every transaction`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Customer</span><span class="does">withdraws, deposits,<br>transfers, checks balance</span></div>
+  <div class="actor"><span class="who">🔧 Operator</span><span class="does">key-switch, refills<br>cash / receipts / ink</span></div>
+  <div class="actor"><span class="who">💼 Bank Manager</span><span class="does">reports, remaining<br>cash</span></div>
+  <div class="actor"><span class="who">🏦 Bank</span><span class="does">authenticates PIN,<br>approves transactions</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Insert card</span><span class="uc">Enter PIN</span><span class="uc">Balance inquiry</span><span class="uc">Withdraw cash</span><span class="uc">Deposit cash</span><span class="uc">Deposit check</span><span class="uc">Transfer funds</span><span class="uc">Cancel / eject</span><span class="uc">Refill ATM</span><span class="uc">Print reports</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice every customer use case wears the same envelope: authenticate → do the thing → receipt → eject. Only the middle differs. That observation becomes a pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The brain &amp; the back end</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">ATM</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Bank</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The hardware (one class per component)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box fly"><div class="cd-h">CardReader</div></div>
+    <div class="cd-box fly"><div class="cd-h">Keypad</div></div>
+    <div class="cd-box fly"><div class="cd-h">Screen</div></div>
+    <div class="cd-box fly"><div class="cd-h">Printer</div></div>
+    <div class="cd-box fly"><div class="cd-h">CashDispenser</div></div>
+    <div class="cd-box abstract"><div class="cd-h">DepositSlot</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The money world</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">Customer</div></div>
+    <div class="cd-box"><div class="cd-h">Card</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Account</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The actions</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Transaction</div></div>
+    <div class="cd-box"><div class="cd-h">BalanceInquiry</div></div>
+    <div class="cd-box"><div class="cd-h">Deposit</div></div>
+    <div class="cd-box"><div class="cd-h">Withdraw</div></div>
+    <div class="cd-box"><div class="cd-h">Transfer</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Coordinators</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Hardware / boundary objects</div>
+</div>`,
+callout:{type:'callout-ok',text:'Sixteen focused classes instead of one flag machine. But where did the flags GO? Nowhere — yet. That\'s Step 4, where we ask what varies.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the transactions',desc:'What kept breaking Attempt #1? <strong>What the customer does varies</strong> — five transaction types today, more tomorrow. So each transaction becomes a class in a hierarchy carrying its own data, keyed by type-safe enums — no more <code>currentOperation</code> strings.',
+code:{h:'Transaction.java — the varying thing gets a hierarchy',b:`public enum TransactionType {
+  BALANCE_INQUIRY, DEPOSIT_CASH, DEPOSIT_CHECK,
+  WITHDRAW, TRANSFER
+}
+public enum TransactionStatus {
+  SUCCESS, FAILURE, BLOCKED, FULL, PARTIAL, NONE
+}
+
+public abstract class Transaction {
+  private int transactionId;
+  private Date creationTime;
+  private TransactionStatus status;
+  public boolean makeTransaction();
+}
+
+public class BalanceInquiry extends Transaction {
+  private int accountId;
+}
+public abstract class Deposit extends Transaction {
+  private double amount;
+}
+public class CheckDeposit extends Deposit {
+  private String checkNumber;  <span class="cm">// stays PENDING until</span>
+  private String bankCode;     <span class="cm">// the bank verifies (R7)</span>
+}
+public class CashDeposit extends Deposit {
+  private double cashDepositLimit;
+}
+public class Withdraw extends Transaction {
+  private double amount;
+}
+public class Transfer extends Transaction {
+  private int destinationAccountNumber; <span class="cm">// its OWN data —</span>
+}                                       <span class="cm">// no ATM-wide flag</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Transaction</div><div class="cd-b">transactionId, creationTime<br>status: TransactionStatus</div><div class="cd-m">+ makeTransaction()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">BalanceInquiry</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10px">Deposit</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Withdraw</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Transfer</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>Deposit splits again</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">CheckDeposit</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">CashDeposit</div></div>
+</div>`,
+callout:{type:'callout-info',text:'Adding "PIN change" tomorrow = one new subclass + one enum value — zero edits to existing code. That\'s the Open/Closed principle, and Q3 from the Oh-No step just died.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. What the customer does varies — so every transaction is its own class carrying its own data.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: accounts & the screen',desc:'"Checking or savings" is not the ATM\'s business. <code>Withdraw</code> asks <code>account.getAvailableBalance()</code> and neither knows nor cares which kind answered. Same trick on the human side: the customer only ever works against the <code>Screen</code>\'s prompts and the <code>Keypad</code>.',
+code:{h:'Account.java + Customer.java — depend on the supertype',b:`public class Account {
+  private int accountNumber;
+  private double totalBalance;
+  private double <span class="hi-b">availableBalance</span>; <span class="cm">// ≠ total: pending</span>
+                                    <span class="cm">// check deposits (R7)</span>
+  public double getAvailableBalance();
+}
+public class SavingAccount extends Account {
+  private double withdrawLimit;
+}
+public class CheckingAccount extends Account {
+  private String debitCardNumber;
+}
+
+public class Customer {
+  private String name, email, phone;
+  private CustomerStatus status;
+  private Card card;          <span class="cm">// one card per customer</span>
+  private <span class="hi-b">Account account</span>;   <span class="cm">// declared as the SUPERTYPE</span>
+  public boolean makeTransaction(Transaction t);
+}
+
+public class Card {
+  private String cardNumber;
+  private String customerName;
+  private Date cardExpiry;
+  private int pin;            <span class="cm">// the security anchor (R5)</span>
+}
+
+public class Bank {
+  private String name;
+  private String bankCode;
+  public boolean addATM();    <span class="cm">// one bank, many ATMs</span>
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Account</div><div class="cd-m">+ getAvailableBalance()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Checking</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Saving</div></div>
+  </div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h">Screen</div><div class="cd-m">+ showMessage(msg)<br>+ getInput()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>all the customer sees</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Keypad</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CardReader</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">Withdraw holds an <b>Account</b> — never a CheckingAccount</div>`,
+callout:{type:'callout-info',text:'Two abstraction seams: Account on the bank side, Screen + Keypad on the human side. New savings rules or a touchscreen upgrade — neither ripples through the transactions.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The declared type (Account, Transaction, DepositSlot) is a supertype, so runtime objects aren\'t locked into the code.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: the ATM HAS its hardware',desc:'Attempt #1\'s ATM owned everything in one body. The fix: the ATM is a <strong>coordinator that HAS hardware</strong> — each physical component is one class with one job — and the money truth lives at the Bank, not inside the machine.',
+code:{h:'ATM.java — an assembly of parts (from the course)',b:`public class ATM {
+  private int atmID;
+  private Address location;
+
+  <span class="cm">// each physical component: one class, one job</span>
+  <span class="hi-g">private CardReader cardReader;</span>
+  <span class="hi-g">private Keypad keypad;</span>
+  <span class="hi-g">private Screen screen;</span>
+  <span class="hi-g">private Printer printer;</span>
+  <span class="hi-g">private CashDispenser cashDispenser;</span>
+  <span class="hi-g">private CheckDepositSlot checkDepositSlot;</span>
+  <span class="hi-g">private CashDepositSlot cashDepositSlot;</span>
+
+  public boolean authenticateUser();
+  public boolean makeTransaction(Customer c, Transaction t);
+}
+
+public class CashDispenser {
+  private int totalFiveDollarBills;
+  private int totalTwentyDollarBills;
+  public boolean <span class="hi-b">canDispenseCash()</span>;  <span class="cm">// enough bills?</span>
+  public boolean dispenseCash(double amount);
+}
+public class Keypad  { public String getInput(); }
+public class Screen  { public boolean showMessage(String m);
+                       public TransactionType getInput(); }
+public class Printer { public boolean printReceipt(Transaction t); }
+
+public abstract class DepositSlot {
+  private double totalAmount;
+}
+public class CheckDepositSlot extends DepositSlot {
+  public double getCheckAmount();
+}
+public class CashDepositSlot extends DepositSlot {
+  public double receiveDollarBill();
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:170px"><div class="cd-h">ATM</div><div class="cd-m">atmID, location<br>coordinates one session</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A (one each)</div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CardReader</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Keypad</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Screen</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Printer</div></div>
+</div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CashDispenser</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10px">DepositSlot ▸2</div></div>
+</div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> talks over the network to</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h">Bank</div><div class="cd-m">accounts, authentication,<br>approvals</div></div>
+  <div class="cd-box abstract" style="min-width:110px"><div class="cd-h"><span class="st">abstract</span>Account</div><div class="cd-m">Checking | Saving</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'A printer jam is now the Printer\'s problem, counting twenties is the CashDispenser\'s problem, and the operator refills each component without touching session logic. Every piece stubs cleanly in a test.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. The ATM is an assembly of parts, not a pile of flags — and the account truth lives at the Bank.'}
+},
+// ============ STEP 11 — PATTERN: STATE ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · State',title:'The ATM is a state machine',desc:'Now the big one. The course draws four <em>activity diagrams</em> — authentication, withdraw, deposit check, transfer. Squint at them: they\'re all the same drawing. The machine is always in exactly ONE of a few states, and each state accepts only a few events. Attempt #1\'s flags were a hand-rolled (and broken) encoding of exactly this.',
+code:{h:'ATMState.java — one class per state, one method per event',b:`<span class="cm">// Every event the hardware can raise → one method.</span>
+public interface <span class="hi-b">ATMState</span> {
+  void insertCard(Card card);
+  void enterPin(String pin);
+  void selectTransaction(TransactionType type);
+  void cancel();            <span class="cm">// legal in EVERY state — each</span>
+}                           <span class="cm">// state decides what it means</span>
+
+public class IdleState implements ATMState {
+  public void insertCard(Card card) {
+    if (cardReader.readCard(card))
+      atm.setState(<span class="hi-g">atm.getHasCardState()</span>);
+    else screen.showMessage("Card unreadable");
+  }
+  public void enterPin(String pin) {
+    screen.showMessage("Insert a card first");  <span class="cm">// illegal</span>
+  }                                             <span class="cm">// event = polite no</span>
+  public void cancel() { <span class="cm">/* nothing to cancel */</span> }
+}
+
+public class HasCardState implements ATMState {
+  private int pinAttempts = 0;  <span class="cm">// lives WHERE it's used</span>
+  public void enterPin(String pin) {
+    if (bank.authenticateUser(card, pin))
+      atm.setState(<span class="hi-g">atm.getAuthenticatedState()</span>);
+    else if (<span class="hi-y">++pinAttempts == 3</span>) {
+      cardReader.<span class="hi-r">retainCard()</span>;      <span class="cm">// security rule (R5)</span>
+      atm.setState(atm.getIdleState());
+    }
+  }
+  public void cancel() {
+    cardReader.ejectCard();         <span class="cm">// R6: eject ANY time</span>
+    atm.setState(atm.getIdleState());
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:2px;align-items:center">
+  <div class="cd-box ctx" style="min-width:160px"><div class="cd-h">Idle</div><div class="cd-m">accepts insertCard() only</div></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>card read OK</div></div>
+  <div class="cd-box ctx" style="min-width:160px"><div class="cd-h">HasCard</div><div class="cd-m">enterPin() — 3 attempts</div></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>bank says PIN ✓</div></div>
+  <div class="cd-box ctx" style="min-width:160px"><div class="cd-h">Authenticated</div><div class="cd-m">selectTransaction()</div></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>transaction chosen</div></div>
+  <div class="cd-box ctx" style="min-width:160px"><div class="cd-h">InTransaction</div><div class="cd-m">execute → receipt</div></div>
+  <div class="cd-arr" style="padding-top:6px">cancel / 3 bad PINs / done → eject card → back to <b>Idle</b></div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: State (<a href="../ch10-state-pattern.html">Chapter 10</a>) — you already built this machine: it\'s the gumball machine, industrial-strength. One class per state, one method per event, transitions explicit. The course encodes this in activity diagrams plus an authenticateUser() flag; in the interview, name the State pattern out loud — then "cancel during amount entry" and "3 strikes keeps the card" become one-line transitions instead of flag-reset puzzles.'}
+},
+// ============ STEP 12 — PATTERN: TEMPLATE METHOD ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Template Method',title:'Every transaction, same envelope',desc:'Second pattern, hiding inside the Transaction hierarchy from Principle #1. Every transaction runs the same choreography — verify the session → execute → print receipt — and only the middle step differs. Freeze the envelope in the abstract class; let subclasses fill the hole.',
+code:{h:'Transaction.java — the envelope is final, the hole is abstract',b:`public abstract class Transaction {
+  private int transactionId;
+  private Date creationTime;
+  private TransactionStatus status;
+
+  <span class="cm">// THE TEMPLATE METHOD — the envelope never changes</span>
+  public final boolean <span class="hi-b">makeTransaction()</span> {
+    if (!atm.isAuthenticated())
+      return fail(TransactionStatus.BLOCKED);
+    status = <span class="hi-g">execute()</span>;       <span class="cm">// ← the only varying step</span>
+    printer.printReceipt(this);
+    return status == TransactionStatus.SUCCESS;
+  }
+  protected abstract TransactionStatus <span class="hi-g">execute()</span>;
+}
+
+public class Withdraw extends Transaction {
+  private double amount;
+  protected TransactionStatus execute() {
+    if (account.getAvailableBalance() &lt; amount)
+      return TransactionStatus.FAILURE;   <span class="cm">// no funds</span>
+    if (!cashDispenser.canDispenseCash())
+      return TransactionStatus.FAILURE;   <span class="cm">// no bills!</span>
+    cashDispenser.dispenseCash(amount);
+    return TransactionStatus.SUCCESS;
+  }
+}
+public class Transfer extends Transaction {
+  private int destinationAccountNumber;
+  protected TransactionStatus execute() {
+    <span class="cm">// move funds via the Bank, PARTIAL on limits</span>
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:210px"><b>makeTransaction()</b> — final</div>
+  <div style="display:flex;flex-direction:column;gap:3px">
+    <div class="dia-wrap" style="min-width:190px">1. session authenticated? <span style="color:var(--text-secondary)">(fixed)</span></div>
+    <div class="dia-wrap" style="min-width:190px;background:var(--bg-info);border-color:var(--border-info)"><b style="color:var(--text-info)">2. execute()</b> ← the hook</div>
+    <div class="dia-wrap" style="min-width:190px">3. printReceipt() <span style="color:var(--text-secondary)">(fixed)</span></div>
+  </div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>subclasses override only execute()</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box"><div class="cd-h" style="font-size:10px">BalanceInquiry</div></div>
+    <div class="cd-box"><div class="cd-h" style="font-size:10px">Deposit ▸2</div></div>
+    <div class="cd-box"><div class="cd-h" style="font-size:10px">Withdraw</div></div>
+    <div class="cd-box"><div class="cd-h" style="font-size:10px">Transfer</div></div>
+  </div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Template Method (<a href="../ch8-template-method-pattern.html">Chapter 8</a>) — makeTransaction() owns the choreography; execute() is the hook. The course declares makeTransaction() on the abstract Transaction and stops there; pulling the shared verify-and-receipt steps up into a final method is exactly the move — say the pattern\'s name when you do it.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, hierarchies for what varies, one class per hardware part, a state machine for the session. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum TransactionType   { BALANCE_INQUIRY, DEPOSIT_CASH,
+                         DEPOSIT_CHECK, WITHDRAW, TRANSFER }
+enum TransactionStatus { SUCCESS, FAILURE, BLOCKED,
+                         FULL, PARTIAL, NONE }
+enum CustomerStatus    { ACTIVE, BLOCKED, BANNED, ... }
+
+<span class="cm">// WHAT VARIES — hierarchies</span>
+abstract class Transaction <span class="cm">// BalanceInquiry, Deposit▸2,</span>
+                           <span class="cm">// Withdraw, Transfer</span>
+abstract class Account     <span class="cm">// Saving | Checking</span>
+abstract class DepositSlot <span class="cm">// CheckSlot | CashSlot</span>
+interface ATMState         <span class="cm">// Idle, HasCard, Authenticated</span>
+
+<span class="cm">// THE BRAIN — composition + state</span>
+class ATM { atmID, location, <span class="hi-b">currentState</span>,
+            cardReader, keypad, screen, printer,
+            cashDispenser, depositSlots,
+            authenticateUser(), makeTransaction(c, t) }
+
+<span class="cm">// THE HARDWARE — one class, one job</span>
+class CardReader    { readCard(), ejectCard(), retainCard() }
+class CashDispenser { fives, twenties,
+                      canDispenseCash(), dispenseCash(amt) }
+class Keypad  { getInput() }
+class Screen  { showMessage(m), getInput() }
+class Printer { printReceipt(t) }
+
+<span class="cm">// THE BANK SIDE — remote source of truth</span>
+class Bank     { name, bankCode, addATM() }
+class Customer { card, account, status, makeTransaction(t) }
+class Card     { cardNumber, cardExpiry, pin }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">ATM <span class="st">state machine</span></div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> state 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> hardware 1 each</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> network 1</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">ATMState ▸3</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">CardReader · Keypad · Screen</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Bank</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Printer · CashDispenser</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">DepositSlot ▸2</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Customer + Card</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Transaction ▸5</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Account ▸2</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same machine, but every axis of change has its own home — new transaction = subclass, new hardware = component, new session rule = state transition. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One withdrawal, end to end — bumps included',desc:'A design is only convincing if you can run a scenario through it — including the unhappy turns. Narrate this in the interview; every step must land on a class you drew.',
+code:{h:'ATM.java — one session, orchestrated (sketch)',b:`<span class="cm">// One session, narrated through the designed classes</span>
+public void serveCustomer() {
+  Card card = cardReader.readCard();   <span class="cm">// Idle → HasCard</span>
+  screen.showMessage("Enter PIN:");
+
+  <span class="cm">// up to 3 attempts — then the card is retained</span>
+  while (!bank.<span class="hi-b">authenticateUser</span>(card, keypad.getInput())) {
+    if (++attempts == 3) { cardReader.<span class="hi-r">retainCard()</span>; return; }
+    screen.showMessage("Wrong PIN. " + (3-attempts) + " left");
+  }                                    <span class="cm">// → Authenticated</span>
+
+  TransactionType choice = screen.getInput();
+  Transaction txn = createTransaction(choice, keypad);
+
+  <span class="cm">// Withdraw.execute(): balance AND bills checked</span>
+  if (txn.<span class="hi-g">makeTransaction()</span>) {        <span class="cm">// template method</span>
+      printer.printReceipt(txn);
+  } else {
+      screen.showMessage("Amount unavailable");
+  }                                    <span class="cm">// back to menu — not a crash</span>
+
+  cardReader.ejectCard();              <span class="cm">// session over → Idle</span>
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Customer</span><br>Inserts card at the idle ATM</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">CardReader</span><br>Reads the account info — ATM → <code>HasCard</code>; Screen: "Enter PIN"</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Bank</span><br>First PIN attempt <b>fails</b> — "Wrong PIN, 2 left" (3 strikes = card retained). Second attempt ✓ → <code>Authenticated</code></div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Screen</span><br>Shows the five <code>TransactionType</code>s; customer picks WITHDRAW, keys $140</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Withdraw</span><br><code>account.getAvailableBalance() ≥ 140</code> ✓ — then <code>cashDispenser.canDispenseCash()</code>: enough bills? If not: "amount unavailable" and back to the menu — a transition, not a crash</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">CashDispenser</span><br><code>dispenseCash(140)</code> — counts out twenties and fives; Bank debits the account</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Printer</span><br><code>printReceipt(txn)</code> — balance printed from the Bank\'s answer</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Screen</span><br>"Another transaction?" — No</div></div>
+  <div class="flow-step"><div class="flow-num">9</div><div class="flow-txt"><span class="flow-who">CardReader</span><br>Ejects the card — ATM → <code>Idle</code> for the next customer (R8: one at a time)</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Wrong PIN, empty dispenser, cancel — every unhappy path is a transition to a designed place, not a flag-reset scramble. That\'s how you know the design is complete enough.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 20 classes — one recipe, three principles, two patterns. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The ATM in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → Transaction ▸5, Account ▸2, DepositSlot ▸2
+2. Program to an interface
+   → Withdraw sees Account; customer sees Screen
+3. Composition + single responsibility
+   → ATM ▸ CardReader, Keypad, Screen, Printer,
+     CashDispenser, DepositSlot; Bank stays remote
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">State</span>            one class per session state; cancel,
+                 3-strikes, out-of-cash = transitions
+<span class="hi-b">Template Method</span>  makeTransaction() fixes the envelope;
+                 execute() is the only moving part
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Vending / Gumball machine (Ch. 10 — the toy ATM)
+Parking Lot (panels ≈ hardware, Payment ≈ Transaction)
+Movie Booking (payment flow + seat-lock session states)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:140px"><div class="cd-h">State</div><div class="cd-m">session flags →<br>one class per state</div></div>
+  <div class="cd-box iface" style="min-width:140px"><div class="cd-h">Template Method</div><div class="cd-m">Transaction envelope fixed,<br>execute() varies</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Behavior by state</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Fixed skeleton, varying step</div>
+</div>`,
+callout:{type:'callout-purple',text:'The flag machine failed because state and behavior were welded into one method. The recipe separated the axes of change — and the patterns appeared exactly where the requirements demanded flexibility: a session with strict modes (State) and five transactions wearing one envelope (Template Method).'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

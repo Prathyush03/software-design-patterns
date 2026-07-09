@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 16 — Design Facebook, a social network | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 16 — Design Facebook, a social network</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design Facebook." All of it. Go.',desc:'The final boss of OOD interviews: an online social network where members connect, post, and read messages. Profiles with work and education, friends, follows, groups, pages, posts, comments, likes, privacy, messages, notifications, search. Forty-five minutes. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: reciting Facebook's real architecture.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you model <span class="hi-b">relationships as objects</span>?
+   (a friend request is not a boolean)
+3. Does every class have <span class="hi-b">one job</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new privacy rule, new notification channel...)
+5. Do <span class="hi-b">design patterns</span> emerge where the
+   requirements demand them — never forced?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:230px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">A social network</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">👤 Alice — profile · work · education</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">🤝 Bob sent a friend request <span style="color:var(--text-secondary)">accept?</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">📝 Post — 👍 12 · 💬 3 · <span style="color:var(--text-secondary)">friends only</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">👥 Groups · 📄 Pages · ✉️ Messages · 🔔</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px;flex-wrap:wrap">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Search everything</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Notify on everything</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'The dorm-room version: one User class',desc:'The instinct under time pressure: a social network is just users, friends, and walls. One <code>User</code> class, two string arrays, one global timeline loop. Done in five minutes — it even demos.',
+code:{h:'User.java — the "just code it" design',b:`public class User {
+    String name;
+    <span class="hi-y">String[] friends = new String[5000];</span>
+    <span class="hi-y">String[] wall = new String[1000];</span>
+    int friendCount = 0, wallCount = 0;
+
+    void addFriend(String friendName) {
+        friends[friendCount++] = friendName;
+        <span class="cm">// friendship = a name in an array. done?</span>
+    }
+
+    void post(String text) {
+        wall[wallCount++] = text;
+    }
+
+    <span class="cm">// "the feed": one global loop over everyone</span>
+    static void showTimeline(User me, User[] all) {
+        for (User u : all)
+            if (<span class="hi-y">contains(me.friends, u.name)</span>)
+                for (String p : u.wall)
+                    print(u.name + ": " + p);
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">User</div><div class="cd-b">String name<br>String[] friends<br>String[] wall</div><div class="cd-m">+ addFriend(String)<br>+ post(String)<br>+ showTimeline()</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, two arrays, one loop</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a dorm-room prototype this works. People "friend" each other, posts show up. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: friend requests must be <em>accepted or rejected</em>. Members follow others <em>without</em> friendship. Groups and pages have their own posts. Comments, likes, shares. Privacy lists that gate who sees a post. Messages. Page recommendations. Notifications for every event. Search across everything. Patch the class!',
+code:{h:'User.java — the God object grows',b:`<span class="cm">// friend requests need an answer first...</span>
+void requestFriend(String from, String to) {
+  <span class="hi-y">pending[pCount++] = from + " -&gt; " + to;</span> <span class="cm">// state?!</span>
+}
+<span class="cm">// privacy: an audience per post...</span>
+void post(String user, String text, String audience) {
+  <span class="hi-y">if (audience.equals("public"))</span>        { ... }
+  <span class="hi-y">else if (audience.equals("friends"))</span>  { ... }
+  <span class="hi-y">else if (audience.equals("close-friends"))</span> { <span class="cm">// ??</span> }
+}
+<span class="cm">// notifications: one method, every event kind</span>
+void notify(String kind, String who) {
+  if (kind.equals("friend-request")) { ... }
+  else if (kind.equals("comment"))   { ... }
+  else if (kind.equals("like"))      { ... }
+  else if (kind.equals("message"))   { ... }
+  <span class="hi-r">// ...group invite, page post, share, mention 😰</span>
+}
+<span class="cm">// TODO: groups. TODO: pages have posts too. TODO:
+// comments on posts on pages. TODO: search. 😱</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">User <span class="st">the God object</span></div><div class="cd-b">friends, pending, walls,<br>audiences, groups, pages,<br>comments, likes, messages...</div><div class="cd-m">+ requestFriend() <span style="color:var(--text-danger)">no state</span><br>+ post() <span style="color:var(--text-danger)">audience if/else</span><br>+ notify() <span style="color:var(--text-danger)">12-way switch</span><br>+ search()? + join()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another string-keyed if/else to methods that already do too much. Smell it yet?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The God object collapses',desc:'Then the interviewer asks three innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Three questions that kill Attempt #1',b:`<span class="cm">// Q1: "Bob sent Alice a request. She hasn't
+//      answered. Where does 'pending' live?"</span>
+<span class="hi-r">→ friends[] knows yes or no. PENDING, REJECTED,
+  CANCELED have no home — the relationship
+  itself has state, and you gave it a String.</span>
+
+<span class="cm">// Q2: "Alice posts a friends-only photo. A
+//      stranger opens her wall. What stops it?"</span>
+<span class="hi-r">→ showTimeline() dumps every wall to everyone.
+  Privacy must be re-checked in EVERY read path
+  you ever write — one forgotten check = leak.</span>
+
+<span class="cm">// Q3: "Someone comments on a post on a page in
+//      a group. Who gets notified, and how?"</span>
+<span class="hi-r">→ Nothing nests: no Comment, no Page, no Group.
+  And notify() is a 12-way if/else on strings.</span>
+
+<span class="cm">// And search? Scan every user's every wall
+// post for the word. Per query.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every change touches<br>the same giant class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed,<br>privacy leaks by default</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">requests, privacy, feed,<br>notify logic all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — things that vary (relationship state, audiences, notification channels) are welded to code that doesn\'t. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the social network — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Basic profile info: <b>work experience, education</b>, etc. <span class="obj">Profile, Work, Education</span></li>
+<li data-n="R2"><b>Search</b> members, groups, pages by name <span class="obj">Search, SearchIndex</span></li>
+<li data-n="R3">Send and <b>accept/reject friend requests</b> <span class="obj">ConnectionInvitation</span></li>
+<li data-n="R4"><b>Follow</b> members without becoming friends <span class="obj">memberFollows</span></li>
+<li data-n="R5">Create/join <b>groups</b>; create/follow <b>pages</b> <span class="obj">Group, Page</span></li>
+<li data-n="R6">Create <b>posts</b> to share with friends <span class="obj">Post</span></li>
+<li data-n="R7"><b>Comment</b> on posts; <b>like or share</b> a post or comment <span class="obj">Comment</span></li>
+<li data-n="R8"><b>Privacy lists</b> of friends; link a post to one — only that list sees it <span class="obj">PrivacyList</span></li>
+<li data-n="R9">Send <b>messages</b> (text, photos, videos) to members <span class="obj">Message</span></li>
+<li data-n="R10">Add a <b>recommendation</b> for any page <span class="obj">Recommendation</span></li>
+<li data-n="R11"><b>Notify</b> on new message / friend request / comment <span class="obj">Notification</span></li>
+<li data-n="R12">Search through <b>posts for a word</b> <span class="obj">searchPost(word)</span></li>
+<li data-n="RX"><em>Extended:</em> find a <b>connection suggestion</b> for a member <span class="obj">searchMemberSuggestions()</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Read R3 again: send AND accept/reject. That word pair is the death certificate for String[] friends — a request has a lifecycle, and lifecycles belong to objects.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Three actors touch this system. Listing their use cases tells us which operations our classes must expose — before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Member</span>
+add/update profile   <span class="cm">— work, education, places</span>
+search               <span class="cm">— members, groups, pages, posts</span>
+send friend request  <span class="cm">— other side accepts/rejects</span>
+follow / unfollow    <span class="cm">— a member or a page</span>
+send message         <span class="cm">— to any friend</span>
+create post          <span class="cm">— like/comment on any post
+                       visible to them</span>
+
+<span class="cm">// Admin</span>
+block / unblock a member
+enable / disable a page
+
+<span class="cm">// System (yes, the system is an actor)</span>
+send notification    <span class="cm">— new message, friend
+                       request, comment on your post</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Member</span><span class="does">searches, befriends,<br>posts, messages</span></div>
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">blocks/unblocks members,<br>enables/disables pages</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">sends notifications<br>for every event</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Add/update profile</span><span class="uc">Search</span><span class="uc">Send friend request</span><span class="uc">Follow/unfollow</span><span class="uc">Send message</span><span class="uc">Create post</span><span class="uc">Comment / like</span><span class="uc">Send notification</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice "System" is an actor again: "send notification" is a use case in its own right. Remember what that hint became in the parking lot\'s display boards — it\'s about to become Observer here too.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers — and notice the tier Attempt #1 never had: <strong>relationships as objects</strong>.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">Account</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Person</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Member</div></div>
+    <div class="cd-box"><div class="cd-h">Admin</div></div>
+    <div class="cd-box"><div class="cd-h">Profile</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The relationships — objects, not booleans</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box iface"><div class="cd-h">ConnectionInvitation</div></div>
+    <div class="cd-box iface"><div class="cd-h">PrivacyList</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The content tree</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Group</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Page</div></div>
+    <div class="cd-box"><div class="cd-h">Post</div></div>
+    <div class="cd-box"><div class="cd-h">Comment</div></div>
+    <div class="cd-box"><div class="cd-h">Message</div></div>
+    <div class="cd-box"><div class="cd-h">Recommendation</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The services</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box fly"><div class="cd-h">SearchIndex</div></div>
+    <div class="cd-box fly"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own content)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Stateful relationship objects</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Services</div>
+</div>`,
+callout:{type:'callout-ok',text:'Fifteen focused classes instead of one God object. The unusual tier is the second one: Attempt #1 modeled relationships as strings in arrays. Here, the relationship itself is a class — that\'s the signature move of this design.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the relationship is an object',desc:'What kept breaking Attempt #1? <strong>The state of a relationship varies over time</strong> — pending, accepted, rejected, canceled. So the friend request becomes a class with a type-safe status enum and an audit trail. Accounts get the same treatment.',
+code:{h:'ConnectionInvitation.java — a lifecycle gets a class',b:`public enum <span class="hi-b">ConnectionInvitationStatus</span> {
+  PENDING, ACCEPTED, REJECTED, CANCELED
+}
+public enum AccountStatus {
+  ACTIVE, CLOSED, CANCELED, BLACKLISTED, DISABLED
+}
+
+<span class="cm">// the relationship IS an object — with a lifecycle</span>
+public class ConnectionInvitation {
+  private Member memberInvited;
+  private <span class="hi-g">ConnectionInvitationStatus status;</span>
+  private Date dateCreated;
+  private Date dateUpdated;      <span class="cm">// audit trail built in</span>
+
+  public bool <span class="hi-g">acceptConnection()</span>; <span class="cm">// PENDING → ACCEPTED</span>
+  public bool <span class="hi-g">rejectConnection()</span>; <span class="cm">// PENDING → REJECTED</span>
+}
+
+public class Member extends Person {
+  private HashSet&lt;Integer&gt; memberConnections;
+  private HashSet&lt;ConnectionInvitation&gt;
+      connectionInvitations;     <span class="cm">// pending ≠ friends</span>
+
+  public boolean sendConnectionInvitation(
+      ConnectionInvitation invitation);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h">Member: Alice</div><div class="cd-m">sendConnection<br>Invitation()</div></div>
+  <div class="cd-box iface" style="min-width:150px"><div class="cd-h">ConnectionInvitation</div><div class="cd-b">memberInvited: Bob<br>status, dates</div><div class="cd-m">+ acceptConnection()<br>+ rejectConnection()</div></div>
+  <div class="cd-box ctx"><div class="cd-h">Member: Bob</div><div class="cd-m">accepts or<br>rejects</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>the status lifecycle</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box dup"><div class="cd-h" style="font-size:10px">PENDING</div></div>
+  <div class="cd-box" style="background:var(--bg-success);border-color:var(--border-success)"><div class="cd-h" style="font-size:10px;color:var(--text-success)">ACCEPTED</div></div>
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">REJECTED</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">CANCELED</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">only ACCEPTED lands both ids in memberConnections</div>
+</div>`,
+callout:{type:'callout-info',text:'Friendship isn\'t a boolean — it\'s a tiny state machine with an audit trail. LinkedIn\'s ConnectionInvitation in <a href="14-linkedin.html">Case Study 14</a> is the identical move: same graph, different logo. Q1 that killed Attempt #1 now has a one-class answer.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. The relationship\'s state varies over time (pending → accepted / rejected / canceled) — so the relationship becomes a class with a status enum, not a String in an array.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: Search',desc:'R2 and R12 say "search members, groups, pages by name — and posts by word." Callers shouldn\'t care <em>how</em> search works. So <code>Search</code> is an interface, and <code>SearchIndex</code> — four HashMaps — is merely today\'s implementation.',
+code:{h:'Search.java + SearchIndex.java — depend on the interface',b:`public interface <span class="hi-b">Search</span> {
+  public List&lt;Member&gt; searchMember(String name);
+  public List&lt;Group&gt;  searchGroup(String name);
+  public List&lt;Page&gt;   searchPage(String name);
+  public List&lt;Post&gt;   searchPost(String word);
+}
+
+public class SearchIndex <span class="hi-b">implements Search</span> {
+  HashMap&lt;String, List&lt;Member&gt;&gt; memberNames;
+  HashMap&lt;String, List&lt;Group&gt;&gt;  groupNames;
+  HashMap&lt;String, List&lt;Page&gt;&gt;   pageTitles;
+  HashMap&lt;String, List&lt;Post&gt;&gt;   posts;
+
+  public boolean addMember(Member member) {
+    if (memberNames.containsKey(member.getName())) {
+      memberNames.get(member.getName()).add(member);
+    } else {
+      memberNames.put(member.getName(), member);
+    }
+  }
+  <span class="cm">// addGroup, addPage, addPost — same shape</span>
+
+  public List&lt;Member&gt; searchMember(String name) {
+    return memberNames.get(name); <span class="cm">// O(1) — no wall scans</span>
+  }
+  public List&lt;Post&gt; searchPost(String word) {
+    return posts.get(word);       <span class="cm">// R12: word → posts</span>
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Member UI</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Group directory</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Feed search</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>all depend on the interface</div></div>
+<div class="cd-row"><div class="cd-box iface" style="min-width:170px"><div class="cd-h"><span class="st">interface</span>Search</div><div class="cd-m">+ searchMember(name)<br>+ searchGroup(name)<br>+ searchPage(name)<br>+ searchPost(word)</div></div></div>
+<div class="cd-arr"><div class="tri"></div><div>implements</div></div>
+<div class="cd-row"><div class="cd-box fly" style="min-width:150px"><div class="cd-h">SearchIndex</div><div class="cd-m">4 HashMaps —<br>today’s implementation</div></div></div>
+<div class="cd-arr" style="padding-top:4px">swap in a real search engine tomorrow — callers never know</div>
+</div>`,
+callout:{type:'callout-info',text:'Attempt #1 answered "search" with a full scan of every wall. Now indexing is one class\'s single job, hidden behind an interface — replace HashMaps with Elasticsearch and not one caller changes.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Callers hold a Search, never a SearchIndex — the concrete indexing strategy can change without touching a single caller.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: two structures, kept apart',desc:'Facebook is secretly <strong>two graphs</strong>. A content tree — members, pages, and groups own posts; posts own comments; both carry likes. And a social graph — members connected to members. Attempt #1 mashed both into the same string arrays. Composition gives each its own spine.',
+code:{h:'Member / Profile / Group / Post / Comment — HAS-A chains',b:`public class Member <span class="hi-b">extends Person</span> {      <span class="cm">// IS-A person</span>
+  private Profile profile;                <span class="cm">// HAS-A profile</span>
+  <span class="hi-g">private HashSet&lt;Integer&gt; memberConnections;</span> <span class="cm">// graph</span>
+  private HashSet&lt;Integer&gt; memberFollows; <span class="cm">// R4: one-way</span>
+  private HashSet&lt;Integer&gt; pageFollows, groupFollows;
+}
+public class Profile {
+  private List&lt;Work&gt; workExperiences;     <span class="cm">// R1</span>
+  private List&lt;Education&gt; educations;
+  private List&lt;Place&gt; places;
+  public boolean addWorkExperience(Work work);
+}
+public class Group {
+  private int totalMembers;
+  private List&lt;Member&gt; members;           <span class="cm">// membership cap</span>
+  public boolean addMember(Member member);
+}
+public class Post {
+  private String text;
+  private int totalLikes, totalShares;
+  private Member owner;                   <span class="cm">// every post has one</span>
+}
+public class Comment {
+  private String text;
+  private int totalLikes;                 <span class="cm">// likes nest too (R7)</span>
+  private Member owner;
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The content tree</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Member</div></div>
+    <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Page</div></div>
+    <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Group</div></div>
+  </div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A posts 0..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:130px"><div class="cd-h">Post</div><div class="cd-m">totalLikes, totalShares</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A comments 0..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:130px"><div class="cd-h">Comment</div><div class="cd-m">totalLikes, owner</div></div></div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The social graph</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Member</div></div>
+    <div class="cd-box iface"><div class="cd-h" style="font-size:10px">ConnectionInvitation</div></div>
+    <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Member</div></div>
+  </div>
+  <div class="cd-arr" style="padding-top:4px">friendship is mutual · follows (memberFollows) are one-way — no invitation needed</div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Now Q3 has a home: a comment on a post on a page is just the tree — Page HAS Post HAS Comment, each with an owner to notify. Nothing about the social graph had to change to make that work.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. The content tree (who owns what) and the social graph (who knows whom) are separate structures — a change to one never ripples into the other.'}
+},
+// ============ STEP 11 — PATTERN: PRIVACY GATE (PROXY IN SPIRIT) ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Protection Proxy (in spirit)',title:'Privacy as first-class objects — gatekeeping the read',desc:'R8 is the sneakiest requirement: a post linked to a privacy list is visible <em>only</em> to that list\'s members. That means visibility is decided <strong>at read time, per object, per viewer</strong>. Someone must stand between the viewer and the post — permanently.',
+code:{h:'PrivacyList.java + Post.java — every read goes through the gate',b:`<span class="cm">// The course models privacy as first-class objects:</span>
+public class PrivacyList {
+  private Integer listId;
+  private String name;              <span class="cm">// "Close friends"</span>
+  private HashSet&lt;Integer&gt; memberIds;
+  public boolean contains(Integer memberId);
+}
+
+public class Post {
+  private Integer postId;
+  private String text;
+  private Member owner;
+  private <span class="hi-b">PrivacyList audience;</span>    <span class="cm">// null = everyone (R8)</span>
+
+  <span class="cm">// THE GATE — one method, called by every read path</span>
+  public boolean <span class="hi-g">isVisibleTo(Member viewer)</span> {
+    if (audience == null) return true;
+    if (viewer.getMemberId() == owner.getMemberId())
+      return true;                  <span class="cm">// you always see yours</span>
+    return <span class="hi-g">audience.contains(viewer.getMemberId())</span>;
+  }
+}
+
+<span class="cm">// the wall renders THROUGH the gate — never around it:</span>
+for (Post p : member.getPosts())
+  if (<span class="hi-b">p.isVisibleTo(viewer)</span>) feed.add(p);`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">👤 Stranger</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">🤝 Close friend</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>both open Alice’s wall</div></div>
+<div class="cd-row"><div class="cd-box iface" style="min-width:180px"><div class="cd-h">isVisibleTo(viewer) <span class="st">the gate</span></div><div class="cd-m">audience = PrivacyList<br>"Close friends"</div></div></div>
+<div class="cd-row" style="gap:20px;margin-top:6px">
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">✗ filtered out</div></div>
+  <div class="cd-box" style="background:var(--bg-success);border-color:var(--border-success)"><div class="cd-h" style="font-size:10px;color:var(--text-success)">✓ sees the photo</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">the post never decides its audience twice — one gate, zero leaks</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1 (in spirit): a protection proxy. Guarding access to an object at read time is exactly what <a href="../ch11-proxy-pattern-walkthrough.html">Chapter 11</a>\'s protection proxy does — here the course hand-rolls the gate as PrivacyList + a visibility check. Say "gatekeeping reads is a design responsibility, like a protection proxy" and watch the interviewer nod.'}
+},
+// ============ STEP 12 — PATTERN: OBSERVER NOTIFICATIONS ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Observer',title:'Notifications: one event, many listeners',desc:'R11: notify a member on a new message, friend request, or comment on their post. Three event kinds today, a dozen tomorrow — and the course says delivery can be "a push notification or an email." The event source must not know who\'s listening or how they\'re reached.',
+code:{h:'Notification.java — fan-out without if/else',b:`<span class="cm">// course: "The system will be able to send a push
+// notification or an email" — encapsulate the channel</span>
+public abstract class Notification {
+  private String notificationId;
+  private Date createdOn;
+  private String content;
+  public abstract boolean <span class="hi-b">sendNotification(Member m)</span>;
+}
+public class PushNotification extends Notification {
+  public boolean sendNotification(Member m) { <span class="cm">/* APNs */</span> }
+}
+public class EmailNotification extends Notification {
+  public boolean sendNotification(Member m) { <span class="cm">/* SMTP */</span> }
+}
+
+<span class="cm">// the events that trigger a fan-out (R11):</span>
+bob.sendMessage(msg);           <span class="cm">// → notify recipients</span>
+alice.sendConnectionInvitation(inv); <span class="cm">// → notify Bob</span>
+post.addComment(comment);       <span class="cm">// → notify post owner</span>
+
+<span class="cm">// the event source never picks push vs email — the
+// member's settings choose the concrete subclass.
+// Compare: Attempt #1's notify() was a 12-way
+// string switch INSIDE the God class.</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">New message</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Friend request</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Comment on post</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>events notify — without knowing the channel</div></div>
+<div class="cd-row"><div class="cd-box iface" style="min-width:150px"><div class="cd-h"><span class="st">abstract</span>Notification</div><div class="cd-m">+ sendNotification(member)</div></div></div>
+<div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">PushNotification</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">EmailNotification</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — members are subscribed to events on their own stuff; the system notifies them without the event source knowing who listens. And the push/email split is Principle #2 again: everyone programs to the Notification supertype, so adding SMS is one new subclass.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, stateful objects for the relationships, a clean content tree, and interfaces at the service seams. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum ConnectionInvitationStatus { PENDING, ACCEPTED,
+                                  REJECTED, CANCELED }
+enum AccountStatus { ACTIVE, CLOSED, CANCELED,
+                     BLACKLISTED, DISABLED }
+
+<span class="cm">// THE PEOPLE — one identity, two roles</span>
+class Account          { id, password, status }
+abstract class Person  { name, address, email, account }
+class Member extends Person { profile, connections,
+     follows, invitations, createPost(), sendMessage() }
+class Admin extends Person  { blockUser(), unblockUser(),
+     enablePage(), disablePage() }
+class Profile { workExperiences, educations, places }
+
+<span class="cm">// THE RELATIONSHIPS — objects with state</span>
+class ConnectionInvitation { status, accept(), reject() }
+class PrivacyList { memberIds }  <span class="hi-b">// gates every read</span>
+
+<span class="cm">// THE CONTENT TREE</span>
+class Post    { text, totalLikes, totalShares, owner }
+class Comment { text, totalLikes, owner }
+class Message { sentTo[], messageBody, media }
+class Group   { totalMembers, members, addMember() }
+class Page    { description, recommendation[] }
+class Recommendation { rating, description }
+
+<span class="cm">// THE SERVICES</span>
+interface Search { searchMember/Group/Page/Post() }
+class SearchIndex implements Search { 4 HashMaps }
+abstract class Notification { sendNotification() } <span class="cm">// push|email</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Person ▸2</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Account</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>Member IS-A Person</div></div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Member</div></div></div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> profile 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> invitations 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> posts 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Profile</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">ConnectionInvitation</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Post</div></div>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> work/edu/places</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> audience 0..1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> comments 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Work / Education</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">PrivacyList</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Comment</div></div>
+</div>
+<div class="cd-row" style="gap:6px;margin-top:4px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Group ▸ posts</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Page ▸ recommendations</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Search ▸ SearchIndex</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Notification ▸2</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but every axis of change has its own home — relationship state, privacy, content, search, delivery channels. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One friendship, end to end',desc:'A design is only convincing if you can run a scenario through it. This is also where the course\'s extended requirement lives: connection suggestions via a two-level BFS over the social graph — real code, shown here condensed.',
+code:{h:'Member.java — searchMemberSuggestions() (from the course)',b:`public class Member extends Person {
+  private HashSet&lt;Integer&gt; memberConnections;
+  private HashSet&lt;ConnectionInvitation&gt;
+      connectionInvitations;
+
+  <span class="cm">// two-level BFS: friends-of-friends, ranked by
+  // how many mutual connections vouch for them</span>
+  private Map&lt;Integer, Integer&gt; searchMemberSuggestions() {
+    Map&lt;Integer, Integer&gt; suggestions = new HashMap();
+    for (Integer memberId : this.memberConnections) {
+      HashSet&lt;Integer&gt; firstLevel =
+          new Member(memberId).getMemberConnections();
+      for (Integer firstId : firstLevel) {
+        <span class="hi-g">this.findMemberSuggestion(suggestions, firstId);</span>
+        for (Integer secondId :
+             new Member(firstId).getMemberConnections())
+          this.findMemberSuggestion(suggestions, secondId);
+      }
+    }
+    <span class="cm">// sort by highest mutual-connection count</span>
+    return sortByValueDescending(suggestions);
+  }
+
+  private void findMemberSuggestion(
+      Map&lt;Integer, Integer&gt; suggestions, Integer id) {
+    <span class="cm">// skip if already a friend or an invite is pending</span>
+    if (<span class="hi-y">this.memberConnections.contains(id)
+        || this.connectionInvitations.contains(id)</span>) return;
+    int count = suggestions.containsKey(id)
+        ? suggestions.get(id) : 0;
+    suggestions.put(id, count + 1);
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">System</span><br><code>searchMemberSuggestions()</code> runs the two-level BFS — Bob surfaces with 3 mutual connections</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Alice (Member)</span><br><code>sendConnectionInvitation(new ConnectionInvitation(bob))</code> — status <code>PENDING</code></div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Notification</span><br>Bob’s phone buzzes: "Alice wants to connect" — PushNotification (Observer)</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Bob</span><br><code>acceptConnection()</code> — status <code>ACCEPTED</code>; both ids land in each other’s <code>memberConnections</code></div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Alice</span><br><code>createPost(photo)</code> linked to her "Close friends" <code>PrivacyList</code> (R8)</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">A stranger</span><br>opens Alice’s wall — <code>isVisibleTo(stranger)</code> returns false, the photo is filtered at read time (the gate)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Bob</span><br>is on the list — sees the photo, adds a <code>Comment</code>, likes it → <code>totalLikes++</code></div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Notification</span><br>Alice gets an email: "Bob commented on your post" (R11) — same event, different channel</div></div>
+  <div class="flow-step"><div class="flow-num">9</div><div class="flow-txt"><span class="flow-who">SearchIndex</span><br>had indexed the post on creation — <code>searchPost("graduation")</code> finds it in O(1) (R12)</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and the two signature moments — the PENDING invitation and the filtered read — are exactly the two things Attempt #1 could not express.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 20 classes — one recipe, three principles, and the two ideas that make social networks tick: the relationship is an object, and reads are gated. Every other case study in this course is this same climb over different nouns.',
+code:{h:'Facebook in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → ConnectionInvitation + status enum:
+     the RELATIONSHIP is an object
+2. Program to an interface
+   → Search / SearchIndex; Notification supertype
+3. Composition + single responsibility
+   → content tree (Member/Page/Group ▸ Post ▸
+     Comment) kept apart from the social graph
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Protection Proxy</span>  (in spirit) PrivacyList +
+                  isVisibleTo() gate every read
+<span class="hi-b">Observer</span>          message / request / comment →
+                  notification fan-out, push or email
+<span class="hi-b">Strategy-shaped</span>   "many strategies to search for
+                  connection suggestions" — the
+                  2-level BFS is just today's pick
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+LinkedIn (14)     the SAME graph: invitation with
+                  status, profile, notifications
+Stack Overflow    posts ▸ comments ▸ votes tree
+Cricinfo          one event → many observers (feed)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h">Relationship = object</div><div class="cd-m">ConnectionInvitation<br>PENDING → ACCEPTED</div></div>
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h">Gated reads</div><div class="cd-m">PrivacyList + isVisibleTo()<br>a protection proxy in spirit</div></div>
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Observer</div><div class="cd-m">events → notifications<br>push / email</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Stateful relationship</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Access control</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification fan-out</div>
+</div>`,
+callout:{type:'callout-purple',text:'String[] friends failed because relationships, privacy, and notifications each have a life of their own — state, rules, channels. The recipe gave each a home: the friend request became a state machine, the privacy list became a read-time gate, and events became observed subjects. Same climb, new nouns — see you in the next case study.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

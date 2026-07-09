@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 3 — Design Amazon, an Online Shopping System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 3 — Design Amazon, an Online Shopping System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design Amazon." Go.',desc:'Forty-five minutes to design the world\'s largest online retailer — scoped to the retail core, where users <em>buy and sell</em> products. Search, carts, checkout, payments, shipping, reviews, notifications. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new payment method, new user role...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:220px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">amazon.com — buyers AND sellers</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">🔍 "wireless mouse" &nbsp;<span style="color:var(--text-secondary)">by name or category</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">📦 Products &nbsp;⭐ Reviews &nbsp;🛒 Cart (3)</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Order #1024 &nbsp;PENDING → SHIPPED → ... &nbsp;<span style="color:var(--text-secondary)">notify me</span></div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Guests browse</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Members buy &amp; sell</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one big class',desc:'The instinct under time pressure: skip the requirements talk and code the happy path. One <code>OnlineStore</code> class, parallel arrays for products, a <code>checkout()</code> that charges a card, order status as a String in a map. Done in five minutes.',
+code:{h:'OnlineStore.java — the "just code it" design',b:`public class OnlineStore {
+    String[] productNames  = new String[10000];
+    double[] productPrices = new double[10000];
+    int[]    stock         = new int[10000];
+    HashMap&lt;String, String&gt; orderStatus = new HashMap&lt;&gt;();
+
+    String checkout(<span class="hi-y">String user, String[] items</span>) {
+        double total = 0;
+        for (String name : items) {
+            int i = indexOf(name);   <span class="cm">// linear scan</span>
+            stock[i]--;
+            total += productPrices[i];
+        }
+        chargeCreditCard(user, total);  <span class="cm">// the only way to pay</span>
+        String orderId = user + "-" + now();
+        orderStatus.put(orderId, <span class="hi-y">"PENDING"</span>);  <span class="cm">// status = String</span>
+        return orderId;
+    }
+
+    void ship(String orderId) {
+        orderStatus.put(orderId, "SHIPPED");  <span class="cm">// just... set it</span>
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">OnlineStore</div><div class="cd-b">String[] productNames<br>double[] productPrices<br>int[] stock<br>HashMap orderStatus</div><div class="cd-m">+ checkout(user, items)<br>+ ship(orderId)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, three arrays, one card charge</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a lemonade-stand storefront this works. Products get bought, cards get charged. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: anyone may <em>browse</em>, but only registered members may <em>buy</em> — and members also <em>sell</em>. Search by name or category. Editable carts. Ratings and reviews. Cancel an order — but only before it ships. Credit card <em>and</em> bank transfer. Notify the buyer on every order or shipping change. Track the shipment. Patch the class!',
+code:{h:'OnlineStore.java — the God object grows',b:`String checkout(String user, String[] items) {
+  <span class="hi-y">if (isGuest(user))</span>
+    return "ERROR: register first";  <span class="cm">// members only!</span>
+  ...
+}
+boolean cancelOrder(String orderId) {
+  <span class="hi-y">if (orderStatus.get(orderId).equals("SHIPPED"))</span>
+    return false;               <span class="cm">// too late to cancel</span>
+  orderStatus.put(orderId, "CANCELED");
+  <span class="hi-r">// notify the buyer... email? SMS? from here?!</span>
+}
+void pay(String user, double total, <span class="hi-y">String method</span>) {
+  if (method.equals("card")) { ... }
+  else if (method.equals("bankTransfer")) { ... }
+}
+List&lt;String&gt; search(String query) {
+  <span class="hi-r">// by name OR category — but the arrays
+  // don't even HAVE categories...</span>
+}
+<span class="cm">// TODO: sellers add products. TODO: reviews.
+// TODO: admin blocks accounts. TODO: shipment
+// tracking. All in this one class. 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">OnlineStore <span class="st">the God object</span></div><div class="cd-b">products, stock, carts, orders,<br>statuses, payments, reviews,<br>categories, shipments, emails...</div><div class="cd-m">+ checkout() <span style="color:var(--text-danger)">role checks inline</span><br>+ cancelOrder() <span style="color:var(--text-danger)">status = String</span><br>+ pay() <span style="color:var(--text-danger)">if/else per method</span><br>+ search()? + notify()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another if/else to methods that already do too much. And three different things are hiding in there: who you are, where the order is, and who needs to know.'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The God object collapses',desc:'Then the interviewer asks four innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "A member also SELLS products. An admin
+//      blocks accounts. Who may do what?"</span>
+<span class="hi-r">→ One String 'role' field + if/else in every
+  method. Guest? Member? Admin? The compiler
+  can't help you.</span>
+
+<span class="cm">// Q2: "What statuses can an order legally
+//      move between?"</span>
+<span class="hi-r">→ orderStatus.put(id, anything). Nothing stops
+  SHIPPED → PENDING, or a typo like "Shiped".
+  The lifecycle lives in your head, not the code.</span>
+
+<span class="cm">// Q3: "Notify the buyer on every shipping
+//      status change."</span>
+<span class="hi-r">→ Every line that mutates the status map must
+  also remember to send email + SMS. Forget one
+  → silent bug, angry customer.</span>
+
+<span class="cm">// Q4: "Search 10 million products by category."</span>
+<span class="hi-r">→ Linear scan over parallel arrays. No index,
+  no catalog, no categories at all.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every new role or payment<br>method edits checkout()</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed statuses,<br>illegal transitions</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">roles, lifecycle, payments,<br>notifications entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — behavior that varies is welded to code that doesn\'t. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the online store — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Users can <b>add new products</b> to sell <span class="obj">Product, Account.addProduct()</span></li>
+<li data-n="R2"><b>Search</b> products by name or category <span class="obj">Search, Catalog</span></li>
+<li data-n="R3">Anyone can browse — but must <b>register to buy</b> <span class="obj">Guest, Member</span></li>
+<li data-n="R4">Add / remove / <b>modify items</b> in the cart <span class="obj">ShoppingCart, Item</span></li>
+<li data-n="R5"><b>Check out</b> and buy everything in the cart <span class="obj">Order</span></li>
+<li data-n="R6"><b>Rate and review</b> a product <span class="obj">ProductReview</span></li>
+<li data-n="R7">Specify a <b>shipping address</b> for delivery <span class="obj">Address</span></li>
+<li data-n="R8"><b>Cancel</b> an order — only if it hasn\'t shipped <span class="obj">OrderStatus guard</span></li>
+<li data-n="R9"><b>Notifications</b> on order / shipping status change <span class="obj">Notification</span></li>
+<li data-n="R10">Pay by <b>credit card or electronic bank transfer</b> <span class="obj">Payment hierarchy</span></li>
+<li data-n="R11"><b>Track the shipment</b> to see the current state <span class="obj">Shipment, ShipmentLog</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Two minutes of requirements talk just produced our entire vocabulary. Attempt #1 skipped this — and had to bolt every one of these on as another if/else.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Four actors touch this system — and one of them isn\'t human. Listing their use cases tells us which operations our classes must expose, before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Guest (no account needed)</span>
+search catalog       <span class="cm">— by name or category</span>
+add/remove cart items
+register             <span class="cm">— become a Member</span>
+
+<span class="cm">// Member (everything a Guest can, plus)</span>
+place order · make payment
+add <span class="hi-b">products to sell</span> · rate &amp; review
+
+<span class="cm">// Admin</span>
+block/unblock members
+add/modify <span class="hi-b">product categories</span>
+
+<span class="cm">// System (yes, the system is an actor)</span>
+update catalog when products change
+send <span class="hi-b">order + shipment notifications</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Guest</span><span class="does">browses, fills a cart,<br>registers</span></div>
+  <div class="actor"><span class="who">🛍️ Member</span><span class="does">buys, sells,<br>reviews</span></div>
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">blocks accounts,<br>manages categories</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">order + shipment<br>notifications</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Search catalog</span><span class="uc">Add/remove cart items</span><span class="uc">Register account</span><span class="uc">Check out</span><span class="uc">Make payment</span><span class="uc">Add/update products</span><span class="uc">Add product category</span><span class="uc">Send shipment notifications</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice "System" is an actor: sending order and shipment notifications is a use case in its own right — hold that thought, it becomes the Observer pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Customer</div></div>
+    <div class="cd-box"><div class="cd-h">Guest</div></div>
+    <div class="cd-box"><div class="cd-h">Member</div></div>
+    <div class="cd-box"><div class="cd-h">Account</div></div>
+    <div class="cd-box"><div class="cd-h">Admin</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The storefront</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box iface"><div class="cd-h">Catalog</div></div>
+    <div class="cd-box"><div class="cd-h">Product</div></div>
+    <div class="cd-box"><div class="cd-h">ProductCategory</div></div>
+    <div class="cd-box"><div class="cd-h">ProductReview</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The purchase</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">ShoppingCart</div></div>
+    <div class="cd-box"><div class="cd-h">Item</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Order</div></div>
+    <div class="cd-box"><div class="cd-h">OrderLog</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">Fulfillment &amp; money</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Shipment</div></div>
+    <div class="cd-box"><div class="cd-h">ShipmentLog</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Notification</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Payment</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interface</div>
+</div>`,
+callout:{type:'callout-ok',text:'Sixteen focused classes instead of one God object. Next: which of these vary? That decides where the hierarchies (and patterns) go.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: who can do what',desc:'What kept breaking Attempt #1? <strong>Capabilities vary by user type</strong>, and <strong>statuses pretended to be strings</strong>. So the user becomes a hierarchy — and every status vocabulary becomes a type-safe enum.',
+code:{h:'Customer.java — the capability ladder (real course code)',b:`public enum OrderStatus {
+  UNSHIPPED, PENDING, SHIPPED, COMPLETED,
+  CANCELED, REFUND_APPLIED    <span class="cm">// the WHOLE vocabulary</span>
+}
+public enum AccountStatus {
+  ACTIVE, BLOCKED, BANNED, COMPROMISED,
+  ARCHIVED, UNKNOWN           <span class="cm">// admins block members</span>
+}
+<span class="cm">// ShipmentStatus, PaymentStatus — same idea</span>
+
+public abstract class <span class="hi-b">Customer</span> {
+  private ShoppingCart cart;  <span class="cm">// EVERY visitor gets a cart</span>
+  private Order order;
+
+  public ShoppingCart getShoppingCart();
+  public bool <span class="hi-g">addItemToCart(Item item)</span>;
+  public bool <span class="hi-g">removeItemFromCart(Item item)</span>;
+}
+
+public class Guest extends Customer {
+  public bool <span class="hi-y">registerAccount()</span>;  <span class="cm">// the only way up</span>
+}
+
+public class Member extends Customer {
+  private Account account;    <span class="cm">// the registered identity</span>
+  public OrderStatus <span class="hi-g">placeOrder(Order order)</span>;
+}
+<span class="cm">// NOTE: Guest has NO placeOrder(). R3 is enforced
+// by the type system — not by an if statement.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Customer</div><div class="cd-b">cart: ShoppingCart<br>order: Order</div><div class="cd-m">+ getShoppingCart()<br>+ addItemToCart(item)<br>+ removeItemFromCart(item)</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h">Guest</div><div class="cd-m">+ registerAccount()</div></div>
+  <div class="cd-box ctx"><div class="cd-h">Member</div><div class="cd-m">account: Account<br>+ <b>placeOrder(order)</b></div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">Member HAS the registered identity ↓</div>
+<div class="cd-row">
+  <div class="cd-box" style="min-width:180px"><div class="cd-h">Account</div><div class="cd-b">userName, password<br>status: AccountStatus<br>shippingAddress: Address</div><div class="cd-m">+ addProduct(product)<br>+ addProductReview(review)<br>+ resetPassword()</div></div>
+</div>`,
+callout:{type:'callout-info',text:'Q1 that killed Attempt #1 is gone: a Guest literally has no placeOrder() method — the compiler enforces "register to buy". Registering upgrades you to a Member, which HAS an Account: the identity that can also sell and review.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. User capabilities vary by type — so Customer becomes a hierarchy. Statuses are fixed vocabularies — so they become enums, not strings.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: search & payments',desc:'"Find products by name or category" is a <em>capability</em>, not a class. Declare it as a <code>Search</code> interface and let <code>Catalog</code> implement it with two indexes. Same story for money: the order depends on <code>Payment</code> — never on which kind.',
+code:{h:'Search.java + Catalog.java — the seams',b:`public interface <span class="hi-b">Search</span> {
+  public List&lt;Product&gt; searchProductsByName(String name);
+  public List&lt;Product&gt; searchProductsByCategory(String cat);
+}
+
+public class Catalog <span class="hi-b">implements Search</span> {
+  HashMap&lt;String, List&lt;Product&gt;&gt; productNames;
+  HashMap&lt;String, List&lt;Product&gt;&gt; productCategories;
+
+  public List&lt;Product&gt; searchProductsByName(String name) {
+    return productNames.get(name);   <span class="cm">// index, not scan</span>
+  }
+  public List&lt;Product&gt; searchProductsByCategory(String cat) {
+    return productCategories.get(cat);
+  }
+}
+
+<span class="cm">// and the money side — two ways to pay, one seam:</span>
+public class Account {
+  private List&lt;<span class="hi-b">CreditCard</span>&gt; creditCards;
+  private List&lt;<span class="hi-b">ElectronicBankTransfer</span>&gt; bankAccounts;
+  ...
+}
+public class Order {
+  public boolean makePayment(<span class="hi-b">Payment payment</span>);
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:140px"><div class="cd-h"><span class="st">interface</span>Search</div><div class="cd-m">+ searchProductsByName()<br>+ searchProductsByCategory()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>implements</div></div>
+  <div class="cd-row"><div class="cd-box fly" style="min-width:110px"><div class="cd-h">Catalog</div><div class="cd-m">two HashMap indexes</div></div></div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Payment</div><div class="cd-m">status: PaymentStatus</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CreditCard</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">BankTransfer</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">Order calls <b>makePayment(Payment)</b> — never "if card else transfer"</div>`,
+callout:{type:'callout-info',text:'Q4 died here too: search is two O(1) HashMap lookups on an index the Catalog maintains — and callers hold a Search, so swapping in a real search engine later changes nobody.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Callers depend on Search and Payment — supertypes — so the concrete engine (Catalog today) and the concrete money-mover (card or bank transfer) can change freely.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: the cart HAS items, the order HAS its history',desc:'The God object owned everything in one body. The fix is an aggregate chain where each class has <strong>one job</strong>: a cart manages its items, an order owns its status history, a shipment owns its tracking trail.',
+code:{h:'ShoppingCart.java + Order.java — aggregates with one job',b:`public class Item {          <span class="cm">// one line in the cart</span>
+  private String productID;
+  private int quantity;
+  private double price;      <span class="cm">// price AT purchase time</span>
+  public boolean updateQuantity(int quantity);
+}
+
+public class ShoppingCart {  <span class="cm">// HAS items</span>
+  private List&lt;Item&gt; items;
+  public boolean addItem(Item item);
+  public boolean removeItem(Item item);
+  public boolean updateItemQuantity(Item item, int qty);
+  public List&lt;Item&gt; getItems();
+  public boolean <span class="hi-g">checkout()</span>;
+}
+
+public class OrderLog {      <span class="cm">// one status snapshot</span>
+  private String orderNumber;
+  private Date creationDate;
+  private OrderStatus status;
+}
+
+public class Order {         <span class="cm">// HAS its whole history</span>
+  private String orderNumber;
+  private OrderStatus status;
+  private Date orderDate;
+  private List&lt;OrderLog&gt; orderLog;
+  public boolean sendForShipment();
+  public boolean makePayment(Payment payment);
+  public boolean <span class="hi-g">addOrderLog(OrderLog orderLog)</span>;
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+  <div class="cd-row"><div class="cd-box ctx" style="min-width:140px"><div class="cd-h">ShoppingCart</div><div class="cd-m">+ addItem / removeItem<br>+ checkout()</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 0..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:140px"><div class="cd-h">Item</div><div class="cd-m">productID, quantity, price</div></div></div>
+  <div class="has-a-lbl">refers to 1</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:140px"><div class="cd-h">Product</div><div class="cd-m">price, seller: Account</div></div></div>
+  <div class="has-a-lbl">belongs to 1</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:140px"><div class="cd-h">ProductCategory</div></div></div>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+  <div class="cd-row"><div class="cd-box ctx" style="min-width:140px"><div class="cd-h">Order</div><div class="cd-m">status: OrderStatus</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:140px"><div class="cd-h">OrderLog</div><div class="cd-m">status snapshot + date</div></div></div>
+  <div class="cd-row" style="margin-top:10px"><div class="cd-box ctx" style="min-width:140px"><div class="cd-h">Shipment</div><div class="cd-m">estimatedArrival, method</div></div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="cd-row"><div class="cd-box" style="min-width:140px"><div class="cd-h">ShipmentLog</div><div class="cd-m">status snapshot + date</div></div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Note the Item/Product split, straight from the course: a pen is a Product; the ten pens in stock are ten Items. Quantity and price-at-purchase live on the Item — so a seller\'s later price change can\'t rewrite your order history.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. Cart ▸ Items, Order ▸ OrderLogs, Shipment ▸ ShipmentLogs, Product ▸ Category — nothing owns everything.'}
+},
+// ============ STEP 11 — PATTERN: STATE ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · State',title:'The order lifecycle is a state machine',desc:'R8 said "cancel only if it hasn\'t shipped" — that\'s a <em>transition rule</em>, not an if to sprinkle around. The design makes the lifecycle explicit: one <code>OrderStatus</code> enum, transitions guarded in one place, and an append-only <code>OrderLog</code> so every change is auditable.',
+code:{h:'Order.java — guarded transitions + audit trail (sketch)',b:`public enum OrderStatus {
+  <span class="hi-b">UNSHIPPED, PENDING, SHIPPED, COMPLETED,
+  CANCELED, REFUND_APPLIED</span>
+}
+
+public class Order {
+  private String orderNumber;
+  private OrderStatus status;       <span class="cm">// ONE current state</span>
+  private List&lt;OrderLog&gt; orderLog;  <span class="cm">// full history — audit</span>
+
+  public boolean sendForShipment() {
+    <span class="hi-g">if (status != OrderStatus.PENDING)</span>  <span class="cm">// legal move?</span>
+      return false;
+    status = OrderStatus.SHIPPED;
+    <span class="hi-g">addOrderLog(new OrderLog(orderNumber, status));</span>
+    return true;
+  }
+
+  public boolean cancel() {
+    <span class="hi-r">if (status == OrderStatus.SHIPPED)
+      return false;</span>                  <span class="cm">// R8: too late</span>
+    status = OrderStatus.CANCELED;
+    addOrderLog(new OrderLog(orderNumber, status));
+    return true;
+  }
+}
+<span class="cm">// The course gives the signatures; the guards
+// fall straight out of R8. No caller can put an
+// order into an illegal state — Q2 is dead.</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+<div class="cd-row" style="gap:4px;align-items:center">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">UNSHIPPED</div></div>
+  <span style="color:var(--text-tertiary);font-size:12px">→</span>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">PENDING</div></div>
+  <span style="color:var(--text-tertiary);font-size:12px">→</span>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">SHIPPED</div></div>
+  <span style="color:var(--text-tertiary);font-size:12px">→</span>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">COMPLETED</div></div>
+</div>
+<div class="cd-arr">cancel() is only legal BEFORE the ship line ↓</div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">CANCELED</div></div>
+  <div class="cd-box dup"><div class="cd-h" style="font-size:10px">REFUND_APPLIED</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">every arrow taken appends an OrderLog { status, date }</div>
+<div class="cd-row" style="margin-top:6px"><div class="cd-box" style="min-width:170px"><div class="cd-h">OrderLog <span class="st">history entry</span></div><div class="cd-m">orderNumber, creationDate<br>status: OrderStatus</div></div></div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: State-machine thinking (<a href="../ch10-state-pattern.html">Chapter 10</a> — State). The course right-sizes it: one enum + guarded methods + an OrderLog audit trail. Say the tradeoff out loud in the interview: the full State pattern (a class per status) earns its keep only when per-state behavior multiplies.'}
+},
+// ============ STEP 12 — PATTERN: OBSERVER + STRATEGY ============
+{phase:'pill-pattern',phaseTxt:'Patterns spotted · Observer & Strategy',title:'Statuses that broadcast, payments that swap',desc:'R9 said the buyer gets notified on <em>every</em> order or shipping change. So a status change is an <em>event</em>: the log append is the one choke point, and <code>Notification</code> fans it out — a hand-rolled <strong>Observer</strong>. And the payment seam from Principle #2 is a textbook <strong>Strategy</strong>.',
+code:{h:'Shipment.java + Notification.java — the event choke point',b:`public class Shipment {
+  private String shipmentNumber;
+  private Date shipmentDate;
+  private Date estimatedArrival;
+  private String shipmentMethod;
+  private List&lt;ShipmentLog&gt; shipmentLogs;
+
+  public boolean addShipmentLog(ShipmentLog log) {
+    shipmentLogs.add(log);        <span class="cm">// state changed →</span>
+    <span class="hi-y">notification.sendNotification(buyerAccount);</span> <span class="cm">// R9</span>
+  }
+}
+
+public class ShipmentLog {
+  private String shipmentNumber;
+  private ShipmentStatus status;  <span class="cm">// PENDING, SHIPPED,</span>
+  private Date creationDate;      <span class="cm">// DELIVERED, ON_HOLD</span>
+}
+
+public abstract class <span class="hi-b">Notification</span> {
+  private int notificationId;
+  private Date createdOn;
+  private String content;
+
+  public boolean <span class="hi-b">sendNotification(Account account)</span>;
+  <span class="cm">// email / SMS channels extend this. Tracking a
+  // shipment (R11) reads the SAME log trail.</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Order / Shipment <span class="st">subject</span></div><div class="cd-m">addOrderLog() / addShipmentLog()<br>= state change</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>notifies</div></div>
+<div class="cd-row"><div class="cd-box fly" style="min-width:180px"><div class="cd-h">Notification <span class="st">observer</span></div><div class="cd-m">sendNotification(account)<br>email / SMS channels</div></div></div>
+<div class="cd-arr" style="padding-top:8px">and from Principle #2 ↓</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface" style="min-width:110px"><div class="cd-h"><span class="st">strategy</span>Payment</div><div class="cd-m">makePayment(Payment)</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CreditCard</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">BankTransfer</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — orders and shipments are subjects; Notification pushes updates to the member. The course hand-rolls it; mention that a real subscribe/notify interface would guarantee no mutation path forgets — that was Q3\'s silent bug. Pattern #3: Strategy (<a href="../ch1-strategy-pattern.html">Chapter 1</a>) — credit card and electronic bank transfer are interchangeable behind Payment.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, a capability ladder for the people, interfaces at the seams, and aggregates that own their logs. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum OrderStatus    { UNSHIPPED, PENDING, SHIPPED,
+                      COMPLETED, CANCELED, REFUND_APPLIED }
+enum AccountStatus  { ACTIVE, BLOCKED, BANNED, ... }
+enum ShipmentStatus { PENDING, SHIPPED, DELIVERED, ON_HOLD }
+enum PaymentStatus  { UNPAID, PENDING, COMPLETED,
+                      DECLINED, REFUNDED, ... }
+
+<span class="cm">// WHO — the capability ladder</span>
+abstract class Customer { cart, addItemToCart() }
+class Guest  extends Customer { registerAccount() }
+class Member extends Customer { account, <span class="hi-b">placeOrder()</span> }
+class Account { status, shippingAddress, creditCards,
+                bankAccounts, addProduct(), addProductReview() }
+
+<span class="cm">// STOREFRONT — indexed, searchable</span>
+interface Search { searchProductsByName/ByCategory() }
+class Catalog implements Search  <span class="cm">// two HashMaps</span>
+class Product { price, category, seller,
+                availableItemCount }
+class ProductCategory { name }   class ProductReview { rating }
+
+<span class="cm">// THE PURCHASE — composition</span>
+class Item         { productID, quantity, price }
+class ShoppingCart { List&lt;Item&gt;, checkout() }
+class Order        { status, <span class="hi-b">List&lt;OrderLog&gt;</span>,
+                     makePayment(), sendForShipment() }
+
+<span class="cm">// FULFILLMENT — logged + observed</span>
+class Shipment { List&lt;ShipmentLog&gt;, estimatedArrival }
+abstract class Notification { sendNotification(account) }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Member <span class="st">extends Customer</span></div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> cart 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> account 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> orders 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">ShoppingCart</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Account</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Order</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> items 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> cards + banks</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> logs 1..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Item ▸ Product</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Payment ▸2</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">OrderLog · Shipment ▸ Logs</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Search ▸ Catalog</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Notification ▸2</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">ProductCategory · Address</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but every axis of change now has its own home. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One purchase, end to end',desc:'A design is only convincing if you can run a scenario through it. Narrate this flow in the interview — it starts as an anonymous Guest and ends with a delivered box.',
+code:{h:'Member.java — placeOrder(), the checkout spine (sketch)',b:`public class Member extends Customer {
+  private Account account;
+
+  public OrderStatus placeOrder(Order order) {
+    getShoppingCart().<span class="hi-b">checkout()</span>;   <span class="cm">// cart → order</span>
+    <span class="cm">// deliver to the account's address (R7)</span>
+    order.setShippingAddress(
+        account.getShippingAddress());
+
+    <span class="cm">// card or bank transfer — the Order
+    // doesn't know or care which (Strategy)</span>
+    Payment payment = account.preferredPayment();
+    if (!order.<span class="hi-g">makePayment(payment)</span>)
+      return OrderStatus.CANCELED;  <span class="cm">// DECLINED → bail</span>
+
+    order.<span class="hi-g">sendForShipment()</span>;  <span class="cm">// PENDING → SHIPPED,
+                               // guarded (State)</span>
+    <span class="cm">// every transition appends an OrderLog and
+    // fires a Notification (R9); the member
+    // tracks the same trail (R11)</span>
+    return order.getStatus();
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Guest</span><br>Searches: <code>catalog.searchProductsByName("wireless mouse")</code> — the Search interface at work</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Guest</span><br><code>addItemToCart(item)</code> — no account needed; the cart lives on Customer</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Guest</span><br>Hits "Buy" → <code>registerAccount()</code> — R3: only Members order. Guest becomes a Member with an Account</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Member</span><br><code>placeOrder(order)</code> — <code>cart.checkout()</code> turns Items into an Order (status PENDING)</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Payment</span><br><code>order.makePayment(payment)</code> — credit card or bank transfer, the Order doesn\'t care (Strategy)</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">Order</span><br><code>sendForShipment()</code> — PENDING → SHIPPED, guard checked, OrderLog appended (State)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Shipment</span><br><code>addShipmentLog()</code> as the box moves PENDING → SHIPPED → DELIVERED</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">System</span><br>Every log append triggers <code>notification.sendNotification(account)</code> (Observer); the member tracks the same trail (R11)</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and no step needs code that doesn\'t exist. That\'s how you know the design is complete enough.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 16 classes — one recipe, three principles, three patterns. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The online store in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → Customer ▸ Guest/Member ladder; 4 status enums
+2. Program to an interface
+   → Search / Catalog; Payment seam (card / transfer)
+3. Composition + single responsibility
+   → Cart ▸ Items; Order ▸ OrderLogs;
+     Shipment ▸ ShipmentLogs; Product ▸ Category
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">State</span>     OrderStatus machine: guarded transitions,
+          logged history, cancel only pre-SHIPPED
+<span class="hi-b">Observer</span>  status change → Notification → member
+<span class="hi-b">Strategy</span>  credit card / bank transfer swap freely
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Movie Tickets (cart≈booking, same payment Strategy)
+Stack Overflow (the Guest/Member/Admin ladder again)
+Stock Brokerage (order lifecycle + notifications)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h">State</div><div class="cd-m">OrderStatus machine —<br>guarded &amp; logged</div></div>
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Observer</div><div class="cd-m">status change →<br>Notification → member</div></div>
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h">Strategy</div><div class="cd-m">Payment: card/transfer<br>swap freely</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Lifecycle</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable behavior</div>
+</div>`,
+callout:{type:'callout-purple',text:'The God object failed because who-you-are, where-the-order-is, and who-needs-to-know were welded into one class. The recipe separated the axes of change — and the patterns appeared exactly where the requirements demanded flexibility: a guarded lifecycle (State), broadcast on change (Observer), swappable payments (Strategy).'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

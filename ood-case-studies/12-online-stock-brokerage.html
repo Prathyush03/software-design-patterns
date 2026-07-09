@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 12 — Design an Online Stock Brokerage System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 12 — Design an Online Stock Brokerage System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design an online stock brokerage." Go.',desc:'Forty-five minutes, a whiteboard, and Wall Street in your pocket. Members trade stocks online with no middlemen: they buy and sell, track portfolios with performance charts, keep watchlists, and get alerts at pre-defined price levels. Real-time quotes stream in from the stock exchange. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: knowing what a stop-limit order is.</span>
+<span class="cm">// (They will tell you. Graded:)</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new order type, new alert channel...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:230px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">A member's brokerage screen</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">WATCHLIST&nbsp; AAPL $10.02 ▲ &nbsp;TSLA $241.10 ▼ &nbsp;<span style="color:var(--text-secondary)">alert @ $10</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">PORTFOLIO&nbsp; AAPL ×150 <span style="color:var(--text-secondary)">(2 lots)</span> &nbsp;MSFT ×40</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">ORDERS&nbsp;&nbsp;&nbsp;&nbsp; BUY 100 AAPL limit $10 — <span style="color:var(--text-warning)">70 filled</span></div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Deposit / withdraw</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Alerts &amp; statements</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one Broker class',desc:'The instinct under time pressure: skip the boring requirements talk and write code. One <code>Broker</code> class, <code>buy()</code> and <code>sell()</code> hitting the exchange directly, a string array of watched symbols polled in a loop. Done in five minutes.',
+code:{h:'Broker.java — the "just code it" design',b:`public class Broker {
+    <span class="hi-y">String[] watchlist</span> = new String[100];
+    double cash = 0;
+
+    boolean buy(<span class="hi-y">String symbol</span>, int qty) {
+        double price = exchange.quote(symbol);
+        if (cash &lt; qty * price) return false;
+        exchange.execute("BUY " + symbol + " " + qty);
+        cash -= qty * price;
+        return true;   <span class="cm">// bought... probably?</span>
+    }
+
+    boolean sell(String symbol, int qty) {
+        exchange.execute("SELL " + symbol + " " + qty);
+        cash += qty * exchange.quote(symbol);
+        return true;
+    }
+
+    void watchLoop() {  <span class="cm">// runs forever, polling</span>
+        for (String symbol : watchlist) {
+            double p = exchange.quote(symbol);
+            if (p != lastPrice(symbol))
+                print(symbol + " moved!");
+        }
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:200px"><div class="cd-h">Broker</div><div class="cd-b">String[] watchlist<br>double cash</div><div class="cd-m">+ buy(String symbol, qty)<br>+ sell(String symbol, qty)<br>+ watchLoop()</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, string symbols, a polling loop</div>`,
+callout:{type:'callout-ok',text:'Honestly? For one member market-buying whole shares with cash on hand, this trades. Money in, stocks out. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: <em>four</em> order types — market, limit, stop-loss, stop-limit — each executing under a different rule. Orders can fill in parts. Members hold multiple <em>lots</em> of the same stock, keep multiple watchlists, deposit and withdraw via check, wire, or electronic transfer, get quarterly and yearly tax statements, and must be notified whenever an order executes. Patch the class!',
+code:{h:'Broker.java — the God object grows',b:`boolean placeOrder(String symbol, int qty,
+                   <span class="hi-y">String type</span>, double limit,
+                   double stop) {
+  <span class="hi-y">if (type.equals("market"))</span> {
+      exchange.execute("BUY " + symbol);  <span class="cm">// now</span>
+  } <span class="hi-y">else if (type.equals("limit"))</span> {
+      <span class="cm">// wait until price &lt;= limit... wait WHERE?</span>
+  } <span class="hi-y">else if (type.equals("stoploss"))</span> {
+      <span class="cm">// fire when price hits the stop</span>
+  } <span class="hi-y">else if (type.equals("stoplimit"))</span> {
+      <span class="hi-r">// stop first, THEN becomes a limit?!</span>
+  } else { return false; }
+  ...
+}
+boolean deposit(double amount, <span class="hi-y">String via</span>) {
+  <span class="hi-r">// "check", "wire", "electronic" — more strings,
+  // plus a $100,000 transfer limit to enforce</span>
+}
+<span class="cm">// TODO: partial fills. TODO: lots. TODO: alert
+// members the instant a watched stock moves.
+// TODO: tax statements from... what records? 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">Broker <span class="st">the God object</span></div><div class="cd-b">symbols, cash, watchlists,<br>order types, stops, limits,<br>fills, lots, checks, wires,<br>statements, alerts...</div><div class="cd-m">+ placeOrder() <span style="color:var(--text-danger)">4-way if/else</span><br>+ deposit() <span style="color:var(--text-danger)">3 more strings</span><br>+ watchLoop() <span style="color:var(--text-danger)">still polling</span><br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another if/else to methods that already do too much. And notice: buy() still returns a boolean. Hold that thought.'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The God broker collapses',desc:'Then the interviewer asks four innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "Your buy() returned true. The exchange
+//      filled 70 of the 100 shares. Now what?"</span>
+<span class="hi-r">→ There is no order OBJECT — just a boolean.
+  Nowhere to record 70 @ $10.00 now and
+  30 @ $10.05 later. No status. No history.</span>
+
+<span class="cm">// Q2: "Add a trailing-stop order type."</span>
+<span class="hi-r">→ Another string, another branch in
+  placeOrder(), the polling loop, the funds
+  check... one change, four blast sites.</span>
+
+<span class="cm">// Q3: "10,000 members want an alert the moment
+//      AAPL crosses $10."</span>
+<span class="hi-r">→ 10,000 watchLoop()s hammering the exchange.
+  Alerts arrive whenever a loop happens to
+  wake up. That’s money lost, not UX lost.</span>
+
+<span class="cm">// Q4: "It’s tax season. Where does the yearly
+//      statement come from?"</span>
+<span class="hi-r">→ From nothing. Every trade vanished into
+  strings and booleans.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every order type is a<br>branch in one method</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed symbols,<br>fills &amp; history lost</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">trading, alerts, money<br>movement all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — behavior that varies is welded to code that doesn\'t. An order needs to be an object with a lifecycle, not a boolean. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the brokerage — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Any user can <b>buy and sell stocks</b> <span class="obj">Member, StockExchange</span></li>
+<li data-n="R2">Multiple <b>watchlists</b> containing multiple <b>stock quotes</b> <span class="obj">Watchlist, Stock</span></li>
+<li data-n="R3">Order types: <b>market, limit, stop-loss, stop-limit</b> <span class="obj">Order hierarchy</span></li>
+<li data-n="R4">Multiple <b>lots</b> of the same stock, kept distinguishable <span class="obj">StockLot, StockPosition</span></li>
+<li data-n="R5">Reports: <b>quarterly updates + yearly tax statements</b> <span class="obj">Statement</span></li>
+<li data-n="R6">Deposit &amp; withdraw via <b>check, wire, or electronic transfer</b> <span class="obj">DepositMoney, WithdrawMoney</span></li>
+<li data-n="R7"><b>Notify</b> members whenever trade orders execute <span class="obj">Notification</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Two minutes of requirements talk just produced our entire vocabulary. Attempt #1 skipped this — and had to invent it mid-code as if/else branches.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Three actors touch this system. Listing their use cases tells us which operations our classes must expose — before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Member</span>
+search stock inventory  <span class="cm">— find stocks by symbol</span>
+place order             <span class="cm">— buy or sell, 4 types</span>
+cancel order            <span class="cm">— while still OPEN</span>
+add/remove/edit watchlist
+deposit / withdraw money <span class="cm">— check, wire, electronic</span>
+
+<span class="cm">// Admin</span>
+register new account / cancel membership
+<span class="hi-b">block / unblock members</span>
+
+<span class="cm">// System (yes, the system is an actor)</span>
+fetch stock quotes from the exchange, periodically
+send notifications when orders execute`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Member</span><span class="does">searches, trades,<br>watches, moves money</span></div>
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">accounts, blocking<br>&amp; unblocking</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">fetches quotes,<br>sends notifications</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Register account</span><span class="uc">Cancel membership</span><span class="uc">Search inventory</span><span class="uc">Place order</span><span class="uc">Cancel order</span><span class="uc">Add/edit watchlist</span><span class="uc">Deposit money</span><span class="uc">Withdraw money</span><span class="uc">Fetch stock quotes</span><span class="uc">Send notification</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice "System" is an actor: fetching quotes and pushing alerts are use cases of their own — that hint becomes the Observer pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The market</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">StockExchange</div></div>
+    <div class="cd-box ctx"><div class="cd-h">StockInventory</div></div>
+    <div class="cd-box"><div class="cd-h">Stock</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The member's world</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Account</div></div>
+    <div class="cd-box"><div class="cd-h">StockPosition</div></div>
+    <div class="cd-box"><div class="cd-h">StockLot</div></div>
+    <div class="cd-box"><div class="cd-h">Watchlist</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The paper trail</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Order</div></div>
+    <div class="cd-box"><div class="cd-h">OrderPart</div></div>
+    <div class="cd-box"><div class="cd-h">Statement</div></div>
+    <div class="cd-box"><div class="cd-h">DepositMoney</div></div>
+    <div class="cd-box"><div class="cd-h">WithdrawMoney</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The messenger</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box fly"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Gateways / aggregates</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Boundary objects</div>
+</div>`,
+callout:{type:'callout-ok',text:'Fourteen small classes instead of one God broker. Next: which of these vary? That decides where the hierarchies (and patterns) go.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the order types',desc:'What kept breaking Attempt #1? <strong>How an order executes varies</strong> — at market price now, at my price or better, when a stop triggers, stop-then-limit. Everything else — the parts map, the status lifecycle, the audit trail — is stable. So <code>Order</code> becomes an abstract base holding the stable machinery, with one subclass per execution rule.',
+code:{h:'Order.java — the varying thing gets a hierarchy',b:`public enum <span class="hi-b">OrderStatus</span> {
+  OPEN, FILLED, PARTIALLY_FILLED, CANCELLED
+}
+public enum TimeEnforcementType {
+  GOOD_TILL_CANCELLED, FILL_OR_KILL,
+  IMMEDIATE_OR_CANCEL, ON_THE_OPEN, ON_THE_CLOSE
+}
+
+public abstract class Order {
+  private String orderNumber;
+  public boolean isBuyOrder;
+  private <span class="hi-b">OrderStatus status</span>;    <span class="cm">// the lifecycle</span>
+  private TimeEnforcementType timeEnforcement;
+  private Date creationTime;
+  private <span class="hi-g">HashMap&lt;Integer, OrderPart&gt; parts</span>;
+
+  public void setStatus(OrderStatus status) { ... }
+  public boolean saveInDB() { ... } <span class="cm">// Q4: audit trail</span>
+  public void addOrderParts(OrderParts parts) {
+    for (OrderPart part : parts)
+      this.parts.put(part.id, part);  <span class="cm">// Q1: 70 + 30</span>
+  }
+}
+
+public class MarketOrder extends Order { }
+                     <span class="cm">// at current market price, now</span>
+public class LimitOrder extends Order {
+  private double priceLimit; <span class="cm">// at my price or better</span>
+}
+public class StopLossOrder  extends Order { ... }
+                     <span class="cm">// fires when stop price hit</span>
+public class StopLimitOrder extends Order { ... }
+                     <span class="cm">// stop hit → becomes a limit</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Order</div><div class="cd-b">orderNumber, isBuyOrder<br>status, timeEnforcement<br>parts: OrderPart map</div><div class="cd-m">+ setStatus(s)<br>+ addOrderParts(parts)<br>+ saveInDB()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Market</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Limit</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">StopLoss</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">StopLimit</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">every order carries the same lifecycle ↓</div>
+<div class="cd-row" style="gap:4px;align-items:center">
+  <div class="dia-wrap" style="padding:3px 8px">OPEN</div>
+  <span style="font-size:10px;color:var(--text-tertiary)">→</span>
+  <div class="dia-wrap" style="padding:3px 8px;background:var(--bg-warning);border-color:var(--border-warning);color:var(--text-warning)">PARTIALLY_FILLED</div>
+  <span style="font-size:10px;color:var(--text-tertiary)">→</span>
+  <div class="dia-wrap" style="padding:3px 8px;background:var(--bg-success);border-color:var(--border-success);color:var(--text-success)">FILLED</div>
+</div>
+<div class="cd-arr" style="padding-top:2px">or → CANCELLED at any point before FILLED</div>`,
+callout:{type:'callout-info',text:'A trailing-stop order tomorrow = one new subclass — Q2 no longer touches existing code. And that status field is a little state machine riding inside every order: OPEN → PARTIALLY_FILLED → FILLED/CANCELLED. Same State thinking as <a href="../ch10-state-pattern.html">Chapter 10</a>, enum-sized.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. The execution rule varies per order type; the parts map, status lifecycle, and audit trail stay the same — so the rule gets subclasses and the machinery lives once in the base.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: accounts & notifications',desc:'"Member or admin", "email, SMS, or push" — and above all: the member\'s book of business holds <code>Order</code>s, never <code>LimitOrder</code>s. Callers depend on the abstraction; the concrete class is chosen at runtime.',
+code:{h:'Account.java + Notification.java — depend on the supertype',b:`public abstract class <span class="hi-b">Account</span> {
+  private String id, password, name;
+  private AccountStatus status; <span class="cm">// ACTIVE, BLACKLISTED...</span>
+  private Location address;
+  private String email, phone;
+  public boolean resetPassword();
+}
+
+public class Member extends Account {
+  private double availableFundsForTrading;
+  private HashMap&lt;String, StockPosition&gt; stockPositions;
+  private <span class="hi-b">HashMap&lt;Integer, Order&gt; activeOrders</span>;
+  <span class="cm">// declared type: Order — any of the 4 kinds fits</span>
+}
+public class Admin extends Account {
+  public boolean blockMember(Member member);
+  public boolean unblockMember(Member member);
+}
+
+public abstract class <span class="hi-b">Notification</span> {
+  private String notificationId;
+  private Date createdOn;
+  private String content;
+  public abstract boolean <span class="hi-b">sendNotification()</span>;
+}
+public class SmsNotification   extends Notification { }
+public class EmailNotification extends Notification { }
+public class PushNotification  extends Notification { }`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Account</div><div class="cd-m">+ resetPassword()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Member</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Admin</div></div>
+  </div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Notification</div><div class="cd-m">+ sendNotification()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">SMS</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Email</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Push</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">Member holds an <b>Order</b>; the system calls a <b>Notification</b> — never a concrete subclass</div>`,
+callout:{type:'callout-info',text:'When an order executes, the system calls notification.sendNotification() — it neither knows nor cares whether that\'s an SMS or a push. (The course names the channels in its class diagram but codes only the abstraction; adding WhatsApp later = one new subclass.)'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The declared type (Order, Account, Notification) should be a supertype so runtime objects aren\'t locked into the code.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: member HAS positions HAS lots',desc:'Who owns what? A member HAS positions, watchlists, and active orders; a position HAS lots (R4); an order HAS parts (Q1). Each class stores one fact well — and the God broker dissolves into an ownership chain.',
+code:{h:'Member.java + the things it owns',b:`public class Member extends Account {
+  private double availableFundsForTrading;
+                          <span class="cm">// buying power</span>
+  private Date dateOfMembership;
+  private HashMap&lt;String, StockPosition&gt; stockPositions;
+  private HashMap&lt;Integer, Order&gt; activeOrders;
+  private List&lt;Watchlist&gt; watchlists; <span class="cm">// R2: multiple</span>
+}
+
+public class StockPosition {   <span class="cm">// "all my AAPL"</span>
+  private String symbol;
+  private double quantity;
+  private List&lt;StockLot&gt; lots;
+  <span class="cm">// R4: 100 bought yesterday, 50 today —
+  // when selling, pick which lot goes first</span>
+}
+public class StockLot {
+  private String lotNumber;
+  private double buyingPrice;
+  private Order buyingOrder;  <span class="cm">// the order that made it</span>
+}
+
+public class Watchlist {
+  private String name;
+  private List&lt;Stock&gt; stocks; <span class="cm">// quotes I follow</span>
+}
+public class OrderPart {
+  private double price;
+  private double quantity;
+  private Date executedAt;    <span class="cm">// 70 @ $10.00, 30 @ $10.05</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:190px"><div class="cd-h">Member</div><div class="cd-m">availableFundsForTrading<br>dateOfMembership</div></div></div>
+<div style="display:flex;gap:18px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> positions 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> orders 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> watchlists 0..*</div>
+</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box" style="min-width:105px"><div class="cd-h" style="font-size:10.5px">StockPosition</div><div class="cd-m">symbol, quantity</div></div>
+  <div class="cd-box abstract" style="min-width:95px"><div class="cd-h" style="font-size:10.5px"><span class="st">abstract</span>Order</div><div class="cd-m">status, parts</div></div>
+  <div class="cd-box" style="min-width:95px"><div class="cd-h" style="font-size:10.5px">Watchlist</div><div class="cd-m">name</div></div>
+</div>
+<div style="display:flex;gap:38px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> lots 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> parts 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> stocks 0..*</div>
+</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box" style="min-width:105px"><div class="cd-h" style="font-size:10.5px">StockLot</div><div class="cd-m">buyingPrice,<br>buyingOrder</div></div>
+  <div class="cd-box" style="min-width:95px"><div class="cd-h" style="font-size:10.5px">OrderPart</div><div class="cd-m">qty @ price,<br>executedAt</div></div>
+  <div class="cd-box" style="min-width:95px"><div class="cd-h" style="font-size:10.5px">Stock</div><div class="cd-m">symbol, price</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Now "sell my older AAPL lot first" touches StockPosition, partial fills touch Order, alert lists touch Watchlist, and tax statements read the saved orders — each class has exactly one reason to change.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. A member is an aggregate of positions, orders, and watchlists; a position is an aggregate of lots — nothing owns everything.'}
+},
+// ============ STEP 11 — PATTERN: SINGLETON ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Singleton',title:'One market, many members — Singleton',desc:'Every member, every quote refresh, every order ends up in the same place: the stock exchange. Thousands of components must share <em>one</em> gateway — one connection, one order queue, one source of truth for prices. The course makes <code>StockExchange</code> a Singleton.',
+code:{h:'StockExchange.java — the singleton gateway (course code)',b:`public class StockExchange {
+
+  <span class="hi-b">private static StockExchange stockExchangeInstance
+      = null;</span>
+
+  <span class="cm">// private constructor to restrict for singleton —
+  // "new StockExchange()" is a compile error
+  // everywhere else in the system</span>
+  <span class="hi-b">private StockExchange() { }</span>
+
+  <span class="cm">// static method to get the singleton instance</span>
+  public static StockExchange <span class="hi-b">getInstance()</span> {
+    if (stockExchangeInstance == null) {
+      stockExchangeInstance = new StockExchange();
+    }
+    return stockExchangeInstance;
+  }
+
+  public static boolean placeOrder(Order order) {
+    boolean returnStatus =
+        getInstance().<span class="hi-g">submitOrder(order)</span>;
+    <span class="cm">// one queue to the real exchange; fills come
+    // back later via member.callbackStockExchange()</span>
+    return returnStatus;
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Member A</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Member B</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">StockInventory</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>all call getInstance()</div></div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">StockExchange <span class="st">singleton</span></div><div class="cd-b">- static instance<br>- private constructor</div><div class="cd-m">+ getInstance()<br>+ placeOrder(order)<br>+ fills → callbacks</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>one connection, one order queue</div></div>
+<div class="cd-row"><div class="dia-wrap" style="padding:6px 14px">🏛 the real stock exchange</div></div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: Singleton (Head First ch. 5) — one lazily-created, globally shared instance. It\'s exactly the move <a href="02-parking-lot.html">the Parking Lot</a> made: many panels, one ParkingLot. Here: many members, one exchange gateway. Orders go down through it; fills come back up through it.'}
+},
+// ============ STEP 12 — PATTERN: OBSERVER ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Observer',title:'Watchlists that watch — Observer',desc:'R2 + R7 are one pattern wearing two hats. Members watch stocks and want alerts at <em>pre-defined price levels</em>; members place orders and want to hear the moment they execute. Nobody polls — the thing that changes notifies the things that care.',
+code:{h:'StockInventory.java — quotes notify watchers (hand-rolled)',b:`<span class="cm">// The course’s class diagram implies this wiring;
+// here it is hand-rolled.
+// Subject: the live-quote inventory.
+// Observers: every watchlist tracking the symbol.</span>
+public class StockInventory {
+  private List&lt;Stock&gt; stocks;
+  <span class="cm">// latest prices, fetched periodically from
+  // StockExchange.getInstance() by the System actor</span>
+
+  public void updateQuote(Stock stock, double price) {
+    stock.setPrice(price);          <span class="cm">// state change →</span>
+    for (Watchlist w : watchersOf(stock)) { <span class="cm">// notify</span>
+      if (<span class="hi-y">w.crossedAlertLevel(stock)</span>) { <span class="cm">// "AAPL ≥ $10"</span>
+        Notification n =
+            w.getMember().preferredChannel();
+        <span class="hi-g">n.sendNotification();</span>  <span class="cm">// SMS / email / push</span>
+      }
+    }
+  }
+}
+
+<span class="cm">// same shape when an order executes (R7):</span>
+public void callbackStockExchange(int orderId,
+    List&lt;OrderPart&gt; parts, OrderStatus status) {
+  ...
+  <span class="hi-g">notification.sendNotification();</span>
+  <span class="cm">// "FILLED: BUY 100 AAPL @ avg $10.015"</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Stock / StockInventory <span class="st">subject</span></div><div class="cd-m">price change =<br>state change</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>notifies</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Watchlist <span class="st">observer</span></div><div class="cd-m">alert level crossed?<br>→ tell the member</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Member <span class="st">observer</span></div><div class="cd-m">order executed?<br>→ callback + notify</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>delivered via</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10px">SmsNotification</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10px">EmailNotification</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10px">PushNotification</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — this is literally the WeatherStation with dollars on it: quotes are the measurements, watchlists are the displays. Say in the interview that a registerObserver/notifyObservers interface would formalize watchersOf() — and Q3\'s 10,000 polling loops vanish.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, three hierarchies for what varies, a singleton gateway, composition for the member\'s world. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum ReturnStatus  { SUCCESS, FAIL, INSUFFICIENT_FUNDS,
+                     INSUFFICIENT_QUANTITY, NO_STOCK_POSITION }
+enum OrderStatus   { OPEN, FILLED, PARTIALLY_FILLED, CANCELLED }
+enum TimeEnforcementType { GOOD_TILL_CANCELLED, FILL_OR_KILL,
+                     IMMEDIATE_OR_CANCEL, ON_THE_OPEN, ON_THE_CLOSE }
+enum AccountStatus { ACTIVE, CLOSED, CANCELED, BLACKLISTED }
+class Constants    { MONEY_TRANSFER_LIMIT = 100_000 } <span class="cm">// R6</span>
+
+<span class="cm">// WHAT VARIES — hierarchies</span>
+abstract class Order        <span class="cm">// Market | Limit | StopLoss | StopLimit</span>
+abstract class Account      <span class="cm">// Member | Admin</span>
+abstract class Notification <span class="cm">// SMS | Email | Push</span>
+
+<span class="cm">// THE MARKET</span>
+class StockExchange  <span class="hi-b">// SINGLETON</span> { getInstance(),
+                     placeOrder(), fills → callbacks }
+class StockInventory { latest quotes, searchSymbol() }
+class Stock          { symbol, price }
+
+<span class="cm">// THE MEMBER'S WORLD — composition</span>
+class Member        { funds, stockPositions, activeOrders,
+                      watchlists, placeBuy/SellLimitOrder(),
+                      callbackStockExchange() }
+class StockPosition { symbol, quantity, lots }   <span class="cm">// R4</span>
+class StockLot      { lotNumber, buyingPrice, buyingOrder }
+class Watchlist     { stocks the member follows } <span class="cm">// R2</span>
+
+<span class="cm">// THE PAPER TRAIL</span>
+class OrderPart     { qty @ price, executedAt }  <span class="cm">// partial fills</span>
+class Statement     { quarterly + yearly tax }   <span class="cm">// R5</span>
+class DepositMoney, WithdrawMoney <span class="cm">// check | wire | electronic</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx" style="min-width:160px"><div class="cd-h">StockExchange <span class="st">singleton</span></div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">StockInventory</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> orders ↓ fills ↑</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> quotes 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Order ▸4</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">OrderPart</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Stock</div></div>
+</div>
+<div class="cd-arr" style="padding:2px 0">placed &amp; held by ↓</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Account ▸2</div></div>
+  <div class="cd-box ctx" style="min-width:130px"><div class="cd-h" style="font-size:10.5px">Member</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Notification ▸3</div></div>
+</div>
+<div style="display:flex;gap:20px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> positions ▸ lots</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> watchlists 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> statements 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">StockPosition ▸ StockLot</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Watchlist</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Statement</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">DepositMoney</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">WithdrawMoney</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but partial fills, lots, alerts, money movement, and the audit trail each have a home. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One trade, end to end',desc:'A design is only convincing if you can run a scenario through it. This is the course\'s actual Member code — the buying-power check, the singleton hand-off, and the callback where partial fills land.',
+code:{h:'Member.java — place a limit buy + exchange callback (course code)',b:`public ReturnStatus placeBuyLimitOrder(String stockId,
+    float quantity, int limitPrice,
+    TimeEnforcementType enforcementType) {
+  <span class="cm">// invariant: never order beyond buying power</span>
+  if (<span class="hi-y">availableFundsForTrading &lt; quantity * limitPrice</span>) {
+    return ReturnStatus.INSUFFICIENT_FUNDS;
+  }
+  LimitOrder order = new LimitOrder(stockId, quantity,
+      limitPrice, enforcementType);
+  order.isBuyOrder = true;
+  order.saveInDB();          <span class="cm">// audit trail BEFORE sending</span>
+  boolean success = <span class="hi-b">StockExchange.placeOrder(order)</span>;
+  if (!success) {
+    order.setStatus(OrderStatus.FAILED); <span class="cm">// (course quirk:
+    // FAILED isn’t in the enum — call it CANCELLED)</span>
+    order.saveInDB();
+  } else {
+    activeOrders.put(order.getOrderId(), order);
+  }
+  return success;
+}
+<span class="cm">// sell side is symmetric, but checks the POSITION:
+// no position → NO_STOCK_POSITION;
+// fewer shares than asked → INSUFFICIENT_QUANTITY</span>
+
+<span class="cm">// invoked whenever the exchange reports progress</span>
+public void <span class="hi-g">callbackStockExchange</span>(int orderId,
+    List&lt;OrderPart&gt; orderParts, OrderStatus status) {
+  Order order = activeOrders.get(orderId);
+  order.addOrderParts(orderParts); <span class="cm">// 70 @ $10, 30 @ $10.05</span>
+  order.setStatus(status); <span class="cm">// OPEN → PARTIALLY_FILLED → FILLED</span>
+  order.updateInDB();
+  if (status == OrderStatus.FILLED ||
+      status == OrderStatus.CANCELLED) {
+    activeOrders.remove(orderId);  <span class="cm">// lifecycle over</span>
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Member</span><br>Adds AAPL to a watchlist with an alert level at $10 (R2)</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">System · StockInventory</span><br>Periodically pulls fresh quotes through <code>StockExchange.getInstance()</code> (Singleton)</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Notification</span><br>AAPL crosses $10 → watchlist alert fires → <code>sendNotification()</code> push (Observer)</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Member</span><br><code>placeBuyLimitOrder("AAPL", 100, 10, GOOD_TILL_CANCELLED)</code> — buying-power check passes</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Order</span><br>LimitOrder saved as OPEN (<code>saveInDB()</code> — the audit trail), submitted via <code>StockExchange.placeOrder(order)</code></div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">StockExchange</span><br>Exchange fills 70 @ $10.00 → <code>callbackStockExchange()</code> → OrderPart recorded, status PARTIALLY_FILLED</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Order → StockPosition</span><br>Remaining 30 fill @ $10.05 → FILLED → removed from activeOrders; position updated with a new StockLot (R4)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">System</span><br>"Order executed" notification sent (R7); the quarterly Statement will report the trade (R5)</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and no step needs code that doesn\'t exist. Attempt #1 could not even represent step 6 — a boolean has no parts.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 20 classes — one recipe, three principles, two patterns, and a state machine. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The brokerage in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → Order ▸4: Market, Limit, StopLoss, StopLimit
+2. Program to an interface
+   → Account ▸2, Notification ▸3; Member holds Order
+3. Composition + single responsibility
+   → Member ▸ Positions ▸ Lots; Order ▸ Parts; Watchlists
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Singleton</span>  StockExchange: one gateway to the market,
+           orders down, fills back up
+<span class="hi-b">Observer</span>   quotes → watchlist alerts;
+           order executed → notification
+<span class="hi-b">State (thinking)</span>  OrderStatus lifecycle:
+           OPEN → PARTIALLY_FILLED → FILLED / CANCELLED
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Amazon   (Order + OrderStatus lifecycle + notifications)
+Cricinfo (live updates pushed to watchers = Observer)
+Parking Lot (one shared coordinator = Singleton)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h">Singleton</div><div class="cd-m">StockExchange —<br>one market gateway</div></div>
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Observer</div><div class="cd-m">quotes &amp; fills →<br>notifications</div></div>
+  <div class="cd-box abstract" style="min-width:120px"><div class="cd-h">Order hierarchy</div><div class="cd-m">4 execution rules +<br>a status lifecycle</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Coordination</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Encapsulated variation</div>
+</div>`,
+callout:{type:'callout-purple',text:'The God broker failed because a boolean can\'t have a lifecycle. The recipe separated the axes of change — and the patterns appeared exactly where the requirements demanded them: one market gateway (Singleton), instant alerts (Observer), and orders that carry their own state machine through partial fills (State thinking).'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

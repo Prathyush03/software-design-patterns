@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 7 — Design an Airline Management System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 7 — Design an Airline Management System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design an airline management system." Go.',desc:'Forty-five minutes and a whiteboard. Flights and their schedules, ticket reservations, multi-city itineraries, seat classes, pilots and crew, cancellations, payments, notifications — an entire airline in one design. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new seat class, new notification channel...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?
+
+<span class="cm">// ...and this case's secret trap:</span>
+6. Do you know the difference between
+   <span class="hi-y">a flight</span> and <span class="hi-y">today's departure of it</span>?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:240px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">One airline, many moving parts</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">✈️ PK-301 · LHE → ISB · daily 08:00</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">&nbsp;&nbsp;Oct 13 · gate A2 · 737 · 42 seats free</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">&nbsp;&nbsp;Oct 14 · gate B1 · A320 · ⛈️ DELAYED</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px;flex-wrap:wrap">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Itinerary: LHE→KHI→DXB</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">notify passengers!</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — a flight is a row',desc:'The instinct under time pressure: skip the requirements talk and code. One <code>Airline</code> class where a flight is a row across parallel arrays: number, date, route, and an array of passenger names. Booking = write a name into a free slot. Done in five minutes.',
+code:{h:'Airline.java — the "just code it" design',b:`public class Airline {
+    <span class="cm">// a "flight" is a row across these arrays</span>
+    <span class="hi-y">String[] flightNo;</span>      <span class="cm">// "PK-301"</span>
+    <span class="hi-y">String[] date;</span>          <span class="cm">// "2026-10-14"</span>
+    String[] from, to;      <span class="cm">// "LHE", "ISB"</span>
+    String[][] passengers;  <span class="cm">// one name per seat</span>
+
+    boolean book(String no, String date, String name) {
+        for (int i = 0; i &lt; flightNo.length; i++) {
+            if (flightNo[i].equals(no)
+                  &amp;&amp; this.date[i].equals(date)) {
+                return addToFreeSlot(passengers[i], name);
+            }
+        }
+        return false;  <span class="cm">// row not found... add one?</span>
+    }
+
+    void cancelFlight(String no, String date) {
+        <span class="cm">// find the row, blank it out.</span>
+        <span class="cm">// passengers find out... at the airport?</span>
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:200px"><div class="cd-h">Airline</div><div class="cd-b">String[] flightNo<br>String[] date<br>String[] from, to<br>String[][] passengers</div><div class="cd-m">+ book(no, date, name)<br>+ cancelFlight(no, date)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, five parallel arrays, zero objects</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a two-plane airline this "works". It books seats, it cancels flights. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: search by date <em>and</em> source/destination airport, multi-flight itineraries, several passengers under one reservation, five seat classes with different fares, admin-only scheduling, cancellations that notify every stakeholder, pilot and crew assignment, payments. Patch the class!',
+code:{h:'Airline.java — the God object grows',b:`boolean book(String no, String date, String name,
+             <span class="hi-y">String seatClass</span>) {
+  <span class="hi-y">if (seatClass.equals("economy"))</span> {
+      <span class="cm">// rows 10-38... on which aircraft?</span>
+  } <span class="hi-y">else if (seatClass.equals("business"))</span> {
+      <span class="cm">// rows 1-4, fare x3... unless promo?</span>
+  } else { return false; }
+  <span class="cm">// wait — is "PK-301 Oct 14" the same flight as</span>
+  <span class="cm">// "PK-301 Oct 15"? Same row? A new row per day?</span>
+  ...
+}
+double fare(String no, String date, String seatClass) {
+  <span class="hi-r">// economy vs business vs first — per DATE?
+  // Oct 14 flies an A320, Oct 15 a 737: different
+  // seat maps, same flight number...</span>
+}
+<span class="cm">// TODO: itinerary = 2 rows? which one gets paid?
+// TODO: cancel ONE date of a daily flight?!
+// TODO: crew — String[] pilots per row?
+// TODO: notify passengers of THAT date only 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">Airline <span class="st">the God object</span></div><div class="cd-b">flight rows, seat strings, fares,<br>crew names, refunds, schedules,<br>itineraries, notifications...</div><div class="cd-m">+ book() <span style="color:var(--text-danger)">if/else per seat class</span><br>+ fare() <span style="color:var(--text-danger)">every rule inline</span><br>+ cancelFlight()? + notify()?<br>+ assignCrew()? + ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another branch to methods that already do too much. And one question keeps echoing: what exactly IS a row — the flight, or the flight on a date?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The flight-as-row design collapses',desc:'Then the interviewer asks four innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "PK-301 flies every day. A customer books
+//      PK-301 for Oct 14. What holds Oct 14's
+//      gate, aircraft, and free seats?"</span>
+<span class="hi-r">→ A row per date copies the route and time into
+  365 rows a year; a schedule change edits all
+  of them. Schedule and occurrence are WELDED.</span>
+
+<span class="cm">// Q2: "One journey: LHE → KHI → DXB. Two flights,
+//      one trip, one payment, one cancellation."</span>
+<span class="hi-r">→ Two unrelated rows. Nothing ties the journey
+  together. Refund half a trip?</span>
+
+<span class="cm">// Q3: "Seat 12A is business on Oct 14's A320,
+//      but Oct 15 flies a 737 with no 12A."</span>
+<span class="hi-r">→ Seats live nowhere — passengers is String[].
+  No classes, no fares, no seat map.</span>
+
+<span class="cm">// Q4: "A storm delays Oct 14's departure. Notify
+//      exactly the passengers on THAT departure."</span>
+<span class="hi-r">→ We'd string-match names across rows. Good luck.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">schedule + occurrence<br>welded into one row</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed flights,<br>seats, and people</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">fares, seats, journeys,<br>notify logic entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'The root disease: a "flight" in Attempt #1 is two different things wearing one name — the schedule (PK-301, LHE→ISB, daily 08:00) and the occurrence (Oct 14\'s departure with its gate, its aircraft, its seats). We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the airline — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Customers <b>search flights</b> by date + source/destination airport <span class="obj">Flight, Airport</span></li>
+<li data-n="R2">Reserve a ticket on any scheduled flight; build <b>multi-flight itineraries</b> <span class="obj">FlightReservation, Itinerary</span></li>
+<li data-n="R3">Check <b>schedules</b>, departure time, <b>available seats</b>, arrival time <span class="obj">WeeklySchedule, FlightInstance</span></li>
+<li data-n="R4">Reservations for <b>multiple passengers</b> under one itinerary <span class="obj">Passenger, seatMap</span></li>
+<li data-n="R5">Only <b>admin</b> adds aircraft, flights, schedules; can <b>cancel</b> any flight — all stakeholders notified <span class="obj">Admin, Notification</span></li>
+<li data-n="R6">Customers can <b>cancel</b> their reservation and itinerary <span class="obj">ReservationStatus</span></li>
+<li data-n="R7">Assign <b>pilots and crew members</b> to flights <span class="obj">Pilot, Crew</span></li>
+<li data-n="R8">Handle <b>payments</b> for reservations <span class="obj">Payment</span></li>
+<li data-n="R9"><b>Notify</b> customers on reservation changes or <b>flight updates</b> <span class="obj">Notification</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Read R3 again: "available seats" belong to a DATE of a flight, not to the flight itself. Two minutes of requirements talk, and the thing that broke Attempt #1 already has a name waiting for it.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Five actors touch this system — the course\'s exact list. Listing their use cases tells us which operations our classes must expose, before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Customer / Front desk officer</span>
+search flights     <span class="cm">— by date + source/destination</span>
+create/modify/view reservation
+assign seats       <span class="cm">— per passenger, per flight instance</span>
+make payment       <span class="cm">— for a reservation</span>
+cancel reservation / itinerary
+
+<span class="cm">// Admin</span>
+add aircraft / flight / <span class="hi-b">flight schedule</span>
+cancel any pre-scheduled flight
+assign <span class="hi-b">pilots &amp; crew</span> to flights
+
+<span class="cm">// Pilot / Crew</span>
+view assigned flights and their schedules
+
+<span class="cm">// System (yes, the system is an actor)</span>
+send notifications <span class="cm">— reservation made/modified,</span>
+                   <span class="cm">  flight status updates</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">schedules flights,<br>cancels, staffs</span></div>
+  <div class="actor"><span class="who">💁 Front desk</span><span class="does">reserves / cancels<br>for customers</span></div>
+  <div class="actor"><span class="who">👤 Customer</span><span class="does">searches, books,<br>cancels</span></div>
+  <div class="actor"><span class="who">👨‍✈️ Pilot / Crew</span><span class="does">views assigned<br>flights</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">notifications,<br>status updates</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:460px">
+  <span class="uc">Search flights</span><span class="uc">Create/modify/view reservation</span><span class="uc">Assign seats</span><span class="uc">Make payment</span><span class="uc">Update flight schedule</span><span class="uc">Assign pilots &amp; crew</span><span class="uc">Cancel reservation</span><span class="uc">Send notifications</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'"System" is an actor again — notifications firing on flight updates is a use case, not an afterthought. Hold that thought: in a few steps it becomes the Observer pattern.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The map &amp; the metal</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Airline</div></div>
+    <div class="cd-box"><div class="cd-h">Airport</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Aircraft</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Seat</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The timetable — note the pair!</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Flight</div></div>
+    <div class="cd-box"><div class="cd-h">WeeklySchedule</div></div>
+    <div class="cd-box"><div class="cd-h">CustomSchedule</div></div>
+    <div class="cd-box ctx"><div class="cd-h">FlightInstance</div></div>
+    <div class="cd-box abstract"><div class="cd-h">FlightSeat</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The paper trail</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Itinerary</div></div>
+    <div class="cd-box"><div class="cd-h">FlightReservation</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Payment</div></div>
+    <div class="cd-box fly"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Person</div></div>
+    <div class="cd-box"><div class="cd-h">Account</div></div>
+    <div class="cd-box"><div class="cd-h">Customer</div></div>
+    <div class="cd-box"><div class="cd-h">Passenger</div></div>
+    <div class="cd-box"><div class="cd-h">Admin</div></div>
+    <div class="cd-box"><div class="cd-h">Pilot / Crew</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Boundary objects</div>
+</div>`,
+callout:{type:'callout-ok',text:'Eighteen small classes instead of five parallel arrays. And look — the noun list has BOTH Flight and FlightInstance. The course splits them on purpose; that split is the whole case study.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: Flight vs FlightInstance',desc:'What kept breaking Attempt #1? One name for two things. So split them: <code>Flight</code> keeps what never changes — number, route, duration, the schedule. <code>FlightInstance</code> owns what changes every departure — date, gate, aircraft, status, seats. Each schedule entry <em>spawns</em> instances.',
+code:{h:'Flight.java + FlightInstance.java — the signature split',b:`public class Flight {              <span class="cm">// the TIMETABLE entry</span>
+  private String flightNumber;     <span class="cm">// "BA212" — never changes</span>
+  private Airport departure;
+  private Airport arrival;
+  private int durationInMinutes;
+  private List&lt;WeeklySchedule&gt; weeklySchedules; <span class="cm">// "Mon+Thu 08:00"</span>
+  private List&lt;CustomSchedule&gt; customSchedules; <span class="cm">// one-off dates</span>
+  <span class="hi-g">private List&lt;FlightInstance&gt; flightInstances;</span>
+}
+
+public class FlightInstance {      <span class="cm">// ONE departure of it</span>
+  <span class="hi-y">private Date departureTime;</span>      <span class="cm">// Oct 14, 08:00 — THIS one</span>
+  <span class="hi-y">private String gate;</span>
+  <span class="hi-y">private FlightStatus status;</span>     <span class="cm">// DELAYED? IN_AIR? CANCELLED?</span>
+  <span class="hi-y">private Aircraft aircraft;</span>       <span class="cm">// today it's the A320</span>
+
+  public boolean cancel();
+  public void updateStatus(FlightStatus status);
+}
+
+<span class="cm">// ...and the SAME split, one level down:</span>
+public class Seat {                <span class="cm">// physical chair on an Aircraft</span>
+  private String seatNumber;       <span class="cm">// "12A"</span>
+  private SeatType type;           <span class="cm">// REGULAR, EMERGENCY_EXIT...</span>
+  private SeatClass _class;        <span class="cm">// ECONOMY ... FIRST_CLASS</span>
+}
+public class FlightSeat extends Seat {  <span class="cm">// 12A on Oct 14's departure</span>
+  <span class="hi-g">private double fare;</span>             <span class="cm">// priced per departure</span>
+  public double getFare();
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Flight <span class="st">the timetable entry — stable</span></div><div class="cd-b">flightNumber "BA212"<br>departure → arrival, duration</div><div class="cd-m">weeklySchedules<br>customSchedules</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>each scheduled date spawns one</div></div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">FlightInstance</div><div class="cd-m">Oct 13 · gate A2<br>737 · SCHEDULED</div></div>
+  <div class="cd-box dup"><div class="cd-h" style="font-size:10px">FlightInstance</div><div class="cd-m">Oct 14 · gate B1<br>A320 · DELAYED</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">FlightInstance</div><div class="cd-m">Oct 15 · gate A2<br>A320 · SCHEDULED</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">the same split, one level down ↓</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box abstract" style="min-width:120px"><div class="cd-h">Seat <span class="st">on the aircraft</span></div><div class="cd-m">"12A" · EMERGENCY_EXIT<br>BUSINESS</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">FlightSeat <span class="st">extends Seat</span></div><div class="cd-m">12A on Oct 14's departure<br>+ fare, reservable</div></div>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Seen this move before? It\'s <a href="01-library-management-system.html">Library Management</a>\'s Book vs BookItem — the catalog entry vs the physical copy. Here: the timetable entry vs the dated departure. Q1 and Q3 from the collapse are both answered by this one split.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. The timetable is stable; the departure varies daily — so the occurrence becomes its own class, at flight level AND at seat level.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: people & roles',desc:'Five kinds of people touch the system, and they must not become five God screens. One abstract <code>Person</code> (holding an <code>Account</code> for login) and one class per role. Plus the subtlest line in the whole design: the <strong>Customer</strong> who books is not the <strong>Passenger</strong> who flies.',
+code:{h:'Person.java &amp; friends — depend on the supertype',b:`public abstract class <span class="hi-b">Person</span> {
+  private String name;
+  private Address address;
+  private String email, phone;
+  private Account account;      <span class="cm">// login is HAS-A, not IS-A</span>
+}
+public class Account {
+  private String id, password;
+  private AccountStatus status; <span class="cm">// BLACKLISTED, BLOCKED...</span>
+  public boolean resetPassword();
+}
+
+public class Customer extends Person {
+  private String frequentFlyerNumber;
+  public List&lt;Itinerary&gt; getItineraries();
+}
+<span class="cm">// roles from the actor list — methods mirror use cases</span>
+public class Admin extends Person {
+  public boolean addFlight(Flight f);   <span class="cm">// R5: admin only</span>
+  public boolean cancelFlightInstance(FlightInstance fi);
+}
+public class FrontDeskOfficer extends Person {
+  public boolean createReservation(Itinerary itinerary);
+}
+public class Pilot extends Person {
+  public List&lt;FlightInstance&gt; getAssignedFlights(); <span class="cm">// R7</span>
+}
+
+public class <span class="hi-g">Passenger</span> {         <span class="cm">// NOT a Person subclass!</span>
+  private String name;
+  private String passportNumber;  <span class="cm">// identity for flying,</span>
+  private Date dateOfBirth;       <span class="cm">// not for logging in</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box abstract" style="min-width:150px"><div class="cd-h"><span class="st">abstract</span>Person</div><div class="cd-b">name, email, phone</div><div class="cd-m">account: Account</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Customer</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Admin</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">FrontDeskOfficer</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Pilot</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Crew</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">and deliberately OUTSIDE the hierarchy ↓</div>
+<div class="cd-row"><div class="cd-box" style="min-width:180px"><div class="cd-h">Passenger <span class="st">no account, no login</span></div><div class="cd-m">name, passportNumber, dateOfBirth<br>lives on a reservation's seatMap</div></div></div>
+</div>`,
+callout:{type:'callout-info',text:'One login books four passengers: grandma and the kids never touch the system, so Passenger carries a passport, not a password. And whoever calls createReservation() — customer portal or front-desk officer — the booking flow depends only on the abstractions, so it\'s identical.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Booking, scheduling, and roster screens depend on the abstract Person/Account — adding a new role never rewrites the booking flow.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: the deepest HAS-A chain in the course',desc:'Now wire the aggregates. The metal: an airline HAS aircraft HAS seats. The timetable: a flight HAS instances, each instance HAS flight-seats. The paper: an itinerary HAS one reservation <em>per leg</em>, each holding a passenger→seat map. Each class has exactly one job.',
+code:{h:'FlightReservation.java + Itinerary.java',b:`public class FlightReservation {
+  private String reservationNumber;
+  <span class="hi-b">private FlightInstance flight;</span>   <span class="cm">// ONE leg, ONE departure</span>
+  <span class="hi-g">private Map&lt;Passenger, FlightSeat&gt; seatMap;</span> <span class="cm">// who sits where</span>
+  private Date creationDate;
+  private ReservationStatus status;
+
+  public static FlightReservation
+      fetchReservationDetails(String reservationNumber);
+  public List&lt;Passenger&gt; getPassengers();
+}
+
+public class Itinerary {           <span class="cm">// the whole JOURNEY</span>
+  private String customerId;
+  private Airport startingAirport; <span class="cm">// LHE</span>
+  private Airport finalAirport;    <span class="cm">// DXB</span>
+  private Date creationDate;
+  <span class="hi-g">private List&lt;FlightReservation&gt; reservations;</span> <span class="cm">// one per leg</span>
+
+  public List&lt;FlightReservation&gt; getReservations();
+  public boolean makeReservation();
+  public boolean makePayment();    <span class="cm">// one payment, all legs</span>
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);margin-bottom:2px">The metal &amp; the timetable</div>
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h" style="font-size:10.5px">Airline</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Aircraft ▸ Seats</div></div>
+    <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">Flight ▸ Schedules</div></div>
+  </div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h" style="font-size:10px">FlightInstance</div><div class="cd-m">gate, status, aircraft</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+  <div class="cd-box fly" style="min-width:100px"><div class="cd-h" style="font-size:10px">FlightSeat</div><div class="cd-m">fare</div></div>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);margin-bottom:2px">The paper trail</div>
+  <div class="cd-box" style="min-width:110px"><div class="cd-h" style="font-size:10.5px">Customer</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 0..*</div>
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h" style="font-size:10px">Itinerary</div><div class="cd-m">LHE → DXB</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> one per LEG</div>
+  <div class="cd-box" style="min-width:130px"><div class="cd-h" style="font-size:10px">FlightReservation</div><div class="cd-m">status, seatMap</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> Passenger → FlightSeat</div>
+  <div class="cd-box fly" style="min-width:100px"><div class="cd-h" style="font-size:10px">FlightSeat</div><div class="cd-m">where paper<br>meets metal</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Q2 dies here: LHE→KHI→DXB is one Itinerary with two FlightReservations — cancel the journey by walking the list. And "available seats on Oct 14" = that instance\'s FlightSeats with no reservation. Nothing else needs to know.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. The airline owns the metal, the flight owns its departures, the itinerary owns the paper trail — nothing owns everything.'}
+},
+// ============ STEP 11 — PATTERN: OBSERVER ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Observer',title:'Delay one departure, notify exactly its passengers',desc:'R5 and R9 are notification requirements: cancel a flight → "all stakeholders will be notified"; any flight update → tell the affected customers. Who is affected? Precisely: every reservation of that <em>one</em> FlightInstance, plus its assigned crew. The fan-out writes itself.',
+code:{h:'FlightInstance.java — the subject pushes updates',b:`public class FlightInstance {        <span class="cm">// the SUBJECT</span>
+  private FlightStatus status;
+  <span class="hi-b">private List&lt;FlightReservation&gt; reservations;</span> <span class="cm">// subscribers</span>
+  private List&lt;Pilot&gt; pilots;
+  private List&lt;Crew&gt; crew;           <span class="cm">// R7: assigned staff</span>
+
+  public void updateStatus(FlightStatus newStatus) {
+    this.status = newStatus;         <span class="cm">// state changed →</span>
+    <span class="hi-y">notifyAllStakeholders();</span>         <span class="cm">// push, don't poll (R9)</span>
+  }
+
+  public boolean cancel() {          <span class="cm">// R5: admin cancels —</span>
+    <span class="cm">// "all stakeholders will be notified"</span>
+    updateStatus(FlightStatus.CANCELLED);
+    <span class="cm">// then free every FlightSeat, trigger refunds...</span>
+    return true;
+  }
+
+  private void notifyAllStakeholders() {
+    <span class="cm">// exactly the paper trail of THIS departure —</span>
+    <span class="cm">// Oct 15's passengers are never spammed</span>
+    for (FlightReservation r : reservations)
+      <span class="hi-g">notification.send(r);</span>          <span class="cm">// email/SMS the customer</span>
+    for (Pilot p : pilots) notification.send(p);
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">FlightInstance <span class="st">subject</span></div><div class="cd-m">updateStatus(DELAYED)<br>= state change</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>notifies exactly its own</div></div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Reservation #072</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Reservation #073</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Crew roster</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+<div class="cd-row"><div class="cd-box" style="min-width:170px"><div class="cd-h">Notification</div><div class="cd-m">email / SMS to each<br>reservation's customer</div></div></div>
+<div class="cd-arr" style="padding-top:4px">fan-out hangs off the INSTANCE — Oct 15's flyers hear nothing</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — the FlightInstance is the subject; its reservations and crew roster are the observers. The course hand-rolls the loop through its Notification class; in the interview, name the subscribe/notify seam out loud. Because fan-out hangs off the instance, Q4 answered itself.'}
+},
+// ============ STEP 12 — PATTERN: STATE + STRATEGY ============
+{phase:'pill-pattern',phaseTxt:'Patterns spotted · State & Strategy',title:'Lifecycles that guard themselves, payments that swap',desc:'Two of the source enums are secretly state machines: a reservation climbs REQUESTED → PENDING → CONFIRMED → CHECKED_IN (or drops to CANCELLED / ABANDONED); a flight instance moves SCHEDULED → DEPARTED → IN_AIR → ARRIVED with DELAYED / CANCELLED / DIVERTED branches. And payment is a seam, not a method body.',
+code:{h:'The enums are lifecycles — guard the transitions',b:`public enum ReservationStatus {  <span class="cm">// a lifecycle, not a label</span>
+  REQUESTED, PENDING, CONFIRMED,
+  CHECKED_IN, CANCELLED, ABANDONED
+}
+<span class="cm">// REQUESTED   asked; nothing held yet
+// PENDING     seats held, awaiting payment
+// CONFIRMED   payment COMPLETED — e-ticket out
+// CHECKED_IN  boarding pass issued
+// CANCELLED   by customer or airline → refund
+// ABANDONED   payment never came; seats released</span>
+
+public enum FlightStatus {
+  ACTIVE, SCHEDULED, DELAYED, DEPARTED, LANDED,
+  IN_AIR, ARRIVED, CANCELLED, DIVERTED, UNKNOWN
+}
+public enum PaymentStatus {
+  UNPAID, PENDING, COMPLETED, FILLED, DECLINED,
+  CANCELLED, ABANDONED, SETTLING, SETTLED, REFUNDED
+}
+
+<span class="cm">// guard transitions where the status lives:</span>
+public boolean cancel() {        <span class="cm">// on FlightReservation (R6)</span>
+  if (status == ReservationStatus.<span class="hi-r">CHECKED_IN</span>)
+    return false;                <span class="cm">// too late — at the gate</span>
+  setStatus(ReservationStatus.CANCELLED);
+  <span class="cm">// free FlightSeats, refund via Payment (R8)</span>
+  return true;
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+<div class="cd-row" style="gap:2px;align-items:center">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">REQUESTED</div></div><div style="color:var(--text-tertiary);font-size:11px">→</div>
+  <div class="cd-box dup"><div class="cd-h" style="font-size:10px">PENDING</div></div><div style="color:var(--text-tertiary);font-size:11px">→</div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">CONFIRMED</div></div><div style="color:var(--text-tertiary);font-size:11px">→</div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">CHECKED_IN</div></div>
+</div>
+<div class="cd-arr">payment fails / customer cancels ↓</div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">CANCELLED</div></div>
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">ABANDONED</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">and the payment seam ↓</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface" style="min-width:110px"><div class="cd-h"><span class="st">strategy</span>Payment</div><div class="cd-m">process(amount)<br>status: PaymentStatus</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CreditCard</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Cash @ front desk</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: State (<a href="../ch10-state-pattern.html">Chapter 10</a>) — legal transitions live with the status, so a CHECKED_IN reservation can never be quietly un-paid. Pattern #3: Strategy (<a href="../ch1-strategy-pattern.html">Chapter 1</a>) — makePayment() neither knows nor cares how money moves; card today, miles tomorrow, one new class. The enum + guard is the interview-sized version; name the full State pattern if the transition rules grow.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, the two schedule-vs-occurrence splits, one role hierarchy, and the composition chains. (Getters/setters omitted — say that out loud; the course does too.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum FlightStatus  { ACTIVE, SCHEDULED, DELAYED, DEPARTED,
+                     LANDED, IN_AIR, ARRIVED, CANCELLED,
+                     DIVERTED, UNKNOWN }
+enum ReservationStatus { REQUESTED, PENDING, CONFIRMED,
+                         CHECKED_IN, CANCELLED, ABANDONED }
+enum PaymentStatus { UNPAID, PENDING, COMPLETED, ...
+                     SETTLED, REFUNDED }
+enum SeatClass { ECONOMY, ECONOMY_PLUS, PREFERRED_ECONOMY,
+                 BUSINESS, FIRST_CLASS }
+enum SeatType  { REGULAR, ACCESSIBLE, EMERGENCY_EXIT,
+                 EXTRA_LEG_ROOM }
+
+<span class="cm">// THE SPLITS — schedule vs occurrence</span>
+class Flight          { flightNumber, route, duration,
+                        schedules, <span class="hi-b">flightInstances</span> }
+class FlightInstance  { departureTime, gate, status,
+                        aircraft, cancel(), updateStatus() }
+class Seat            { seatNumber, type, seatClass }
+class FlightSeat extends Seat { <span class="hi-b">fare</span> } <span class="cm">// per departure</span>
+
+<span class="cm">// THE PEOPLE</span>
+abstract class Person { name, contact, account }
+  <span class="cm">// Customer · Admin · FrontDeskOfficer · Pilot · Crew</span>
+class Passenger { name, passport, dob }  <span class="cm">// no login</span>
+
+<span class="cm">// THE PAPER TRAIL — composition</span>
+class Itinerary   { startingAirport, finalAirport,
+                    reservations, makeReservation(),
+                    makePayment() }
+class FlightReservation { flightInstance, status,
+                    Map&lt;Passenger, FlightSeat&gt; seatMap }
+class Payment      { amount, status }
+class Notification { send(reservation) }
+
+<span class="cm">// THE MAP &amp; THE METAL</span>
+class Airline  { name, code }    class Airport { code }
+class Aircraft { name, model, seats }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Airline</div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> aircraft 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> flights 1..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Aircraft ▸ Seats</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Flight ▸ Schedules</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Airport</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> instances 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> flightSeats 1..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">FlightInstance</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Seat ▸ FlightSeat</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Notification</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> reservations 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> payment 0..1</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Itinerary</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">FlightReservation</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Payment</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Person ▸5</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Passenger</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Account</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same nine requirements, but every axis of change now has a home — and "PK-301 on Oct 14" finally has an address: a FlightInstance.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One journey, end to end (plus a storm)',desc:'A design is only convincing if you can run a scenario through it. Narrate this flow in the interview — a two-leg booking AND a weather delay — and every step lands on a class we designed.',
+code:{h:'Itinerary.java — the orchestration (sketch)',b:`public class Itinerary {
+  private List&lt;FlightReservation&gt; reservations;
+
+  public boolean makeReservation() {
+    for (FlightReservation r : reservations) {
+      <span class="cm">// hold a FlightSeat per passenger on that</span>
+      <span class="cm">// leg's OWN FlightInstance — never on "PK-303"</span>
+      if (!r.assignSeats()) {
+        <span class="hi-r">rollbackHolds(); return false;</span>  <span class="cm">// all or nothing</span>
+      }
+      r.setStatus(ReservationStatus.PENDING);
+    }
+    return true;    <span class="cm">// seats held, awaiting payment</span>
+  }
+
+  public boolean makePayment() {
+    if (!<span class="hi-g">payment.process(totalFare())</span>)  <span class="cm">// Strategy!</span>
+      return false; <span class="cm">// stays PENDING → times out → ABANDONED</span>
+    for (FlightReservation r : reservations)
+      r.setStatus(ReservationStatus.<span class="hi-b">CONFIRMED</span>);
+    <span class="cm">// R9: Notification fan-out → e-tickets</span>
+    return true;
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Customer</span><br>Searches LHE → DXB for Oct 14: <code>airport.getFlights()</code> + schedule filter (R1)</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">System</span><br>No direct flight — proposes two legs: PK-303 LHE→KHI + PK-211 KHI→DXB, i.e. two <code>FlightInstance</code>s on Oct 14</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Itinerary</span><br>Created: startingAirport LHE, finalAirport DXB, one <code>FlightReservation</code> per leg (REQUESTED)</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">FlightReservation</span><br>For 3 passengers, <code>seatMap</code> assigns each a <code>FlightSeat</code> — 12A business on the A320 leg, 14C economy on the 737 leg → PENDING</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Payment</span><br><code>itinerary.makePayment()</code> — one payment for the whole journey (Strategy); PaymentStatus COMPLETED</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">System</span><br>Both reservations CONFIRMED; Notification e-tickets the customer (R9)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Weather</span><br>A storm parks over Karachi. Ops calls <code>updateStatus(DELAYED)</code> on PK-211's <b>Oct 14 instance</b></div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Observer</span><br>Exactly that instance's reservations fan out alerts; crew rosters update; Oct 15's flyers hear nothing</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and the two hard scenarios — multi-leg journeys and per-departure delays — are one loop and one method call. That\'s how you know the split was right.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 18 classes — one recipe, three principles, three patterns, and one signature split. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The airline in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → Flight vs FlightInstance (schedule vs occurrence)
+   → Seat vs FlightSeat (chair vs chair-on-THIS-departure)
+2. Program to an interface
+   → Person/Account roles; Customer ≠ Passenger
+3. Composition + single responsibility
+   → Airline ▸ Aircraft ▸ Seats
+   → Flight ▸ Instances ▸ FlightSeats
+   → Itinerary ▸ Reservations ▸ seatMap
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Observer</span>   instance status change → notify exactly
+           its reservations' customers + crew
+<span class="hi-b">State</span>      ReservationStatus / FlightStatus lifecycles
+<span class="hi-b">Strategy</span>   Payment: how money moves is swappable
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Library        Book ≈ Flight, BookItem ≈ FlightInstance
+Movie Tickets  Show ≈ FlightInstance + seat locking
+Hotel          booking lifecycle ≈ reservation states`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Observer</div><div class="cd-m">instance → its own<br>reservations + crew</div></div>
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h">State</div><div class="cd-m">reservation &amp; flight<br>lifecycles guarded</div></div>
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h">Strategy</div><div class="cd-m">Payment: card / cash /<br>miles swap freely</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Lifecycle</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable behavior</div>
+</div>`,
+callout:{type:'callout-purple',text:'The flight-as-row failed because the timetable and the departure were welded together. The recipe split them — and the patterns appeared exactly where the requirements demanded flexibility: live status fan-out (Observer), a guarded booking lifecycle (State), swappable payments (Strategy). Same skeleton next door: <a href="01-library-management-system.html">Library</a> (Book/BookItem), <a href="05-movie-ticket-booking.html">Movie Ticket Booking</a> (Show ≈ FlightInstance), <a href="09-hotel-management.html">Hotel</a> (the booking lifecycle).'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

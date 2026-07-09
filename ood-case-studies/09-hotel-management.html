@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 9 — Design a Hotel Management System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 9 — Design a Hotel Management System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design a hotel management system." Go.',desc:'Forty-five minutes and a whiteboard. A hotel chain: multiple locations, hundreds of rooms in four styles, advance bookings for date ranges, check-in and check-out, room service billed to the room, housekeeping logs, electronic keys, and bills paid by card, check, or cash. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you model <span class="hi-b">time</span>? A booking is a claim
+   on a room for a <span class="hi-b">date range</span> — not a flag.
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new room style, new billable service,
+    new payment method...)
+5. Do you spot where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:220px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">One hotel, many moving parts</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Floor 3&nbsp;&nbsp;🛏️ 301–308 &nbsp;<span style="color:var(--text-secondary)">family &amp; business suites</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Floor 2&nbsp;&nbsp;🛏️ 201–212 &nbsp;<span style="color:var(--text-secondary)">deluxe</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Floor 1&nbsp;&nbsp;🛏️ 101–120 &nbsp;<span style="color:var(--text-secondary)">standard</span></div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Front desk → bookings, keys</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Kitchen → room service</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design it the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one big Hotel class',desc:'The instinct under time pressure: skip the boring requirements talk and write code. One <code>Hotel</code> class, a boolean per room, a flat nightly rate. Book flips the flag; checkout clears it and multiplies nights by the rate. Done in five minutes.',
+code:{h:'Hotel.java — the "just code it" design',b:`public class Hotel {
+    <span class="hi-y">boolean[] roomsFree</span> = new boolean[500];
+    long[] checkInDay = new long[500];
+
+    int book() {
+        for (int i = 0; i &lt; roomsFree.length; i++) {
+            if (roomsFree[i]) {
+                roomsFree[i] = false;  <span class="cm">// room taken</span>
+                checkInDay[i] = today();
+                return i;    <span class="cm">// room number = booking?</span>
+            }
+        }
+        return -1;  <span class="cm">// no vacancy... I guess?</span>
+    }
+
+    double checkOut(int room) {
+        roomsFree[room] = true;
+        long nights = daysSince(checkInDay[room]);
+        return nights * <span class="hi-y">100.0</span>;  <span class="cm">// flat $100/night</span>
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">Hotel</div><div class="cd-b">boolean[] roomsFree<br>long[] checkInDay</div><div class="cd-m">+ book()<br>+ checkOut(int room)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, one bit per room, one price</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a roadside motel with walk-ins only, this works. Rooms get taken, money gets collected. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: standard, deluxe, family suite, and business suite rooms at different prices. Advance booking for <em>date ranges</em>. Cancellation with a 24-hour refund policy. Notifications near check-in. Housekeeping logs. Electronic room keys. Room service and food billed to the room. Payment by credit card, check, or cash. Patch the class!',
+code:{h:'Hotel.java — the God object grows',b:`int book(<span class="hi-y">String style</span>, <span class="hi-y">String from</span>, <span class="hi-y">String to</span>) {
+  <span class="hi-y">if (style.equals("standard"))</span> {
+      <span class="cm">// rooms 0..299... but for which DATES?</span>
+  } <span class="hi-y">else if (style.equals("deluxe"))</span> {
+      <span class="cm">// rooms 300..399, $180/night</span>
+  } <span class="hi-y">else if (style.equals("family_suite"))</span> {
+      <span class="cm">// rooms 400..449, $260/night, 2 keys?</span>
+  } else { return -1; }
+  <span class="hi-r">// roomsFree[i] is true OR false. A booking
+  // for Aug 12–15 needs "false on those three
+  // nights, true otherwise". A bit can't say that.</span>
+}
+double checkOut(int room) {
+  <span class="hi-r">// nightly rate by style + room service
+  // + kitchen orders + amenities... where
+  // did the club sandwich charge even go?</span>
+}
+<span class="cm">// TODO: cancel + full refund if &gt;24h before check-in.
+// TODO: notifications. housekeeping log. key cards. 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">Hotel <span class="st">the God object</span></div><div class="cd-b">roomsFree, styles, rates,<br>dates?, keys, charges, refunds,<br>notifications, housekeeping...</div><div class="cd-m">+ book() <span style="color:var(--text-danger)">60 lines of if/else</span><br>+ checkOut() <span style="color:var(--text-danger)">every rule inline</span><br>+ cancel()? + notify()?<br>+ addCharge()? + ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another if/else. And one requirement — booking a DATE RANGE — doesn\'t even fit the data structure. Smell it yet?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'A boolean can\'t hold a calendar',desc:'Then the interviewer asks four innocent follow-ups, and Attempt #1 falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "Room 101 is booked Aug 12–15. Can I
+//      book it for Aug 20–22 — today?"</span>
+<span class="hi-r">→ roomsFree[101] is one bit. Availability is
+  per-DATE, not per-room. The data structure
+  itself is wrong — no patch can fix it.</span>
+
+<span class="cm">// Q2: "Deluxe is $180, family suite $260, and
+//      the manager reprices for the summer."</span>
+<span class="hi-r">→ A flat rate hard-coded in checkOut().
+  Styles are strings; 'delux' compiles
+  fine and fails at runtime.</span>
+
+<span class="cm">// Q3: "A guest orders a club sandwich to
+//      room 204. Who pays, and when?"</span>
+<span class="hi-r">→ Charges have nowhere to live. There is
+  no booking object to attach them to.</span>
+
+<span class="cm">// Q4: "Cancel 3 days early — full refund.
+//      Cancel at the door — no refund."</span>
+<span class="hi-r">→ A boolean has 2 states. A real booking
+  has 7: requested, confirmed, checked-in,
+  checked-out, cancelled...</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every change touches<br>the same giant class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed styles,<br>a bit pretending<br>to be a calendar</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">pricing, refunds, charges,<br>availability all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'The fatal flaw isn\'t messy code — it\'s a wrong model. "Is the room free?" is not a property of the room; it\'s a property of the room ON A DATE. We need an object for that claim.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the hotel — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Booking of different <b>room types</b>: standard, deluxe, family suite... <span class="obj">RoomStyle</span></li>
+<li data-n="R2">Guests <b>search the inventory</b> and book any <b>available</b> room <span class="obj">Search, RoomBooking</span></li>
+<li data-n="R3">Retrieve <b>who booked a room</b> / what rooms a customer booked <span class="obj">RoomBooking links Guest↔Room</span></li>
+<li data-n="R4"><b>Cancel</b> a booking — full refund if 24h+ before check-in <span class="obj">BookingStatus lifecycle</span></li>
+<li data-n="R5"><b>Notifications</b> near the check-in / check-out date <span class="obj">Notification</span></li>
+<li data-n="R6">Maintain a room <b>housekeeping log</b> of all tasks <span class="obj">RoomHouseKeeping</span></li>
+<li data-n="R7">Any customer can add <b>room services and food items</b> <span class="obj">RoomService, KitchenService</span></li>
+<li data-n="R8">Customers can ask for different <b>amenities</b> <span class="obj">Amenity</span></li>
+<li data-n="R9">Pay bills via <b>credit card, check or cash</b> <span class="obj">Payment hierarchy</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Two minutes of requirements talk and the fatal flaw already has a name: R2\'s "available" always means available FOR A DATE RANGE — no boolean survives that. And R7/R8 need somewhere to park the charges.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Six actors touch this system — more than any design so far. Listing their use cases tells us which operations our classes must expose, before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Guest / Receptionist</span>
+search room       <span class="cm">— by style + availability</span>
+book room         <span class="cm">— claim a room for dates</span>
+check-in          <span class="cm">— booking becomes a stay, keys issued</span>
+check-out         <span class="cm">— keys returned, bill settled</span>
+cancel booking    <span class="cm">— refund per the 24h policy (R4)</span>
+
+<span class="cm">// Staff — each role, its own operations</span>
+add/remove/edit room       <span class="cm">— Receptionist</span>
+add room charge            <span class="cm">— Server (R7/R8)</span>
+update housekeeping log    <span class="cm">— Housekeeper (R6)</span>
+add new workers            <span class="cm">— Manager</span>
+register / cancel account  <span class="cm">— membership</span>
+
+<span class="cm">// System (yes, the system is an actor)</span>
+send notifications near check-in / check-out,
+and on booking or cancellation events (R5)`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Guest</span><span class="does">searches rooms,<br>makes bookings</span></div>
+  <div class="actor"><span class="who">💁 Receptionist</span><span class="does">rooms, bookings,<br>check-in/out</span></div>
+  <div class="actor"><span class="who">🍽️ Server</span><span class="does">room service<br>records</span></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">🧹 Housekeeper</span><span class="does">housekeeping<br>records</span></div>
+  <div class="actor"><span class="who">🧑‍💼 Manager</span><span class="does">adds new<br>workers</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">sends booking &amp;<br>cancel notifications</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Search room</span><span class="uc">Book room</span><span class="uc">Check-in</span><span class="uc">Check-out</span><span class="uc">Cancel booking</span><span class="uc">Add/remove/edit room</span><span class="uc">Add room charge</span><span class="uc">Update housekeeping log</span><span class="uc">Register/cancel account</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Six actors, and none of them is a "User with boolean flags". Each staff role gets exactly the operations its job needs — that hint becomes the Person hierarchy in Principle #2. And "System sends notifications" is an Observer waiting to happen.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The building (permanent)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Hotel</div></div>
+    <div class="cd-box ctx"><div class="cd-h">HotelLocation</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Room</div></div>
+    <div class="cd-box"><div class="cd-h">RoomKey</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Person</div></div>
+    <div class="cd-box"><div class="cd-h">Guest</div></div>
+    <div class="cd-box"><div class="cd-h">Receptionist</div></div>
+    <div class="cd-box"><div class="cd-h">Server</div></div>
+    <div class="cd-box"><div class="cd-h">HouseKeeper</div></div>
+    <div class="cd-box"><div class="cd-h">Manager</div></div>
+    <div class="cd-box"><div class="cd-h">Account</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The paper trail (transient, dated)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">RoomBooking</div></div>
+    <div class="cd-box"><div class="cd-h">Invoice</div></div>
+    <div class="cd-box abstract"><div class="cd-h">RoomCharge</div></div>
+    <div class="cd-box"><div class="cd-h">RoomHouseKeeping</div></div>
+    <div class="cd-box"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The seams (abstraction points)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box iface"><div class="cd-h">Search</div></div>
+    <div class="cd-box iface"><div class="cd-h">Payment</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interfaces</div>
+</div>`,
+callout:{type:'callout-ok',text:'See the split hiding in plain sight? Room lives in "the building" (permanent); RoomBooking lives in "the paper trail" (transient, dated). Attempt #1 tried to store the paper trail INSIDE the building — one bit per room.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the booking leaves the room',desc:'What varies day to day? Not the room — its number, style, and price are stable. What varies is <strong>who has a claim on it, for which dates</strong>. So the claim becomes its own object. The <code>Room</code> answers "what am I?"; the <code>RoomBooking</code> answers "who holds me, and when?".',
+code:{h:'Room.java + RoomBooking.java — identity vs. dated claim',b:`public enum RoomStyle {
+  STANDARD, DELUXE, FAMILY_SUITE, BUSINESS_SUITE
+}
+public enum RoomStatus {
+  AVAILABLE, RESERVED, OCCUPIED, NOT_AVAILABLE,
+  BEING_SERVICED, OTHER
+}
+
+public class Room {              <span class="cm">// PERMANENT identity</span>
+  private String roomNumber;     <span class="cm">// the unique key</span>
+  private <span class="hi-b">RoomStyle style</span>;      <span class="cm">// enum — 'delux' can't compile</span>
+  private RoomStatus status;
+  private <span class="hi-b">double bookingPrice</span>; <span class="cm">// per room — Q2 solved</span>
+  private boolean isSmoking;
+  public boolean isRoomAvailable();
+}
+
+public class RoomBooking {       <span class="cm">// TRANSIENT, dated claim</span>
+  private String reservationNumber;
+  private <span class="hi-g">Date startDate;</span>
+  private <span class="hi-g">int durationInDays;</span>  <span class="cm">// the calendar lives HERE</span>
+  private BookingStatus status;
+  private Date checkin, checkout;
+  private int guestID;           <span class="cm">// R3: guest ↔ room, via booking</span>
+  private <span class="hi-g">Room room;</span>            <span class="cm">// booking → room, never room → booking</span>
+  public static RoomBooking fetchDetails(String reservationNumber);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:130px"><div class="cd-h">Room <span class="st">permanent</span></div><div class="cd-m">roomNumber, style,<br>bookingPrice</div></div>
+  <div class="cd-box" style="min-width:150px"><div class="cd-h">RoomBooking <span class="st">dated claim</span></div><div class="cd-m">reservationNumber<br>startDate + durationInDays<br>status, guestID</div></div>
+</div>
+<div class="cd-arr">one room ← many non-overlapping bookings</div>
+<div class="dia-wrap" style="padding:10px;min-width:240px">
+  <div style="font-size:10px;margin-bottom:5px;color:var(--text-secondary)">Room 101 — August nights</div>
+  <div style="display:flex;gap:2px;justify-content:center;font-family:var(--font-mono);font-size:9px;flex-wrap:wrap">
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-secondary)">11</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-info);color:var(--text-info)">12</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-info);color:var(--text-info)">13</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-info);color:var(--text-info)">14</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-secondary)">15</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-secondary)">16</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-secondary)">17</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-secondary)">18</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-secondary)">19</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-warning);color:var(--text-warning)">20</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-warning);color:var(--text-warning)">21</span>
+    <span style="width:20px;padding:2px 0;border-radius:3px;background:var(--bg-secondary)">22</span>
+  </div>
+  <div style="font-size:9px;color:var(--text-tertiary);margin-top:5px">booking A (Aug 12–15) · booking B (Aug 20–22)<br>same room, two claims, zero booleans</div>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'This identity split — the permanent thing vs. the dated claim on it — is the same move as Book vs. BookItem in the <a href="01-library-management-system.html">Library case study</a>, with time added. "Available?" is now a query over bookings: does any CONFIRMED booking overlap these dates? Q1 dissolves.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. The room is stable; who holds it and for which dates changes constantly — so the claim becomes its own class, RoomBooking.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: roles &amp; search',desc:'Six actors could tempt you into one User class full of flags (<code>isManager</code>, <code>canAddCharge</code>...). Instead: an abstract <code>Person</code> holding an <code>Account</code>, and each role a subclass exposing only the operations its job allows. Same story for search — callers depend on the <code>Search</code> interface, never on how rooms are stored.',
+code:{h:'Person.java + Search.java — depend on abstractions',b:`public abstract class <span class="hi-b">Person</span> {
+  private String name;
+  private Address address;
+  private String email, phone;
+  private Account account;  <span class="cm">// id, password, AccountStatus</span>
+}
+
+public class Guest extends Person {
+  private int totalRoomsCheckedIn;
+  public List&lt;RoomBooking&gt; getBookings();  <span class="cm">// R3</span>
+}
+public class Receptionist extends Person {
+  public List&lt;Member&gt; searchMember(String name);
+  public boolean createBooking();
+}
+public class Server extends Person {
+  <span class="cm">// the ONLY role that can bill a room</span>
+  public boolean addRoomCharge(Room room, RoomCharge charge);
+}
+<span class="cm">// HouseKeeper → housekeeping log; Manager → addWorker()</span>
+
+public interface <span class="hi-b">Search</span> {
+  List&lt;Room&gt; search(RoomStyle style, Date startDate,
+                    int duration);
+}
+public class Room implements Search {
+  public static List&lt;Room&gt; search(RoomStyle style,
+      Date startDate, int duration) {
+    <span class="cm">// all rooms of this style, free for EVERY
+    // night in [startDate, startDate + duration)</span>
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box abstract" style="min-width:150px"><div class="cd-h"><span class="st">abstract</span>Person</div><div class="cd-b">name, address,<br>email, phone</div><div class="cd-m">account: Account</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Guest</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Receptionist</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Server</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">HouseKeeper</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Manager</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">and the search seam ↓</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box iface" style="min-width:130px"><div class="cd-h"><span class="st">interface</span>Search</div><div class="cd-m">+ search(style,<br>&nbsp;&nbsp;startDate, duration)</div></div>
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h">Room</div><div class="cd-m">implements Search</div></div>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'A new staff role (Concierge?) is a new subclass — not another boolean on a bloated User. And read the search signature closely: style + startDate + duration. The interface itself encodes the lesson of Q1 — availability is always asked WITH dates.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Callers hold a Person, a Search, a Payment — never a concrete subclass — so new roles and new payment methods drop in without edits.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: the hotel HAS locations HAVE rooms',desc:'The God object owned everything in one body. The fix: an aggregate chain where each class has <strong>one job</strong> — the hotel coordinates locations, a location holds its rooms, a room owns its key cards and housekeeping log, and a booking owns its invoice and notifications.',
+code:{h:'Hotel.java, Room.java — the aggregate chain',b:`public class Hotel {
+  private String name;
+  private <span class="hi-g">List&lt;HotelLocation&gt; locations;</span>
+  public boolean addLocation(HotelLocation location);
+}
+public class HotelLocation {
+  private String name;
+  private Address location;
+  public <span class="hi-g">List&lt;Room&gt; getRooms();</span>
+}
+public class Room {
+  ...
+  private <span class="hi-g">List&lt;RoomKey&gt; keys;</span>            <span class="cm">// electronic key cards</span>
+  private <span class="hi-g">List&lt;RoomHouseKeeping&gt; houseKeepingLog;</span>  <span class="cm">// R6</span>
+}
+
+public class RoomKey {
+  private String keyId;      <span class="cm">// unique key-ID + barcode</span>
+  private String barcode;
+  private Date issuedAt;
+  private boolean active, isMaster;
+  public boolean assignRoom(Room room);
+}
+public class RoomHouseKeeping {
+  private String description;
+  private Date startDatetime;
+  private int duration;
+  private <span class="hi-b">HouseKeeper houseKeeper;</span>  <span class="cm">// who cleaned, when, how long</span>
+  public boolean addHouseKeeping(Room room);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:150px"><div class="cd-h">Hotel</div><div class="cd-m">name</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:150px"><div class="cd-h">HotelLocation</div><div class="cd-m">name, address</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:150px"><div class="cd-h">Room</div><div class="cd-m">style, price, status</div></div></div>
+<div style="display:flex;gap:40px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> keys 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> log 0..*</div>
+</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box" style="min-width:110px"><div class="cd-h">RoomKey</div><div class="cd-m">barcode, isMaster</div></div>
+  <div class="cd-box" style="min-width:130px"><div class="cd-h">RoomHouseKeeping</div><div class="cd-m">houseKeeper, duration</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">meanwhile, on the paper-trail side ↓</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box" style="min-width:130px"><div class="cd-h">RoomBooking</div><div class="cd-m">invoice: Invoice<br>notifications 0..*</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'"Add a location" touches Hotel only. "Log a cleaning" touches one room\'s log. "Send a reminder" touches one booking\'s notifications. Each class has exactly one reason to change.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. The hotel aggregates locations; a location aggregates rooms; the room owns its keys and logs; the booking owns its paperwork.'}
+},
+// ============ STEP 11 — PRINCIPLE 1, AGAIN: ROOM CHARGES ============
+{phase:'pill-principle',phaseTxt:'Principle #1, again',title:'Charges bill the booking, not the guest',desc:'R7 and R8: club sandwiches, minibar restocks, extra towels, spa amenities — the billable things vary endlessly, and the bill must be ready at check-out. Same principle, second axis: an abstract <code>RoomCharge</code> that knows how to post itself to an <code>Invoice</code>, one subclass per kind of billable thing. And note WHERE the invoice lives: on the booking, because each stay settles its own bill.',
+code:{h:'RoomCharge.java — every billable thing, one seam',b:`public abstract class <span class="hi-b">RoomCharge</span> {
+  public Date issueAt;
+  <span class="cm">// the one stable seam: every charge can post itself</span>
+  public boolean <span class="hi-b">addInvoiceItem(Invoice invoice)</span>;
+}
+
+public class Amenity extends RoomCharge {        <span class="cm">// R8</span>
+  public String name;
+  public String description;
+}
+public class RoomService extends RoomCharge {    <span class="cm">// R7</span>
+  public boolean isChargeable;  <span class="cm">// towels: free. minibar: not.</span>
+  public Date requestTime;
+}
+public class KitchenService extends RoomCharge { <span class="cm">// R7: food</span>
+  public String description;
+}
+
+<span class="cm">// ...and the charge lands on the STAY:</span>
+public class RoomBooking {
+  ...
+  private <span class="hi-g">Invoice invoice;</span>  <span class="cm">// one bill per stay — not per guest</span>
+}
+public class Server extends Person {
+  public boolean addRoomCharge(Room room, RoomCharge charge);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box abstract" style="min-width:150px"><div class="cd-h"><span class="st">abstract</span>RoomCharge</div><div class="cd-m">issueAt<br>+ addInvoiceItem(invoice)</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Amenity</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">RoomService</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">KitchenService</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>addInvoiceItem()</div></div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box" style="min-width:110px"><div class="cd-h">Invoice</div><div class="cd-m">invoice items,<br>one per charge</div></div>
+  <div class="cd-box" style="min-width:120px"><div class="cd-h">RoomBooking</div><div class="cd-m">HAS-A invoice 1</div></div>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Check-out is now a fold over invoice items — no archaeology through the guest\'s history. A new billable thing (spa? parking? late fee?) = one new RoomCharge subclass. checkOut() never changes. Q3, answered.'},
+principle:{lbl:'Design principle #1 — second axis',txt:'Encapsulate what varies. The set of billable things grows forever; the act of posting a charge to an invoice never does. Abstract the stable seam (addInvoiceItem), subclass the variety.'}
+},
+// ============ STEP 12 — PATTERN: STATE ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · State',title:'A booking is a state machine',desc:'Q4 asked about refunds; R4 gives the policy. The answer isn\'t an if — it\'s a lifecycle. <code>BookingStatus</code> names seven states, and every operation is legal only in some of them: you can\'t check into a CANCELLED booking, can\'t cancel a CHECKED_OUT one, and the refund depends on WHERE in the lifecycle the cancel lands.',
+code:{h:'RoomBooking.java — guarded transitions',b:`public enum BookingStatus {
+  REQUESTED, PENDING, CONFIRMED,
+  CHECKED_IN, CHECKED_OUT, CANCELLED, ABANDONED
+}
+
+public class RoomBooking {
+  private BookingStatus status;
+
+  public boolean checkIn() {
+    <span class="cm">// legal only from CONFIRMED</span>
+    if (status != BookingStatus.CONFIRMED) return false;
+    <span class="hi-g">status = BookingStatus.CHECKED_IN;</span>
+    room.checkIn();            <span class="cm">// RoomStatus → OCCUPIED</span>
+    <span class="cm">// issue RoomKey(s), open the Invoice</span>
+    return true;
+  }
+
+  public boolean cancel(Date now) {
+    if (status == BookingStatus.CHECKED_IN
+        || status == BookingStatus.CHECKED_OUT)
+      return false;            <span class="cm">// too late to cancel</span>
+    <span class="hi-g">status = BookingStatus.CANCELLED;</span>
+    <span class="cm">// R4: full refund iff 24h+ before check-in</span>
+    if (<span class="hi-b">hoursUntil(startDate, now) &gt;= 24</span>)
+      refundInFull();
+    return true;
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+<div class="cd-row" style="gap:4px;align-items:center">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">REQUESTED</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">PENDING</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">CONFIRMED</div></div>
+</div>
+<div class="cd-row" style="gap:4px;align-items:center">
+  <span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">CHECKED_IN</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">CHECKED_OUT</div></div>
+</div>
+<div class="cd-arr">cancel before check-in ↓ &nbsp;(full refund only if 24h+ out)</div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box bad"><div class="cd-h" style="font-size:10px">CANCELLED</div></div>
+  <div class="cd-box dup"><div class="cd-h" style="font-size:10px">ABANDONED</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">every method checks the state before it acts</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: State (<a href="../ch10-state-pattern.html">Chapter 10</a>). The course hand-rolls it — an enum field plus guarded transitions. Say that out loud in the interview, then add: if the transition logic grows (per-state pricing, per-state notifications), promote each state to its own class, exactly like the Gumball Machine.'}
+},
+// ============ STEP 13 — PATTERNS: STRATEGY + OBSERVER ============
+{phase:'pill-pattern',phaseTxt:'Patterns spotted · Strategy &amp; Observer',title:'Payments that swap, bookings that notify',desc:'R9 says credit card, check, or cash — three interchangeable ways to settle one bill: <strong>Strategy</strong>. R5 says the system nudges guests as check-in and check-out approach — each booking carries its notifications and the System actor fires them on schedule: a hand-rolled <strong>Observer</strong>.',
+code:{h:'Payment.java + Notification — the last two seams',b:`<span class="cm">// R9 — three ways to settle one invoice</span>
+public abstract class <span class="hi-b">Payment</span> {
+  private double amount;
+  private PaymentStatus status;  <span class="cm">// UNPAID ... SETTLED, REFUNDED</span>
+  public abstract boolean <span class="hi-b">initiateTransaction()</span>;
+}
+public class CreditCardTransaction extends Payment { ... }
+public class CheckTransaction      extends Payment { ... }
+public class CashTransaction       extends Payment { ... }
+<span class="cm">// check-out calls initiateTransaction() and neither
+// knows nor cares which method settles the bill</span>
+
+<span class="cm">// R5 — the booking carries its own reminders</span>
+public class RoomBooking {
+  ...
+  private <span class="hi-g">List&lt;Notification&gt; notifications;</span>
+}
+public class Notification {
+  private int notificationId;
+  private Date createdOn;
+  private String content;
+  public boolean <span class="hi-g">sendNotification(Person person)</span>;
+  <span class="cm">// the System actor fires these as check-in /
+  // check-out nears, and on booking or cancellation</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box iface" style="min-width:130px"><div class="cd-h"><span class="st">strategy</span>Payment</div><div class="cd-m">+ initiateTransaction()</div></div></div>
+<div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">CreditCard</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Check</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Cash</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">and the watchers ↓</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:140px"><div class="cd-h">RoomBooking <span class="st">subject</span></div><div class="cd-m">check-in nears /<br>status changes</div></div>
+  <div class="cd-box fly" style="min-width:140px"><div class="cd-h">Notification <span class="st">observer-ish</span></div><div class="cd-m">sendNotification(guest)</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Strategy (<a href="../ch1-strategy-pattern.html">Chapter 1</a>) — interchangeable payment algorithms behind one interface; adding a mobile wallet is one new subclass. Pattern #3: Observer-ish (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — booking events push notifications to the guest. Mention that a real subscribe/notify interface would let email and SMS observers register themselves.'}
+},
+// ============ STEP 14 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, hierarchies for what varies, aggregates for the structure. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum RoomStyle     { STANDARD, DELUXE, FAMILY_SUITE,
+                     BUSINESS_SUITE }
+enum RoomStatus    { AVAILABLE, RESERVED, OCCUPIED,
+                     NOT_AVAILABLE, BEING_SERVICED, OTHER }
+enum BookingStatus { REQUESTED, PENDING, CONFIRMED,
+                     CHECKED_IN, CHECKED_OUT,
+                     CANCELLED, ABANDONED }  <span class="hi-b">// the state machine</span>
+enum AccountStatus, AccountType, PaymentStatus
+
+<span class="cm">// WHAT VARIES — hierarchies</span>
+abstract class Person     <span class="cm">// Guest | Receptionist | Server
+                          //  | HouseKeeper | Manager</span>
+abstract class RoomCharge <span class="cm">// Amenity | RoomService | Kitchen</span>
+abstract class Payment    <span class="cm">// CreditCard | Check | Cash</span>
+
+<span class="cm">// THE STRUCTURE — composition</span>
+class Hotel          { name, locations }
+class HotelLocation  { name, address, getRooms() }
+class Room implements Search
+                     { roomNumber, style, bookingPrice,
+                       keys, houseKeepingLog,
+                       isRoomAvailable() }
+class RoomBooking    { reservationNumber, startDate,
+                       durationInDays, status, room,
+                       <span class="hi-g">invoice, notifications</span> }
+class RoomKey        { keyId, barcode, active, isMaster }
+class RoomHouseKeeping { description, duration, houseKeeper }
+class Invoice        { one invoice-item per charge }
+class Notification   { sendNotification(person) }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Hotel</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> locations 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:160px"><div class="cd-h">HotelLocation</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> rooms 1..*</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Room ▸ Search</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">RoomBooking</div></div>
+</div>
+<div style="display:flex;gap:18px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> keys + log</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> claims 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> invoice + notifs</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">RoomKey</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">RoomHouseKeeping</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Invoice</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Notification</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Person ▸5</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">RoomCharge ▸3</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Payment ▸3</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but the calendar lives in RoomBooking, prices live on the Room, charges live on the Invoice — every axis of change has its own home. This is the whiteboard you leave behind.'}
+},
+// ============ STEP 15 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One guest, end to end',desc:'A design is only convincing if you can run a scenario through it. Narrate this flow in the interview — it proves the classes actually collaborate.',
+code:{h:'Booking + check-out — the orchestration (sketch)',b:`<span class="cm">// reservation side — Guest or Receptionist</span>
+public RoomBooking bookRoom(Guest g, RoomStyle style,
+                            Date start, int nights) {
+  List&lt;Room&gt; free = <span class="hi-b">Room.search(style, start, nights)</span>;
+  if (free.isEmpty()) return null;  <span class="cm">// no vacancy — for THOSE dates</span>
+  RoomBooking b = new RoomBooking(newReservationNumber(),
+                    start, nights, BookingStatus.REQUESTED);
+  b.setRoom(free.get(0));           <span class="cm">// the dated claim is born</span>
+  b.setStatus(BookingStatus.CONFIRMED);  <span class="cm">// after payment auth</span>
+  <span class="hi-g">b.getNotifications().add(confirmationFor(g));</span>  <span class="cm">// R5</span>
+  return b;
+}
+
+<span class="cm">// settlement side — Receptionist at the desk</span>
+public double checkOut(RoomBooking b, <span class="hi-b">Payment payment</span>) {
+  double total = b.getInvoice().total();
+  <span class="cm">// nights x room.bookingPrice + every RoomCharge</span>
+  if (<span class="hi-g">payment.initiateTransaction()</span>) {  <span class="cm">// Strategy!</span>
+    b.setStatus(BookingStatus.CHECKED_OUT);
+    b.getRoom().checkOut();  <span class="cm">// keys back, AVAILABLE again</span>
+  }
+  return total;
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Guest</span><br>Searches: <code>Room.search(DELUXE, Aug 12, 3)</code> — availability computed against bookings, per date</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Receptionist / Guest</span><br>Books room 204: new <code>RoomBooking</code>, REQUESTED → CONFIRMED — a dated claim, Aug 12–15</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">System</span><br>Confirmation <code>Notification</code> sent; a reminder queued for near check-in (R5, Observer-ish)</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Receptionist</span><br>Aug 12, check-in: booking CONFIRMED → CHECKED_IN (State), <code>RoomKey</code> issued, RoomStatus OCCUPIED</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Server</span><br>Club sandwich → <code>KitchenService.addInvoiceItem(invoice)</code> — the charge lands on the booking (R7)</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">Guest</span><br>Requests a crib → <code>Amenity</code> posts to the same invoice (R8)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Receptionist</span><br>Aug 15, check-out: invoice totals 3 nights × $180 + charges; <code>payment.initiateTransaction()</code> — card, check, or cash (Strategy)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Housekeeper</span><br>Logs the cleaning into room 204\'s <code>houseKeepingLog</code>; RoomStatus BEING_SERVICED → AVAILABLE (R6)</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed. The sandwich — the question that stumped Attempt #1 — is now one line: a RoomCharge posting itself to the booking\'s invoice.'}
+},
+// ============ STEP 16 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 20 classes — one recipe, three principles, three patterns, and a single sentence about time. Every reservation-shaped system in this course is this same climb over different nouns.',
+code:{h:'The hotel in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → RoomBooking (the dated claim), RoomCharge ▸3
+2. Program to an interface
+   → Person ▸5 roles, Search, Payment
+3. Composition + single responsibility
+   → Hotel ▸ Locations ▸ Rooms; Room owns keys + log;
+     Booking owns invoice + notifications
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">State</span>     BookingStatus: REQUESTED → ... → CHECKED_OUT,
+          guarded transitions, refund by lifecycle
+<span class="hi-b">Strategy</span>  Payment: credit card / check / cash
+<span class="hi-b">Observer</span>  booking events → Notifications to the guest
+
+<span class="cm">// THE ONE-LINER</span>
+The room is permanent. The booking is a dated claim
+on it. Everything else hangs off the right one.
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Car Rental  (vehicle≈room, reservation≈booking —
+             nearly isomorphic, down to the enums)
+Parking Lot (spot≈room, ticket≈booking, minus dates)
+Airline     (flight → dated FlightInstance
+             ≈ room → dated RoomBooking)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h">State</div><div class="cd-m">BookingStatus lifecycle,<br>guarded transitions</div></div>
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h">Strategy</div><div class="cd-m">Payment: card/check/cash<br>swap freely</div></div>
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Observer</div><div class="cd-m">booking → notifications<br>to the guest</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Lifecycle</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable behavior</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+</div>`,
+callout:{type:'callout-purple',text:'Attempt #1 died because a boolean can\'t hold a calendar. The recipe separated identity (Room) from claim (RoomBooking) — and once that split exists, the lifecycle (State), the bill (RoomCharge → Invoice), and the reminders (Observer) all have an obvious home. Master the split once; Car Rental, Airline, and the <a href="01-library-management-system.html">Library</a> are the same design wearing different uniforms.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

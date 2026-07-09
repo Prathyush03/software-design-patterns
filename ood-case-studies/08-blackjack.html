@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 8 — Design Blackjack and a Deck of Cards | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 8 — Design Blackjack and a Deck of Cards</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design Blackjack and a deck of cards." Go.',desc:'Forty-five minutes, a whiteboard, and a deceptively cozy prompt. Blackjack: the world\'s most-played casino game. Players compete against a dealer (never each other), everyone building a hand as close to 21 as possible without going over. Decks, a shoe, bets, splits, insurance. It sounds like a toy... which is exactly the trap.',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: knowing casino rules by heart.</span>
+<span class="cm">// Graded:</span>
+1. Can you model a <span class="hi-b">physical thing</span> — a card,
+   a deck, a shoe — as real objects?
+2. Can one object hold <span class="hi-b">two values at once</span>?
+   (the Ace: 1 OR 11 — this whole case
+   study hides inside that one card)
+3. Same table, different rules: the <span class="hi-b">dealer’s
+   play is fixed, the player chooses</span> —
+   where does each rule live?
+4. Do <span class="hi-b">design patterns</span> emerge where the
+   rules demand them — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:230px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">A blackjack table</div>
+    <div style="display:flex;flex-direction:column;gap:4px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Dealer&nbsp;&nbsp;<b>9♣</b> ▮ <span style="color:var(--text-secondary)">up card + hidden hole card</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Shoe&nbsp;&nbsp;▮▮▮▮ <span style="color:var(--text-secondary)">1..N decks, shuffled</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Player&nbsp;&nbsp;<b>A♥ 5♦</b> <span style="color:var(--text-secondary)">soft 16... or hard 6?</span></div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Beat the dealer</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Never pass 21</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — a deck is just 52 ints',desc:'The instinct under time pressure: a deck is just numbers! Integer division gives the suit, modulo gives the rank, and a hand is a running total. Fifteen lines and the demo plays.',
+code:{h:'BlackjackGame.java — the "just code it" design',b:`public class BlackjackGame {
+    <span class="hi-y">int[] deck = new int[52];</span>   <span class="cm">// 0..51 — "a deck"</span>
+    int next = 0;
+
+    void shuffle() { <span class="cm">/* Fisher–Yates on ints */</span> }
+
+    int suit(int c) { return c / 13; }      <span class="cm">// 0..3</span>
+    int rank(int c) { return c % 13 + 1; }  <span class="cm">// 1..13</span>
+
+    <span class="hi-y">int playerTotal = 0, dealerTotal = 0;</span>  <span class="cm">// hands = sums</span>
+
+    void deal(boolean toPlayer) {
+        int c = deck[next++];
+        int pts = Math.min(rank(c), 10);  <span class="cm">// J/Q/K → 10. easy!</span>
+        if (toPlayer) playerTotal += pts;
+        else          dealerTotal += pts;
+    }
+
+    boolean playerBust() { return playerTotal &gt; 21; }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:200px"><div class="cd-h">BlackjackGame</div><div class="cd-b">int[] deck<br>int playerTotal<br>int dealerTotal</div><div class="cd-m">+ shuffle()<br>+ deal(toPlayer)<br>+ playerBust()</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">a card is an int · a hand is a sum · what could go wrong?</div>`,
+callout:{type:'callout-ok',text:'Honestly? It shuffles, it deals, it adds. For 2-through-King this plays a legal game. The interviewer nods... and then flips over an Ace.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps reading: the <strong>Ace counts as 1 OR 11</strong> (a "soft" or "hard" total), J/Q/K all score 10, a same-rank pair can <strong>split into two hands</strong>, players may double down, insurance appears when the dealer shows an Ace, the dealer <em>must</em> hit at 16 and stand at 17, and the casino deals from a multi-deck shoe. Patch the ints!',
+code:{h:'BlackjackGame.java — the int arithmetic grows hair',b:`void deal(boolean toPlayer) {
+  int c = deck[next++];
+  int pts = Math.min(rank(c), 10);
+  <span class="hi-y">if (rank(c) == 1) {                <span class="cm">// the Ace...</span>
+    pts = (playerTotal + 11 &lt;= 21) ? 11 : 1;
+  }</span>
+  <span class="hi-r">// A♥ then 5♦ = soft 16. Now draw 9♣:
+  // 16 + 9 = 25 → BUST?! No — the Ace must
+  // retroactively become 1. But we added 11
+  // and threw the card away. Re-count WHAT?</span>
+  if (toPlayer) playerTotal += pts;
+}
+
+boolean canSplit() {
+  <span class="hi-r">// split needs "same rank". K+Q both scored
+  // 10 — but they are NOT a pair. The sum
+  // forgot which cards it came from.</span>
+}
+double payout() {
+  <span class="cm">// blackjack 3:2, win 1:1, push on tie,
+  // insurance 2:1, double = one card only...</span>
+}
+<span class="cm">// TODO: 6-deck shoe. TODO: dealer must hit ≤16
+// but players choose. TODO: TWO totals after
+// a split?! playerTotal2? 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">BlackjackGame <span class="st">the God object</span></div><div class="cd-b">int[] deck, totals, aceFlags,<br>bets, insurance, splitTotals,<br>dealer rules, payouts...</div><div class="cd-m">+ deal() <span style="color:var(--text-danger)">Ace guesswork</span><br>+ canSplit() <span style="color:var(--text-danger)">rank is gone</span><br>+ payout() <span style="color:var(--text-danger)">every rule inline</span><br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every rule = more int-surgery in the same class</div>`,
+callout:{type:'callout-warn',text:'Notice the shape of the failure: the requirements talk about cards, hands, and players — the code only has ints. There is nothing to hang a rule on.'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The int arithmetic collapses',desc:'Four innocent follow-ups, and the running-total design falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "You hold A+5 and draw a 9. Score?"</span>
+<span class="hi-r">→ Soft 16 must become hard 15: the Ace
+  re-decides from 11 down to 1. A stored int
+  can’t change its mind — and the cards you
+  would re-count from are already gone.</span>
+
+<span class="cm">// Q2: "Player shows K♠ Q♥ — can they split?"</span>
+<span class="hi-r">→ Split requires SAME RANK. Both scored "10",
+  so your sum says yes; the casino says no.
+  Adding ints destroyed card identity.</span>
+
+<span class="cm">// Q3: "This table deals from a 6-deck shoe
+//      and re-shoes when it runs out."</span>
+<span class="hi-r">→ int[52] hardcodes one deck. Six decks +
+  reshuffle logic = more parallel arrays.</span>
+
+<span class="cm">// Q4: "Dealer MUST hit at 16 and stand at 17.
+//      Players choose freely."</span>
+<span class="hi-r">→ One deal(boolean) means if (isDealer)
+  sprouting inside every method.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every rule change =<br>int-surgery in one class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">the Ace guess corrupts<br>totals mid-hand</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">can’t test scoring without<br>shuffling and dealing</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'The root disease: an int is not a card, and a running sum is not a hand. The Ace is the proof — one object with two possible values, and only a real object can carry that ambiguity until the moment it must resolve.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for Blackjack — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">One or more standard <b>52-card decks</b>; 13 ranks × 4 suits <span class="obj">Card, Deck, SUIT</span></li>
+<li data-n="R2">Cards are dealt from a multi-deck <b>shoe</b> <span class="obj">Shoe</span></li>
+<li data-n="R3">Number cards score face value; <b>J / Q / K all score 10</b> <span class="obj">BlackjackCard</span></li>
+<li data-n="R4"><b>Ace counts as 1 or 11</b> — hard vs soft totals <span class="obj">Hand.getScores()</span></li>
+<li data-n="R5">Player and dealer each get a 2-card <b>hand</b>; the dealer hides the hole card <span class="obj">Hand</span></li>
+<li data-n="R6">A mandatory <b>ante</b> bet starts the game <span class="obj">Player.placeBet()</span></li>
+<li data-n="R7">Player options each turn: <b>hit, stand, double down</b> <span class="obj">Game.playAction()</span></li>
+<li data-n="R8">A same-rank pair may <b>split into two hands</b> (with an extra bet) <span class="obj">Player HAS List&lt;Hand&gt;</span></li>
+<li data-n="R9"><b>Dealer’s play is fixed</b>: hit at 16 or less, stand at 17 or more <span class="obj">Dealer</span></li>
+<li data-n="R10">Bust (&gt;21) loses at once; <b>blackjack pays 3:2</b>, other wins 1:1, ties push <span class="obj">Game resolution</span></li>
+<li data-n="R11"><b>Insurance</b> is offered when the dealer’s up card is an Ace <span class="obj">Game / Bet</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Read R4 again — it single-handedly killed Attempt #1. And R8 is the accomplice: after a split the player has TWO hands, so "the player\'s hand" was never a single int to begin with.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Only two actors touch this system — the smallest cast in the course. But listing their use cases exposes the asymmetry that drives the whole design: one of them never gets to choose.',
+code:{h:'Top use cases',b:`<span class="cm">// Player</span>
+place bet             <span class="cm">— the mandatory ante</span>
+hit / double / stand  <span class="cm">— play out EACH hand</span>
+split                 <span class="cm">— same-rank pair → two hands</span>
+accept insurance      <span class="cm">— only when dealer shows Ace</span>
+accept even money     <span class="cm">— blackjack vs dealer Ace</span>
+
+<span class="cm">// Dealer (also runs the game)</span>
+create hands          <span class="cm">— two cards each, hole down</span>
+play own hand         <span class="cm">— NO choices: hit ≤16,
+                        stand at 17+</span>
+examine hole card     <span class="cm">— resolve insurance bets</span>
+resolve game          <span class="cm">— 3:2 blackjack, 1:1 win,
+                        collect losses, push ties</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">🎩 Dealer</span><span class="does">deals cards,<br>fixed play rule,<br>resolves bets</span></div>
+  <div class="actor"><span class="who">🧑 Player</span><span class="does">bets &amp; chooses:<br>hit, double, stand,<br>split, insurance</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Create hands</span><span class="uc">Place bet</span><span class="uc">Hit</span><span class="uc">Double down</span><span class="uc">Stand pat</span><span class="uc">Resolve bust</span><span class="uc">Dealer plays hand</span><span class="uc">Offer insurance</span><span class="uc">Examine hole card</span><span class="uc">Split</span><span class="uc">Game resolution</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Look closely: the Player\'s list is all choices, the Dealer\'s list is all fixed procedure. That asymmetry becomes a pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The cardboard (physical things)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Card</div></div>
+    <div class="cd-box abstract"><div class="cd-h">BlackjackCard</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Deck</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Shoe</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The table (game state)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">Hand</div></div>
+    <div class="cd-box"><div class="cd-h">Bet <span class="st">ante · insurance · split · double</span></div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">BasePlayer</div></div>
+    <div class="cd-box fly"><div class="cd-h">Player</div></div>
+    <div class="cd-box fly"><div class="cd-h">Dealer</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The conductor</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx" style="min-width:130px"><div class="cd-h">Game <span class="st">the sequence of play</span></div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Behavior differs per role</div>
+</div>`,
+callout:{type:'callout-ok',text:'Nine small classes instead of one int-farm. Now the key question: which of these vary? The Card does — what it scores depends on the game and, for the Ace, on the rest of the hand.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the card itself',desc:'What actually broke Attempt #1? The card. A card\'s <em>identity</em> (rank + suit) never changes — but what it <em>scores</em> varies by game. So identity lives in <code>Card</code>, and Blackjack\'s scoring quirks live in a subclass that never edits its parent.',
+code:{h:'Card.java + BlackjackCard.java — identity vs score',b:`public enum SUIT {
+  HEART, SPADE, CLUB, DIAMOND     <span class="cm">// no magic ints</span>
+}
+
+public class Card {
+  private SUIT suit;
+  private int faceValue;   <span class="cm">// 1..13 — identity, KEPT forever</span>
+
+  public SUIT getSuit() { return suit; }
+  public int getFaceValue() { return faceValue; }
+
+  Card(SUIT suit, int faceValue) {
+    this.suit = suit;
+    this.faceValue = faceValue;
+  }
+}
+
+<span class="cm">// scoring varies BY GAME → subclass, never edit Card</span>
+public class BlackjackCard extends Card {
+  private int gameValue;   <span class="cm">// what it SCORES at this table</span>
+
+  public BlackjackCard(SUIT suit, int faceValue) {
+    super(suit, faceValue);
+    this.gameValue = faceValue;
+    <span class="hi-g">if (this.gameValue &gt; 10) {
+      this.gameValue = 10;      <span class="cm">// J, Q, K → 10  (R3)</span>
+    }</span>
+  }
+  public int getGameValue() { return gameValue; }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:170px"><div class="cd-h">Card</div><div class="cd-b">suit: SUIT<br>faceValue: 1..13</div><div class="cd-m">+ getSuit()<br>+ getFaceValue()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row">
+  <div class="cd-box" style="min-width:170px"><div class="cd-h">BlackjackCard</div><div class="cd-b">gameValue</div><div class="cd-m">+ getGameValue()<br>J/Q/K → 10 · Ace → Hand decides</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">a King knows it IS a King (faceValue 13)<br>AND that it scores 10 here (gameValue)</div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">PokerCard?</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">RummyCard?</div></div>
+</div>
+<div class="cd-arr">future games = new subclasses, zero edits to Card</div>`,
+callout:{type:'callout-info',text:'Q2 is dead: K♠ and Q♥ both score 10, but getFaceValue() still says 13 and 12 — "same rank?" is a real question again. Scoring and identity are separate concerns in separate fields.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. A card\'s identity (suit, rank) is stable; what it scores varies by game — so BlackjackCard carries the game value and Card never changes.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: ask the Hand, don\'t peek',desc:'Now the Ace. One card, two values — an int can\'t be both, but a <code>Hand</code> can carry <em>every</em> candidate total and resolve at the last moment. Callers just ask <code>resolveScore()</code>; the ambiguity never leaks out.',
+code:{h:'Hand.java — the score is a question, not a field',b:`public class Hand {
+  private ArrayList&lt;BlackjackCard&gt; cards;
+
+  public Hand(BlackjackCard c1, BlackjackCard c2) {
+    this.cards = new ArrayList&lt;BlackjackCard&gt;();
+    this.cards.add(c1);
+    this.cards.add(c2);
+  }
+  public void addCard(BlackjackCard card) {
+    cards.add(card);
+  }
+
+  <span class="cm">// every Ace FORKS the totals: A+5 → {6, 16}</span>
+  private List&lt;Integer&gt; getScores() {
+    List&lt;Integer&gt; totals = new ArrayList();
+    totals.add(0);
+    for (BlackjackCard card : cards) {
+      List&lt;Integer&gt; newTotals = new ArrayList();
+      for (int score : totals) {
+        newTotals.add(card.getGameValue() + score);
+        <span class="hi-g">if (card.getGameValue() == 1) {
+          newTotals.add(11 + score);  <span class="cm">// the Ace’s fork</span>
+        }</span>
+      }
+      totals = newTotals;
+    }
+    return totals;
+  }
+
+  <span class="cm">// highest total ≤ 21 — COMPUTED from the cards
+  // on demand. Nothing stored, nothing stale.</span>
+  public int <span class="hi-b">resolveScore()</span> {
+    List&lt;Integer&gt; scores = getScores();
+    int bestScore = 0;
+    for (int score : scores) {
+      if (score &lt;= 21 &amp;&amp; score &gt; bestScore) {
+        bestScore = score;
+      }
+    }
+    return bestScore;
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row">
+  <div class="cd-box" style="min-width:180px"><div class="cd-h">A♥ + 5♦</div><div class="cd-m">getScores() → {6, <b>16</b>}<br>resolveScore() → <b>16</b> <span style="color:var(--text-secondary)">(soft)</span></div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>hit: draw 9♣</div></div>
+<div class="cd-row">
+  <div class="cd-box" style="min-width:180px"><div class="cd-h">A♥ + 5♦ + 9♣</div><div class="cd-m">getScores() → {<b>15</b>, 25}<br>resolveScore() → <b>15</b> <span style="color:var(--text-secondary)">(25 &gt; 21, dropped)</span></div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">the Ace "re-decided" all by itself —<br>because no score was ever stored</div>
+</div>`,
+callout:{type:'callout-info',text:'Q1 is dead: the Ace never commits early. The hand keeps ALL candidate totals and resolves at the last responsible moment. Game code cannot even see the ambiguity — it just asks for the best score.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Callers depend on the question ("best total ≤ 21?") — never on the representation (which cards, how many Aces). Hand is free to compute the answer any way it likes.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: Shoe HAS Decks HAS Cards — and a player HAS hands',desc:'The God object owned everything in one body. The fix: a composition chain where each class has <strong>one job</strong> — a Deck builds its 52 cards, the Shoe stacks and shuffles N decks, a player holds hands. And "hands" is deliberately plural.',
+code:{h:'Deck.java + Shoe.java — each level, one job',b:`public class Deck {
+  private List&lt;BlackjackCard&gt; cards;
+
+  public Deck() {  <span class="cm">// 13 ranks × 4 suits = 52, exactly once</span>
+    this.cards = new ArrayList&lt;BlackjackCard&gt;();
+    for (int value = 1; value &lt;= 13; value++) {
+      for (SUIT suit : SUIT.values()) {
+        this.cards.add(<span class="hi-g">new BlackjackCard(suit, value)</span>);
+      }
+    }
+  }
+  public List&lt;BlackjackCard&gt; getCards() { return cards; }
+}
+
+<span class="cm">// the casino device: N decks, shuffled together</span>
+public class Shoe {
+  private List&lt;BlackjackCard&gt; cards;
+  private int numberOfDecks;
+
+  public Shoe(int numberOfDecks) {
+    this.numberOfDecks = numberOfDecks;
+    createShoe();
+    shuffle();      <span class="cm">// Fisher–Yates across ALL decks</span>
+  }
+  private void createShoe() {
+    this.cards = new ArrayList&lt;BlackjackCard&gt;();
+    for (int d = 0; d &lt; numberOfDecks; d++) {
+      cards.addAll(new Deck().getCards());
+    }
+  }
+  public BlackjackCard <span class="hi-b">dealCard()</span> {
+    if (cards.size() == 0) {
+      createShoe(); <span class="cm">// auto re-shoe — R2 lives HERE only</span>
+    }
+    return cards.remove(0);
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:160px"><div class="cd-h">Shoe</div><div class="cd-m">shuffle(), dealCard()</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:160px"><div class="cd-h">Deck</div><div class="cd-m">builds 52 cards</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 52</div>
+<div class="cd-row"><div class="cd-box" style="min-width:160px"><div class="cd-h">BlackjackCard</div></div></div>
+<div class="cd-arr" style="padding-top:8px">and on the people side ↓</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box abstract" style="min-width:130px"><div class="cd-h"><span class="st">abstract</span>BasePlayer</div><div class="cd-m">hands: List&lt;Hand&gt;<br>addHand / removeHand</div></div>
+  <div class="cd-box" style="min-width:110px"><div class="cd-h">Hand</div><div class="cd-m">cards 2..*<br>+ resolveScore()</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">a split is just hands.add(...) —<br>because a player HAS hands, plural</div>
+</div>`,
+callout:{type:'callout-ok',text:'Q3 is dead: a six-deck table is new Shoe(6) — one argument. And R8 stopped being scary: a player HAS a List of Hands, so a second hand is an add(), not a second copy of every total.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class one job. The Shoe composes Decks, a Deck composes Cards, a player composes Hands — nothing owns everything, and each level can change size without the others noticing.'}
+},
+// ============ STEP 11 — PATTERN: STRATEGY ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Strategy',title:'One table, two decision policies',desc:'R9 is the sleeper requirement: player and dealer hold the same kind of hands — same cards, same scoring — but the player <em>chooses</em> while the dealer <em>executes a fixed house algorithm</em>. Same interface, two interchangeable ways to decide.',
+code:{h:'BasePlayer.java — one supertype, two policies',b:`public abstract class BasePlayer {
+  private String id;
+  private double balance;
+  private AccountStatus status;
+  <span class="hi-g">private List&lt;Hand&gt; hands;</span>   <span class="cm">// plural — splits live here</span>
+
+  public List&lt;Hand&gt; getHands() { return hands; }
+  public void addHand(Hand hand) { hands.add(hand); }
+  public void removeHand(Hand hand) { hands.remove(hand); }
+}
+
+public class Player extends BasePlayer {
+  private int bet;
+  private int totalCash;
+
+  public Player(Hand hand) {
+    this.hands = new ArrayList&lt;Hand&gt;();
+    this.hands.add(hand);
+  }
+  <span class="cm">// decision policy: ASK THE HUMAN —
+  // hit / double / stand / split / insurance</span>
+}
+
+public class Dealer extends BasePlayer {
+  <span class="cm">// decision policy: THE HOUSE RULE, hardcoded (R9).
+  // (the course references Dealer without listing
+  //  it — sketch it aloud in the interview)</span>
+  public boolean <span class="hi-b">wantsCard(Hand hand)</span> {
+    return hand.resolveScore() &lt;= 16;  <span class="cm">// hit ≤16, stand 17+</span>
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>BasePlayer</div><div class="cd-b">hands: List&lt;Hand&gt;<br>balance, status</div><div class="cd-m">+ addHand() + removeHand()</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>extends</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Player</div><div class="cd-m">chooses freely:<br>hit, double, stand,<br>split, insure</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Dealer</div><div class="cd-m">no choices:<br>hit ≤16, stand 17+</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">same hands, interchangeable decision policies</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: Strategy (<a href="../ch1-strategy-pattern.html">Chapter 1</a>) — "how do I play a hand?" is an interchangeable algorithm behind one supertype. The dealer\'s strategy is a hardcoded rule, the player\'s delegates to a human — and the Game treats both as BasePlayers holding Hands.'}
+},
+// ============ STEP 12 — PATTERN: TEMPLATE METHOD ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Template Method',title:'The round is a Template Method',desc:'Zoom out to the round itself: ante → deal two each → player decisions → dealer\'s fixed play → settle bets. That sequence <em>never</em> varies — only the decisions inside it do. The course says <code>Game</code> "encapsulates the basic sequence of play" — its words, and a pattern\'s definition.',
+code:{h:'Game.java — a fixed skeleton with decision hooks',b:`public class Game {
+  private Player player;
+  private Dealer dealer;
+  private Shoe shoe;
+  private final int MAX_NUM_OF_DECKS = 3;
+
+  public void <span class="hi-b">start()</span> {            <span class="cm">// the template method</span>
+    player.placeBet(getBetFromUI());        <span class="cm">// 1. ante (R6)</span>
+    player.addHand(new Hand(shoe.dealCard(),
+                            shoe.dealCard()));
+    dealer.addHand(new Hand(shoe.dealCard(),
+                            shoe.dealCard()));
+                                            <span class="cm">// 2. deal (R5)</span>
+    while (true) {                          <span class="cm">// 3. player acts</span>
+      for (Hand hand : player.getHands()) { <span class="cm">// EVERY hand</span>
+        String action = <span class="hi-y">getUserAction(hand)</span>; <span class="cm">// ← the hook</span>
+        playAction(action, hand);
+        if (action.equals("stand")) break;
+      }
+    }                                       <span class="cm">// 4. dealer’s turn:
+                                            //    fixed — no hook</span>
+  }
+
+  private void playAction(String action, Hand hand) {
+    switch (action) {
+      case "hit":   <span class="hi-g">hit(hand)</span>;   break; <span class="cm">// repeatable</span>
+      case "split": split(hand); break; <span class="cm">// forks the hand</span>
+      case "stand": stand();     break; <span class="cm">// → resolution</span>
+      default:      print("Wrong input");
+    }
+  }
+  private void hit(Hand hand) {
+    hand.addCard(shoe.dealCard());
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:210px"><b>1. Place ante</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:210px"><b>2. Deal 2 + 2</b> — hole card down</div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:210px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">3. Player decides ← the only hook</b><br><span style="color:var(--text-warning)">hit · double · stand · split · insure</span></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:210px"><b>4. Dealer plays — fixed</b> hit ≤16 / stand 17+</div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:210px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Settle: 3:2 · 1:1 · collect · push</b></div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Template Method (<a href="../ch8-template-method-pattern.html">Chapter 8</a>) — Game.start() freezes the round\'s skeleton and leaves one varying step: "what does this player do?". The dealer\'s version of that step is final and hardcoded. Hollywood Principle: don\'t call the Game — the Game calls you.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: one enum, one card hierarchy, a composition chain for the cardboard, one supertype for the people, one conductor. (Getters/setters omitted — say that out loud.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARY — an enum, not magic ints</span>
+enum SUIT { HEART, SPADE, CLUB, DIAMOND }
+
+<span class="cm">// WHAT VARIES — the card’s value, by game</span>
+class Card          { suit, faceValue 1..13 }
+class BlackjackCard extends Card
+                    { gameValue: J/Q/K → 10 }
+
+<span class="cm">// THE CARDBOARD — composition chain</span>
+class Deck { 52 BlackjackCards, each exactly once }
+class Shoe { N decks, shuffle(), <span class="hi-b">dealCard()</span>,
+             auto re-shoe when empty }
+
+<span class="cm">// THE TABLE — score computed, never stored</span>
+class Hand { cards, getScores() forks per Ace,
+             <span class="hi-b">resolveScore()</span> = best total ≤ 21 }
+
+<span class="cm">// THE PEOPLE — one supertype, two policies</span>
+abstract class BasePlayer { hands: List&lt;Hand&gt;,
+                            addHand/removeHand }
+class Player extends BasePlayer   <span class="cm">// chooses — Strategy</span>
+             { bet, totalCash }
+class Dealer extends BasePlayer   <span class="cm">// fixed: hit ≤16</span>
+
+<span class="cm">// THE CONDUCTOR — the round as a fixed sequence</span>
+class Game { player, dealer, shoe,
+             <span class="hi-b">start()</span>,             <span class="cm">// Template Method</span>
+             playAction: hit | split | stand,
+             stand(): settle 3:2 / 1:1 / push }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Game <span class="st">template method</span></div></div></div>
+<div style="display:flex;gap:40px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> shoe 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> players 1..*</div>
+</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Shoe</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">BasePlayer ▸ Player · Dealer</div></div>
+</div>
+<div style="display:flex;gap:40px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> decks 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> hands 1..*</div>
+</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Deck</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Hand ▸ resolveScore()</div></div>
+</div>
+<div style="display:flex;gap:40px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> cards 52</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> cards 2..*</div>
+</div>
+<div class="cd-row"><div class="cd-box" style="min-width:140px"><div class="cd-h" style="font-size:10.5px">BlackjackCard</div></div></div>
+<div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+<div class="cd-row"><div class="cd-box abstract" style="min-width:140px"><div class="cd-h" style="font-size:10.5px">Card</div></div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare with Attempt #1: same rules, but the Ace lives in Hand, the deck count lives in Shoe, the house rule lives in Dealer, and the round lives in Game. Every rule has exactly one home.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One round, end to end — with a split and an Ace',desc:'A design is only convincing if you can run a scenario through it — so run the two moments that killed Attempt #1: a split and an Ace re-score, inside one round.',
+code:{h:'Game.java — split() forks, stand() settles',b:`private void split(Hand hand) {  <span class="cm">// R8: pair → two hands</span>
+  Cards cards = hand.getCards();
+  player.addHand(new Hand(cards[0], shoe.dealCard()));
+  player.addHand(new Hand(cards[1], shoe.dealCard()));
+  <span class="hi-g">player.removeHand(hand);</span>  <span class="cm">// original dissolves — no
+                            // totals to migrate, because
+                            // scores were never stored</span>
+}
+
+private void stand() {
+  int dealerScore = dealer.getTotalScore();
+  for (Hand hand : player.getHands()) {  <span class="cm">// EVERY hand</span>
+    int bestScore = <span class="hi-b">hand.resolveScore()</span>; <span class="cm">// Aces settle here</span>
+    if (bestScore == 21) {
+      <span class="cm">// blackjack — pay 3:2 of the bet (R10)</span>
+    } else if (bestScore &gt; dealerScore) {
+      <span class="cm">// pay player equal to the bet</span>
+    } else if (bestScore &lt; dealerScore) {
+      <span class="cm">// collect the bet from the player</span>
+    } else {
+      <span class="cm">// tie — the bet goes back (push)</span>
+    }
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Player</span><br>Places the mandatory ante: <code>player.placeBet(...)</code></div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Game / Shoe</span><br>Deals from the shoe: player gets <b>8♠ 8♦</b> face-up; dealer gets an up card + a hidden hole card</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Player</span><br>Same rank — elects to split: <code>split()</code> builds two new Hands (8♠+draw, 8♦+draw), removes the original, matches the ante on the new hand (R8)</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Hand A</span><br>Draws <b>A♥</b>: <code>getScores()</code> forks to {9, <b>19</b>}; <code>resolveScore()</code> → soft 19. Computed fresh — the Ace never committed</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Player</span><br>Hand B draws 4♣, hits to <b>20</b>, then stands on both hands</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">Dealer</span><br>Reveals the hole card: 9♣ + 6♦ = 15 → house rule fires: hit (≤16) → draws 4♠ → <b>19</b> → stand (17+). Zero choices (R9)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Game</span><br><code>stand()</code> settles EVERY hand vs dealer’s 19: Hand A 19 → push, bet returned; Hand B 20 → paid 1:1 (R10)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Shoe</span><br>Running low? <code>dealCard()</code> silently rebuilds and reshuffles. Next round starts</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'The split costs three lines because a player HAS hands, and the Ace re-score costs zero lines because scores are computed, never stored. The naive design died on exactly these two moments.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not nine classes — one recipe, three principles, two patterns, one invariant. Every other case study in this course is this same climb over different nouns.',
+code:{h:'Blackjack in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → Card → BlackjackCard: J/Q/K score 10;
+     identity (rank + suit) preserved
+2. Program to an interface
+   → hand.resolveScore() — callers never touch
+     card ints or Ace ambiguity
+3. Composition
+   → Shoe ▸ Decks ▸ Cards; BasePlayer ▸ Hands
+     (a split = hands.add, nothing else moves)
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Strategy</span>         Dealer’s fixed house rule vs
+                 Player’s free choice — one
+                 BasePlayer supertype
+<span class="hi-b">Template Method</span>  Game.start(): ante → deal →
+                 decide → dealer → settle
+
+<span class="cm">// THE INVARIANT</span>
+a score is a question you ask the Hand —
+never a number you store
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Chess (game loop ≈ template, pieces ≈ cards)
+Poker / Rummy (Deck + Shoe reusable as-is)
+ATM (a session = the same fixed-sequence shape)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box iface" style="min-width:130px"><div class="cd-h">Strategy</div><div class="cd-m">Player chooses,<br>Dealer executes the<br>house rule</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Template Method</div><div class="cd-m">Game.start(): fixed round,<br>one decision hook</div></div>
+  <div class="cd-box ctx" style="min-width:130px"><div class="cd-h">The invariant</div><div class="cd-m">scores computed<br>from cards —<br>never stored</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable behavior</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Fixed skeleton + hooks</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Design invariant</div>
+</div>`,
+callout:{type:'callout-purple',text:'The int array failed because a card is an object with identity, and a hand is an object whose value stays ambiguous until it must resolve. Once the nouns became classes, the patterns appeared exactly where the rules demanded them: interchangeable play policies (Strategy) inside a fixed sequence of play (Template Method).'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

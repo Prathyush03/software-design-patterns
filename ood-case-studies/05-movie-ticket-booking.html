@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 5 — Design a Movie Ticket Booking System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 5 — Design a Movie Ticket Booking System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design a movie ticket booking system." Go.',desc:'BookMyShow, Fandango, AMC — pick your favorite. Customers browse movies playing in their city, pick a show, choose seats from a live seat map, and pay. Thousands of them, at the same moment, for the same Friday-night blockbuster. Forty-five minutes, a whiteboard. Where do you start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new seat type, new payment method...)
+5. Do you spot the trap this case hides —
+   <span class="hi-r">two customers, one seat, same second</span>?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:240px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">Friday, 7:52pm — everyone wants seat G7</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Delhi › PVR Saket › Hall 3 › Dune, 8:00pm</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;letter-spacing:3px;color:var(--text-tertiary)">▔▔▔ SCREEN ▔▔▔</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">A&nbsp; <span style="color:var(--text-danger)">■ ■</span> □ <span style="color:var(--text-danger)">■</span> □ &nbsp;<span style="color:var(--text-warning)">premium</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">B&nbsp; □ <span style="color:var(--text-danger)">■</span> □ □ □</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">G&nbsp; □ □ <span style="background:var(--bg-warning);border-radius:3px;padding:0 3px">□?</span> □ □ &nbsp;<span style="color:var(--text-secondary)">regular</span></div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">□ available</span>
+        <span style="background:var(--bg-danger);color:var(--text-danger);border-radius:4px;padding:2px 8px">■ booked</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: the same climb as every case study — start naive, feel the pain, let the principles drive. But this one hides the sharpest trap in the course: concurrency.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one Cinema class',desc:'The instinct under time pressure: a cinema is a grid of seats, and a booking flips a boolean. One <code>Cinema</code> class, a <code>boolean[][]</code> per movie, a <code>book()</code> method. Done in five minutes.',
+code:{h:'Cinema.java — the "just code it" design',b:`public class Cinema {
+    <span class="hi-y">HashMap&lt;String, boolean[][]&gt;</span> seats
+        = new HashMap&lt;&gt;();  <span class="cm">// movie name → seat grid</span>
+
+    boolean book(<span class="hi-y">String movie</span>, int row, int col) {
+        boolean[][] grid = seats.get(movie);
+        if (!grid[row][col]) {      <span class="cm">// looks free...</span>
+            grid[row][col] = true;  <span class="cm">// ...grab it!</span>
+            charge(12.00);          <span class="cm">// every seat $12</span>
+            return true;
+        }
+        return false;               <span class="cm">// taken, pick another</span>
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:200px"><div class="cd-h">Cinema</div><div class="cd-b">HashMap&lt;String, boolean[][]&gt;<br>seats — one grid per movie</div><div class="cd-m">+ book(movie, row, col)<br>+ charge() — $12 flat</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, one grid, one price</div>`,
+callout:{type:'callout-ok',text:'Honestly? For one cinema with one hall showing each movie once, this books seats and takes money. The demo works. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: multiple <em>cities</em>, each with multiple <em>cinemas</em>, each with multiple <em>halls</em> — and each hall runs one show at a time, so the same hall plays Dune at 5pm <em>and</em> 8pm. Search by title, language, genre, release date, city. Premium seats cost more. Guests browse, members book. Coupons. Cash and card. Notifications. Patch the class!',
+code:{h:'Cinema.java — the God object grows',b:`boolean book(String city, String cinema, int hall,
+             String movie, <span class="hi-y">String showTime</span>,
+             int row, int col) {
+  <span class="cm">// which grid?! hall 3 runs Dune at 5pm AND 8pm —</span>
+  <span class="cm">// a seat isn't booked per MOVIE, it's per SHOW</span>
+  String key = city + "|" + cinema + "|" + hall
+             + "|" + movie + "|" + showTime;  <span class="hi-y">// 😬</span>
+  boolean[][] grid = seats.get(key);
+
+  double price = 12.00;
+  <span class="hi-y">if (row &lt;= 2) price *= 1.5;</span>          <span class="cm">// "premium"?</span>
+  <span class="hi-y">if (coupon != null) price *= 0.9;</span>     <span class="cm">// coupons?!</span>
+  <span class="hi-y">if (user == null) return false;</span>       <span class="cm">// guests?</span>
+
+  <span class="cm">// TODO: search by 5 axes — loop over the string
+  // keys and split("|")? TODO: notify customers on
+  // new movies. TODO: refunds within a window. 😰</span>
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:220px"><div class="cd-h">Cinema <span class="st">the God object</span></div><div class="cd-b">cities, cinemas, halls, shows,<br>grids by string key, prices,<br>coupons, guests, notifications...</div><div class="cd-m">+ book() <span style="color:var(--text-danger)">7 params &amp; counting</span><br>+ search()? <span style="color:var(--text-danger)">split("|") over keys</span><br>+ notify()? + refund()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another parameter to book() and another branch inside it. And the worst requirement hasn\'t even been asked yet.'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'7:59pm. Two thumbs, one seat.',desc:'Then the interviewer asks the question this case study exists for — and the design dies on the whiteboard.',
+code:{h:'The questions that kill Attempt #1',b:`<span class="cm">// Q1: "Two customers tap seat G7 for the same
+//      show at the same instant. What happens?"</span>
+<span class="hi-r">T1: if (!grid[6][6])  → free! ✓
+T2: if (!grid[6][6])  → free! ✓   // both pass
+T1: grid[6][6] = true → charged $12
+T2: grid[6][6] = true → charged $12
+→ two tickets, one seat. See you at row G. 💥</span>
+
+<span class="cm">// Q2: "Where does a seat's price live?"</span>
+<span class="hi-r">→ Inside an if-statement. Premium, recliner,
+  accessible — every seat type is another
+  branch in book(), re-tested nowhere.</span>
+
+<span class="cm">// Q3: "Find all Hindi movies releasing this
+//      week that play in Delhi."</span>
+<span class="hi-r">→ Loop over string keys and split("|").
+  The catalog IS the seat map. One class,
+  every job, zero indexes.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every seat type, rule,<br>and city edits book()</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">double-booking race,<br>stringly-typed keys</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">search, pricing, booking<br>all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'Q1 is the signature failure of this system: between "looks free" and "grab it" there is a race window, and no amount of if/else closes it. We need a design where reserving a seat is atomic — and a method to get there.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the ticket system — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong> One of them is pointing at a lock.',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">List the <b>cities</b> where affiliate cinemas are located <span class="obj">City</span></li>
+<li data-n="R2">Each cinema has multiple <b>halls</b>; each hall runs <b>one show at a time</b> <span class="obj">Cinema, CinemaHall</span></li>
+<li data-n="R3">Each movie has <b>multiple shows</b> <span class="obj">Movie, Show</span></li>
+<li data-n="R4">Search by <b>title, language, genre, release date, city</b> <span class="obj">Search, Catalog</span></li>
+<li data-n="R5">Picking a movie shows the <b>cinemas running it + shows</b> <span class="obj">Catalog, Show</span></li>
+<li data-n="R6">Select a show and <b>book tickets</b> <span class="obj">Booking</span></li>
+<li data-n="R7">Show the hall\'s <b>seating arrangement</b>; select multiple seats <span class="obj">CinemaHallSeat</span></li>
+<li data-n="R8">Distinguish <b>available</b> seats from <b>booked</b> ones <span class="obj">ShowSeat.isReserved</span></li>
+<li data-n="R9"><b>Notify</b> on new movie, booking made, booking canceled <span class="obj">Notification</span></li>
+<li data-n="R10">Pay with <b>credit card or cash</b> <span class="obj">Payment</span></li>
+<li data-n="R11"><b>No two customers can ever reserve the same seat</b> <span class="obj">the race!</span></li>
+<li data-n="R12">Add a <b>discount coupon</b> to the payment <span class="obj">Payment</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Twelve requirements, and R11 is doing the heavy lifting: "the system should ensure that no two customers are able to book the same seat" — the one requirement Attempt #1 physically cannot meet.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Five actors touch this system — and one of them isn\'t human. Listing their use cases tells us which operations our classes must expose, before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Guest / Customer</span>
+search movies      <span class="cm">— title, genre, language,</span>
+                   <span class="cm">  release date, city (R4)</span>
+create/modify/view booking
+make payment       <span class="cm">— cash or credit card</span>
+add coupon         <span class="cm">— discount on the payment</span>
+refund payment     <span class="cm">— on cancel, within the</span>
+                   <span class="cm">  allowed time frame</span>
+
+<span class="cm">// FrontDeskOfficer</span>
+book / cancel at the counter <span class="cm">— same Booking</span>
+
+<span class="cm">// Admin</span>
+add movie, add show, block/unblock user
+
+<span class="cm">// System (yes, the system is an actor)</span>
+<span class="hi-b">assign seat</span>   <span class="cm">— seat map, mark reserved</span>
+<span class="hi-b">notify</span>        <span class="cm">— new movie, booking made,</span>
+              <span class="cm">  booking canceled (R9)</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Customer</span><span class="does">searches, books,<br>cancels</span></div>
+  <div class="actor"><span class="who">🕶️ Guest</span><span class="does">browses only — must<br>register to book</span></div>
+  <div class="actor"><span class="who">💁 FrontDesk</span><span class="does">books/cancels<br>at the counter</span></div>
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">movies, shows,<br>blocks users</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">seat maps,<br>notifications</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:440px">
+  <span class="uc">Search movies</span><span class="uc">Create/modify/view booking</span><span class="uc">Make payment</span><span class="uc">Add coupon</span><span class="uc">Assign seat</span><span class="uc">Refund payment</span><span class="uc">Add movie/show</span><span class="uc">Block user</span><span class="uc">Send notifications</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Two hints to file away: Guest vs Customer says browsing and booking are different privileges, and "System sends notifications" is an Observer pattern knocking on the door.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The venue (geography)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">City</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Cinema</div></div>
+    <div class="cd-box ctx"><div class="cd-h">CinemaHall</div></div>
+    <div class="cd-box"><div class="cd-h">CinemaHallSeat</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The content (scheduling)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Movie</div></div>
+    <div class="cd-box"><div class="cd-h">Show</div></div>
+    <div class="cd-box abstract"><div class="cd-h">ShowSeat <span class="st">seat × show</span></div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The transaction (money &amp; messages)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Booking</div></div>
+    <div class="cd-box"><div class="cd-h">Payment</div></div>
+    <div class="cd-box fly"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people &amp; the front door</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Person</div></div>
+    <div class="cd-box"><div class="cd-h">Guest</div></div>
+    <div class="cd-box"><div class="cd-h">Account</div></div>
+    <div class="cd-box iface"><div class="cd-h">Search ▸ Catalog</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract / the crux</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Boundary objects</div>
+</div>`,
+callout:{type:'callout-ok',text:'Fifteen small classes instead of one God object. And look at ShowSeat, sitting between the venue and the content — a seat × show pair. That little class is about to answer Q1 and Q2 at the same time.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the seat × show',desc:'What kept breaking Attempt #1? The <code>boolean[][]</code> welded a seat\'s <em>identity</em> (row G, seat 7 — never changes) to its <em>state</em> (booked for the 8pm show — changes per show). Separate them: <code>CinemaHallSeat</code> is the chair, <code>ShowSeat</code> is the chair-for-one-show. And every status becomes a type-safe enum.',
+code:{h:'ShowSeat.java — the varying thing gets its own class',b:`public enum SeatType {
+  <span class="hi-b">REGULAR, PREMIUM, ACCESSIBLE</span>, SHIPPED,
+  EMERGENCY_EXIT, OTHER   <span class="cm">// type-safe, not row &lt;= 2</span>
+}
+public enum BookingStatus {
+  REQUESTED, PENDING, CONFIRMED,
+  CHECKED_IN, CANCELED, ABANDONED
+}
+public enum PaymentStatus {
+  UNPAID, PENDING, COMPLETED, DECLINED,
+  CANCELLED, ABANDONED, SETTLED, <span class="hi-b">REFUNDED</span>
+}
+
+<span class="cm">// the PHYSICAL chair — fixed, one per hall</span>
+public class CinemaHallSeat {
+  private String seatId;      <span class="cm">// "G7"</span>
+  private SeatType type;      <span class="cm">// PREMIUM</span>
+}
+
+<span class="cm">// the chair × ONE show — the state that varies</span>
+public class ShowSeat extends CinemaHallSeat {
+  private int showSeatId;
+  private <span class="hi-g">boolean isReserved</span>;  <span class="cm">// per show, not per hall</span>
+  private <span class="hi-g">double price</span>;        <span class="cm">// 8pm premium ≠ matinee</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box" style="min-width:180px"><div class="cd-h">CinemaHallSeat <span class="st">the chair</span></div><div class="cd-b">seatId: "G7"<br>type: PREMIUM</div><div class="cd-m">fixed — bolted to the floor</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>extends — one ShowSeat per show</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box" style="min-width:130px;background:var(--bg-success);border-color:var(--border-success)"><div class="cd-h">ShowSeat <span class="st">Dune · 5:00pm</span></div><div class="cd-m">isReserved: false<br>price: $14</div></div>
+  <div class="cd-box bad" style="min-width:130px"><div class="cd-h">ShowSeat <span class="st">Dune · 8:00pm</span></div><div class="cd-m">isReserved: true<br>price: $18</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">same chair, different state per show —<br>the boolean[][] could never say this</div>
+</div>`,
+callout:{type:'callout-info',text:'Q2 answered: price and availability are now data on ShowSeat, set per show and per seat type. A new seat type is an enum value plus a price — not another branch inside book().'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. The chair is stable; its per-show state (reserved, price) varies — so the pair gets its own class: ShowSeat.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: Search & People',desc:'R4\'s five search axes become one <code>Search</code> interface that <code>Catalog</code> implements with pre-built indexes. Callers — including Guests, who can browse but not book — depend on the interface, never on the HashMaps behind it. Same story for people: an abstract <code>Person</code> with role subclasses.',
+code:{h:'Search.java + Catalog.java — depend on the abstraction',b:`public interface <span class="hi-b">Search</span> {
+  public List&lt;Movie&gt; searchByTitle(String title);
+  public List&lt;Movie&gt; searchByLanguage(String language);
+  public List&lt;Movie&gt; searchByGenre(String genre);
+  public List&lt;Movie&gt; searchByReleaseDate(Date relDate);
+  public List&lt;Movie&gt; searchByCity(String cityName);
+}
+
+public class Catalog <span class="hi-b">implements Search</span> {
+  HashMap&lt;String, List&lt;Movie&gt;&gt; movieTitles;
+  HashMap&lt;String, List&lt;Movie&gt;&gt; movieLanguages;
+  HashMap&lt;String, List&lt;Movie&gt;&gt; movieGenres;
+  HashMap&lt;Date, List&lt;Movie&gt;&gt;   movieReleaseDates;
+  HashMap&lt;String, List&lt;Movie&gt;&gt; movieCities;
+
+  public List&lt;Movie&gt; searchByTitle(String title) {
+    return movieTitles.get(title);  <span class="cm">// O(1), indexed —</span>
+  }                                 <span class="cm">// not split("|")!</span>
+  public List&lt;Movie&gt; searchByCity(String cityName) {
+    return movieCities.get(cityName);
+  }
+  <span class="cm">// ...ByLanguage, ByGenre, ByReleaseDate: same shape</span>
+}
+
+<span class="cm">// guests get Search; members get Search + booking</span>
+public class Guest { public bool registerAccount(); }
+public class Customer extends Person {
+  public boolean <span class="hi-g">makeBooking(Booking booking)</span>;
+  public List&lt;Booking&gt; getBookings();
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:150px"><div class="cd-h"><span class="st">interface</span>Search</div><div class="cd-m">searchByTitle()<br>searchByLanguage()<br>searchByGenre()<br>searchByReleaseDate()<br>searchByCity()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>implements</div></div>
+  <div class="cd-row"><div class="cd-box fly" style="min-width:130px"><div class="cd-h">Catalog</div><div class="cd-m">5 HashMap indexes</div></div></div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box abstract" style="min-width:140px"><div class="cd-h"><span class="st">abstract</span>Person</div><div class="cd-m">name, address, email,<br>phone, Account</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box"><div class="cd-h" style="font-size:10px">Customer</div></div>
+    <div class="cd-box"><div class="cd-h" style="font-size:10px">Admin</div></div>
+    <div class="cd-box"><div class="cd-h" style="font-size:10px">FrontDeskOfficer</div></div>
+  </div>
+  <div class="cd-arr" style="padding-top:4px">Guest → registerAccount() → becomes a Customer</div>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'The UI, the Guest, and the Customer all hold a Search — none of them knows Catalog exists. Swap the HashMaps for a real search engine tomorrow and no caller changes a line.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Callers depend on Search, Person, and Payment abstractions — never on Catalog\'s HashMaps or a concrete payment type.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: two chains that meet at the seat',desc:'Attempt #1 crammed geography, scheduling, and money into one class. The fix is two composition chains: the <strong>venue chain</strong> (City → Cinema → CinemaHall → CinemaHallSeat) and the <strong>content chain</strong> (Movie → Show). They meet at ShowSeat — and a <code>Booking</code> composes ShowSeats with a Payment at the moment of sale.',
+code:{h:'City, Cinema, CinemaHall, Booking — the aggregates',b:`public class City {
+  private String name, state, zipCode;
+  <span class="cm">// each city HAS many cinemas (R1)</span>
+}
+public class Cinema {
+  private String name;
+  private int totalCinemaHalls;
+  private Address location;
+  private <span class="hi-g">List&lt;CinemaHall&gt; halls</span>;
+}
+public class CinemaHall {
+  private String name;
+  private int totalSeats;
+  private <span class="hi-g">List&lt;CinemaHallSeat&gt; seats</span>;
+  private <span class="hi-g">List&lt;Show&gt; shows</span>;  <span class="cm">// one at a time (R2)</span>
+}
+public class Show {
+  private int showId;
+  private Date startTime, endTime;
+  private CinemaHall playedAt;   <span class="cm">// where</span>
+  private Movie movie;           <span class="cm">// what</span>
+}
+public class Booking {
+  private String bookingNumber;
+  private BookingStatus status;
+  private Show show;
+  private <span class="hi-g">List&lt;ShowSeat&gt; seats</span>;   <span class="cm">// HAS the seats</span>
+  private <span class="hi-g">Payment payment</span>;        <span class="cm">// HAS the money</span>
+  public boolean makePayment(Payment payment);
+  public boolean cancel();
+  public boolean assignSeats(List&lt;ShowSeat&gt; seats);
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary)">The venue</div>
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h">City</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> cinemas 1..*</div>
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h">Cinema</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> halls 1..*</div>
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h">CinemaHall</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> seats 1..*</div>
+  <div class="cd-box" style="min-width:110px"><div class="cd-h">CinemaHallSeat</div></div>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary)">The content</div>
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h">Movie</div></div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> shows 1..*</div>
+  <div class="cd-box" style="min-width:110px"><div class="cd-h">Show</div><div class="cd-m">playedAt: CinemaHall</div></div>
+</div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>the chains meet at</div></div>
+<div class="cd-row"><div class="cd-box abstract" style="min-width:160px"><div class="cd-h">ShowSeat</div><div class="cd-m">= CinemaHallSeat × Show<br>isReserved, price</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> Booking HAS seats 1..* + payment 1</div>
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:110px"><div class="cd-h">Booking</div><div class="cd-m">status, show,<br>seats, payment</div></div>
+  <div class="cd-box iface" style="min-width:100px"><div class="cd-h">Payment</div><div class="cd-m">amount, status</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'"Add a cinema in Mumbai" touches City. "Add a 9pm show" touches CinemaHall and Movie. "Refund a booking" touches Booking and Payment. Every change now has exactly one home.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance; give each class one reason to change. The venue chain owns geography, the content chain owns scheduling, and Booking composes the two at the moment of sale.'}
+},
+// ============ STEP 11 — THE SIGNATURE MOVE: LOCKING ============
+{phase:'pill-pattern',phaseTxt:'The signature move',title:'\'Select\' is not \'reserve\' — lock the seat',desc:'Back to Q1. R11 says no two customers can ever hold the same seat. The course\'s answer: reserving is a <strong>database transaction at SERIALIZABLE isolation</strong> — reading the seat rows write-locks them, so check-then-reserve becomes one atomic step. Selected seats stay locked for a payment window; pay in time and they\'re yours, or they\'re released.',
+code:{h:'Customer.java — makeBooking() with row locks',b:`public class Customer extends Person {
+ public boolean makeBooking(Booking booking) {
+  <span class="cm">// suppose we want seats 54, 55, 56 for ShowID=99</span>
+  List&lt;ShowSeat&gt; seats = booking.getSeats();
+  Connection db = getDBConnection();
+  db.setAutoCommit(false);
+  <span class="hi-b">db.setTransactionIsolation(
+      Connection.TRANSACTION_SERIALIZABLE);</span>
+  <span class="cm">// SERIALIZABLE: reads take a WRITE lock — safe
+  // from Dirty, Nonrepeatable, and Phantom reads</span>
+
+  String sql = "Select * From ShowSeat where "
+    + "ShowID=? &amp;&amp; ShowSeatID in (?) &amp;&amp; <span class="hi-g">isReserved=0</span>";
+  ResultSet rs = runQuery(sql, showId, seatIds);
+
+  <span class="cm">// fewer rows than requested? someone else is
+  // holding at least one of these seats RIGHT NOW —
+  // do not process this booking</span>
+  if (<span class="hi-y">rowCount == seats.size()</span>) {
+    <span class="cm">// update ShowSeat table... update Booking table...</span>
+    db.commit();     <span class="hi-g">// seats are ours — atomically</span>
+    return true;
+  }
+  db.rollback();     <span class="hi-r">// lost the race — tell the user</span>
+  return false;
+ }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row" style="gap:8px">
+  <div class="cd-box fly" style="min-width:110px"><div class="cd-h">Customer A</div><div class="cd-m">wants 54, 55, 56</div></div>
+  <div class="cd-box fly" style="min-width:110px"><div class="cd-h">Customer B</div><div class="cd-m">wants 55, 56</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>same instant · ShowID 99</div></div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:210px"><div class="cd-h">ShowSeat rows <span class="st">SERIALIZABLE txn</span></div><div class="cd-b">SELECT ... WHERE isReserved=0<br>→ read rows take a WRITE lock</div><div class="cd-m">check + reserve = one atomic step</div></div></div>
+<div class="cd-row" style="gap:8px;padding-top:4px">
+  <div class="cd-box" style="min-width:120px;background:var(--bg-success);border-color:var(--border-success)"><div class="cd-h">A: COMMIT ✓</div><div class="cd-m">3 rows returned —<br>seats reserved</div></div>
+  <div class="cd-box bad" style="min-width:120px"><div class="cd-h">B: ROLLBACK ✗</div><div class="cd-m">rows locked/taken —<br>"seat no longer available"</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'This is the same race the <a href="02-parking-lot.html">Parking Lot</a> killed with a synchronized Singleton — one shared source of truth, mutually exclusive updates. But seat state lives in a database shared by many servers, so the lock moves into the database (single-JVM equivalent: a synchronized reserveSeats() on ShowSeat). Tapping a seat on screen reserves nothing — only the committed transaction does.'}
+},
+// ============ STEP 12 — PATTERNS: OBSERVER, STATE & STRATEGY ============
+{phase:'pill-pattern',phaseTxt:'Patterns spotted · Observer, State & Strategy',title:'Bookings that announce, statuses that flow',desc:'Three more patterns are already sitting in the requirements. R9\'s notifications make the System actor a publisher (<strong>Observer</strong>). A booking\'s life is a strict status machine (<strong>State</strong>) — every operation is legal only in certain states. And cash vs card, with a coupon on top, is one payment abstraction with swappable implementations (<strong>Strategy</strong>).',
+code:{h:'Booking.java + Notification — the guarded lifecycle',b:`public class Booking {
+  private BookingStatus status;  <span class="cm">// the state machine</span>
+
+  public boolean makePayment(Payment payment) {
+    <span class="cm">// legal only while PENDING (seats locked)</span>
+    if (payment.getStatus() == PaymentStatus.COMPLETED) {
+      this.payment = payment;
+      <span class="hi-g">this.status = BookingStatus.CONFIRMED;</span>
+      <span class="hi-b">notification.send(customer);</span>  <span class="cm">// "booking made"</span>
+      return true;
+    }
+    return false;  <span class="cm">// window expires → ABANDONED,
+                   // locked seats go back on sale</span>
+  }
+
+  public boolean cancel() {
+    <span class="cm">// legal only from CONFIRMED, and refundable
+    // only within the allowed time frame</span>
+    <span class="hi-y">this.status = BookingStatus.CANCELED;</span>
+    for (ShowSeat seat : seats) seat.free();
+    payment.setStatus(PaymentStatus.<span class="hi-g">REFUNDED</span>);
+    <span class="hi-b">notification.send(customer);</span>  <span class="cm">// "booking canceled"</span>
+    return true;
+  }
+}
+
+<span class="cm">// R9 — new movie, booking made, booking canceled
+// (course names the class; body sketched)</span>
+public class Notification {
+  public boolean send(Customer customer); <span class="cm">// email/SMS</span>
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary)">BookingStatus — the lifecycle (State)</div>
+<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center;font-family:var(--font-mono);font-size:10px">
+  <span style="background:var(--bg-secondary);border-radius:4px;padding:2px 8px">REQUESTED</span><span style="color:var(--text-tertiary)">→</span>
+  <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">PENDING</span><span style="color:var(--text-tertiary)">→</span>
+  <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">CONFIRMED</span><span style="color:var(--text-tertiary)">→</span>
+  <span style="background:var(--bg-info);color:var(--text-info);border-radius:4px;padding:2px 8px">CHECKED_IN</span>
+</div>
+<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-family:var(--font-mono);font-size:10px">
+  <span>PENDING <span style="color:var(--text-tertiary)">—timeout→</span> <span style="background:var(--bg-danger);color:var(--text-danger);border-radius:4px;padding:2px 8px">ABANDONED</span></span>
+  <span>CONFIRMED <span style="color:var(--text-tertiary)">—cancel→</span> <span style="background:var(--bg-danger);color:var(--text-danger);border-radius:4px;padding:2px 8px">CANCELED</span></span>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>every transition notifies (Observer)</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Notification</div><div class="cd-m">new movie · booking made<br>· booking canceled</div></div>
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">strategy</span>Payment</div><div class="cd-m">cash / credit card<br>+ coupon (R12)</div></div>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — customers subscribe, the system publishes new-movie and booking events; the course hand-rolls the sends, so mention that a subscribe/notify interface removes the coupling. Pattern #3: State (<a href="../ch10-state-pattern.html">Chapter 10</a>) — BookingStatus guards which operations are legal. Pattern #4: Strategy (<a href="../ch1-strategy-pattern.html">Chapter 1</a>) — cash or card behind one Payment, coupons compose on top.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, hierarchies for people and seats, two composition chains, and the transaction objects. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum BookingStatus { REQUESTED, PENDING, CONFIRMED,
+                     CHECKED_IN, CANCELED, ABANDONED }
+enum SeatType      { REGULAR, PREMIUM, ACCESSIBLE,
+                     SHIPPED, EMERGENCY_EXIT, OTHER }
+enum PaymentStatus { UNPAID, PENDING, COMPLETED, ...,
+                     REFUNDED }
+enum AccountStatus { ACTIVE, BLOCKED, BANNED, ... }
+
+<span class="cm">// THE PEOPLE — abstract Person + roles</span>
+abstract class Person { name, address, Account }
+class Customer  { makeBooking(), getBookings() }
+class Admin     { addMovie(), addShow(), blockUser() }
+class FrontDeskOfficer { createBooking() }
+class Guest     { registerAccount() }
+
+<span class="cm">// THE VENUE — composition chain</span>
+class City        { cinemas }
+class Cinema      { halls, location }
+class CinemaHall  { seats, shows }
+class CinemaHallSeat { seatId, SeatType }
+
+<span class="cm">// THE CONTENT</span>
+class Movie { title, language, genre, releaseDate,
+              shows, getShows() }
+class Show  { startTime, endTime, playedAt, movie }
+class ShowSeat extends CinemaHallSeat
+              <span class="hi-b">{ isReserved, price }  // the crux</span>
+
+<span class="cm">// THE TRANSACTION</span>
+class Booking  { status, show, seats, payment,
+                 makePayment(), cancel(), assignSeats() }
+class Payment  { amount, transactionId, status }
+class Notification { send() }
+
+<span class="cm">// THE FRONT DOOR</span>
+interface Search { byTitle / Language / Genre /
+                   ReleaseDate / City }
+class Catalog implements Search  <span class="cm">// 5 indexes</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Search ▸ Catalog</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Person ▸3</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Guest</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>find a show, then book it</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">City</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Cinema</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">CinemaHall</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Movie</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> seats 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> shows 1..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">CinemaHallSeat</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Show</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">ShowSeat</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> seats 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> payment 1</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Booking</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Payment</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Notification</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but geography, scheduling, money, and people each have their own home — and the seat race has an owner: ShowSeat plus one serializable transaction.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One Friday night, end to end',desc:'A design is only convincing if you can run a scenario through it — including the two unhappy paths: losing the race and letting the payment window expire. Narrate this in the interview.',
+code:{h:'FridayNight.java — the whole design in one scenario',b:`<span class="cm">// 1. browse (works for Guest too — Search only)</span>
+List&lt;Movie&gt; inDelhi = catalog.searchByCity("Delhi");
+Movie dune = catalog.searchByTitle("Dune").get(0);
+
+<span class="cm">// 2. pick the 8:00pm show at PVR Saket, Hall 3</span>
+Show show = dune.getShows().get(1);
+
+<span class="cm">// 3. seat map renders from ShowSeats — isReserved
+//    distinguishes booked from available (R7, R8)</span>
+Booking booking = new Booking(show);   <span class="cm">// REQUESTED</span>
+booking.assignSeats(List.of(g7, g8)); <span class="cm">// → PENDING</span>
+
+<span class="cm">// 4. reserve = SERIALIZABLE txn (the signature move)</span>
+if (<span class="hi-b">customer.makeBooking(booking)</span>) {
+  <span class="cm">// rows locked · payment window starts ticking</span>
+  Payment payment = new Payment(<span class="hi-g">2 * 18.00 - coupon</span>);
+  booking.makePayment(payment);
+  <span class="cm">// COMPLETED → CONFIRMED → isReserved=1 forever
+  // → notification.send(customer)  (R9)</span>
+} else {
+  <span class="hi-r">// lost the race — seats taken, pick others</span>
+}
+<span class="cm">// no payment inside the window?
+// → locks released, seats back on sale, ABANDONED</span>`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Guest / Customer</span><br><code>catalog.searchByCity("Delhi")</code>, then <code>searchByTitle("Dune")</code> — the Search interface (R4)</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Movie</span><br><code>dune.getShows()</code> → cinemas running it and their showtimes (R5)</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Show</span><br>Customer picks 8:00pm at PVR Saket Hall 3; the seat map of <code>ShowSeat</code>s renders — booked vs available (R7, R8)</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Booking</span><br>Selects G7 + G8 → <code>Booking</code> created, REQUESTED → PENDING, <code>assignSeats()</code></div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Database</span><br>SERIALIZABLE transaction write-locks the two ShowSeat rows — rivals now lose the race (R11); the payment window starts</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">Payment</span><br>Coupon applied (R12), card charged: <code>booking.makePayment(payment)</code> → COMPLETED — cash or card, Booking doesn\'t care (Strategy)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Booking</span><br>Status → CONFIRMED; <code>isReserved=1</code> permanently; <code>Notification.send()</code> — "booking made" (Observer, R9)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">The timeout path</span><br>No payment inside the window → locks released, seats back on sale, booking ABANDONED (State)</div></div>
+  <div class="flow-step"><div class="flow-num">9</div><div class="flow-txt"><span class="flow-who">The cancel path</span><br>Next day: <code>booking.cancel()</code> within the allowed window → CANCELED, seats freed, Payment REFUNDED, notification sent</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every step lands on a class we designed, and the two paths that matter most — the lost race and the expired window — both end with seats safely back on sale. That\'s R11 honored end to end.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 18 classes — one recipe, three principles, one signature move, three patterns. Every booking-shaped system in this course is this same climb over different nouns.',
+code:{h:'The ticket system in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → ShowSeat = chair × show; statuses as enums
+2. Program to an interface
+   → Search ⇐ Catalog; Person ▸3; Payment
+3. Composition + single responsibility
+   → City ▸ Cinema ▸ Hall ▸ Seat; Movie ▸ Show;
+     Booking HAS seats + payment
+
+<span class="cm">// THE SIGNATURE MOVE + PATTERNS (never forced)</span>
+<span class="hi-b">Locking</span>    SERIALIZABLE txn — check + reserve
+           is atomic; 'select' is not 'reserve'
+<span class="hi-b">Observer</span>   new movie / booking made / canceled
+           → notifications
+<span class="hi-b">State</span>      REQUESTED → PENDING → CONFIRMED →
+           CANCELED / ABANDONED guards every op
+<span class="hi-b">Strategy</span>   Payment: cash / card (+ coupon)
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Airline (Flight ≈ Show, FlightSeat ≈ ShowSeat —
+         the exact same race)
+Parking Lot (capacity + synchronized ticket issue)
+Hotel (rooms ≈ halls, bookings ≈ bookings)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:118px"><div class="cd-h">Locking</div><div class="cd-m">SERIALIZABLE txn —<br>reserve is atomic</div></div>
+  <div class="cd-box fly" style="min-width:118px"><div class="cd-h">Observer</div><div class="cd-m">bookings &amp; new movies<br>→ notifications</div></div>
+  <div class="cd-box fly" style="min-width:118px"><div class="cd-h">State</div><div class="cd-m">BookingStatus guards<br>every operation</div></div>
+  <div class="cd-box iface" style="min-width:118px"><div class="cd-h">Strategy</div><div class="cd-m">Payment: cash/card<br>swap freely</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Coordination / consistency</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification &amp; lifecycle</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable behavior</div>
+</div>`,
+callout:{type:'callout-purple',text:'Attempt #1 failed because "looks free" and "is mine" were two separate steps. The recipe separated the axes of change — venue, content, money, people — and the patterns appeared exactly where the requirements demanded them: atomic reservation (the lock), live announcements (Observer), a guarded lifecycle (State), swappable payments (Strategy). Same climb, next case study.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OOD Case Studies | Grokking the Object Oriented Design Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --purple-50: #EEEDFE; --purple-600: #534AB7; --purple-800: #3C3489;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --purple-50: #2a2554; --purple-600: #AFA9EC; --purple-800: #CECBF6;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); }
+  .intro { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 16px 20px; font-size: 13.5px; color: var(--text-secondary); margin: 16px 0 20px; }
+  .intro b { color: var(--text-primary); font-weight: 500; }
+  .recipe { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-family: var(--font-mono); font-size: 11px; }
+  .recipe span { background: var(--bg-secondary); border-radius: 4px; padding: 2px 8px; }
+  .recipe .arrow { background: none; color: var(--text-tertiary); padding: 2px 0; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+  .cs { display: block; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 16px; text-decoration: none; color: var(--text-primary); transition: transform 0.12s, border-color 0.2s; }
+  .cs:hover { transform: translateY(-2px); border-color: var(--border-info); }
+  .cs .num { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-tertiary); }
+  .cs .name { font-size: 14.5px; font-weight: 500; margin: 1px 0 4px; letter-spacing: -0.2px; }
+  .cs .pats { display: flex; gap: 4px; flex-wrap: wrap; }
+  .pat { font-size: 10px; padding: 1px 8px; border-radius: 10px; background: var(--purple-50); color: var(--purple-800); border: 0.5px solid var(--purple-600); }
+  .pat.core { background: var(--bg-info); color: var(--text-info); border-color: var(--border-info); }
+  .foot { text-align: center; font-size: 11.5px; color: var(--text-tertiary); margin-top: 22px; }
+  .foot a { color: var(--text-info); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Object-Oriented Design Case Studies</h1>
+      <p>Grokking the OOD Interview — solved the Head First way, one interactive walkthrough per system</p>
+    </div>
+    <button class="theme-toggle" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark'?'':'dark')">Toggle dark mode</button>
+  </div>
+
+  <div class="intro">
+    Every case study follows the same climb: a <b>naive God-object attempt</b> that collapses under the real requirements, then the <b>5-step OOD recipe</b> rebuilt with the three Head First principles — and the design patterns emerge exactly where the requirements demand flexibility.
+    <div class="recipe">
+      <span>1 · requirements</span><span class="arrow">→</span>
+      <span>2 · actors &amp; use cases</span><span class="arrow">→</span>
+      <span>3 · nouns → classes</span><span class="arrow">→</span>
+      <span>4 · relationships &amp; principles</span><span class="arrow">→</span>
+      <span>5 · skeleton code + patterns</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <a class="cs" href="01-library-management-system.html"><span class="num">CASE STUDY 1</span><div class="name">Library Management System</div><div class="pats"><span class="pat core">Book vs BookItem</span><span class="pat">Search interface</span><span class="pat">Observer</span></div></a>
+    <a class="cs" href="02-parking-lot.html"><span class="num">CASE STUDY 2</span><div class="name">Parking Lot</div><div class="pats"><span class="pat core">Singleton</span><span class="pat">Observer</span><span class="pat">Strategy</span></div></a>
+    <a class="cs" href="03-amazon-online-shopping.html"><span class="num">CASE STUDY 3</span><div class="name">Amazon — Online Shopping</div><div class="pats"><span class="pat core">State (order lifecycle)</span><span class="pat">Observer</span><span class="pat">Guest→Member</span></div></a>
+    <a class="cs" href="04-stack-overflow.html"><span class="num">CASE STUDY 4</span><div class="name">Stack Overflow</div><div class="pats"><span class="pat core">Observer (follow Q)</span><span class="pat">State (question)</span><span class="pat">Roles</span></div></a>
+    <a class="cs" href="05-movie-ticket-booking.html"><span class="num">CASE STUDY 5</span><div class="name">Movie Ticket Booking</div><div class="pats"><span class="pat core">Concurrency (seat locks)</span><span class="pat">Strategy</span><span class="pat">Catalog search</span></div></a>
+    <a class="cs" href="06-atm.html"><span class="num">CASE STUDY 6</span><div class="name">ATM</div><div class="pats"><span class="pat core">State machine</span><span class="pat">Transaction hierarchy</span><span class="pat">Composition</span></div></a>
+    <a class="cs" href="07-airline-management.html"><span class="num">CASE STUDY 7</span><div class="name">Airline Management System</div><div class="pats"><span class="pat core">Deep composition</span><span class="pat">Itinerary</span><span class="pat">Observer</span></div></a>
+    <a class="cs" href="08-blackjack.html"><span class="num">CASE STUDY 8</span><div class="name">Blackjack &amp; a Deck of Cards</div><div class="pats"><span class="pat core">Enums + composition</span><span class="pat">Template Method</span><span class="pat">Ace scoring</span></div></a>
+    <a class="cs" href="09-hotel-management.html"><span class="num">CASE STUDY 9</span><div class="name">Hotel Management System</div><div class="pats"><span class="pat core">Room hierarchy</span><span class="pat">Booking lifecycle</span><span class="pat">Strategy</span></div></a>
+    <a class="cs" href="10-restaurant-management.html"><span class="num">CASE STUDY 10</span><div class="name">Restaurant Management</div><div class="pats"><span class="pat core">Menu composition</span><span class="pat">Reservations</span><span class="pat">Roles</span></div></a>
+    <a class="cs" href="11-chess.html"><span class="num">CASE STUDY 11</span><div class="name">Chess</div><div class="pats"><span class="pat core">Polymorphic canMove()</span><span class="pat">Command (moves)</span><span class="pat">Board composition</span></div></a>
+    <a class="cs" href="12-online-stock-brokerage.html"><span class="num">CASE STUDY 12</span><div class="name">Online Stock Brokerage</div><div class="pats"><span class="pat core">Observer (watchlist)</span><span class="pat">Order hierarchy</span><span class="pat">Singleton</span></div></a>
+    <a class="cs" href="13-car-rental.html"><span class="num">CASE STUDY 13</span><div class="name">Car Rental System</div><div class="pats"><span class="pat core">Reservation lifecycle</span><span class="pat">Vehicle hierarchy</span><span class="pat">Add-ons</span></div></a>
+    <a class="cs" href="14-linkedin.html"><span class="num">CASE STUDY 14</span><div class="name">LinkedIn</div><div class="pats"><span class="pat core">Social graph</span><span class="pat">Observer</span><span class="pat">Profile composition</span></div></a>
+    <a class="cs" href="15-cricinfo.html"><span class="num">CASE STUDY 15</span><div class="name">Cricinfo</div><div class="pats"><span class="pat core">Observer (live scores)</span><span class="pat">Match hierarchy</span><span class="pat">Innings→Over→Ball</span></div></a>
+    <a class="cs" href="16-facebook.html"><span class="num">CASE STUDY 16</span><div class="name">Facebook — a Social Network</div><div class="pats"><span class="pat core">Privacy &amp; graph</span><span class="pat">Observer</span><span class="pat">Page/Group/Post</span></div></a>
+  </div>
+
+  <div class="foot">Companion to the <a href="../ch1-strategy-pattern.html">Head First Design Patterns walkthroughs</a> in this repo — the patterns you learned there appear here in the wild.</div>
+</div>
+</body>
+</html>

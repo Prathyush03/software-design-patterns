@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 15 — Design Cricinfo | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 15 — Design Cricinfo</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design Cricinfo." Go.',desc:'Forty-five minutes, a whiteboard, and a sports site for exactly one game. Live coverage of cricket matches with ball-by-ball commentary, a database of every historic match, three international formats, and stat queries like "highest wicket taker of all time?". Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: knowing cricket trivia.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you find the domain’s <span class="hi-b">atomic fact</span>?
+   (hint: it is NOT the score)
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (a fourth match format, a new stat query...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:230px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">🏏 IND vs AUS · 3rd ODI · LIVE</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">IND <b>287/4</b> (42.3 ov) &nbsp;<span style="color:var(--text-secondary)">Kohli 112*</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">42.3 — <b>WICKET!</b> edged, caught at slip</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px;text-align:left">42.2 — FOUR, driven through the covers</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Live, ball by ball</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Stats: all of history</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — a Scoreboard',desc:'The instinct under time pressure: cricket is a score, so build a scoreboard. One <code>Scoreboard</code> class with runs, wickets, overs, a commentary string, and a match-type string. Viewers refresh the page. Done in five minutes.',
+code:{h:'Scoreboard.java — the "just code it" design',b:`public class Scoreboard {
+    int runs = 0;
+    int wickets = 0;
+    double overs = 0.0;
+    <span class="hi-y">String matchType;</span>           <span class="cm">// "ODI", "T20", "Test"</span>
+    <span class="hi-y">String commentaryLog = "";</span>
+
+    void addRuns(int r)    { runs += r; }
+    void wicketFalls()     { wickets++; }
+    void nextBall()        { overs += 0.1; <span class="cm">// 0.6→1.0?</span> }
+    void addLine(String s) { commentaryLog += s + "\\n"; }
+
+    boolean isMatchOver() {
+        if (<span class="hi-y">matchType.equals("T20")</span>) return overs &gt;= 20;
+        if (<span class="hi-y">matchType.equals("ODI")</span>) return overs &gt;= 50;
+        return false;   <span class="cm">// Test... days? innings? later.</span>
+    }
+    String render() { return runs + "/" + wickets; }
+}
+<span class="cm">// viewers: GET /score every 5 seconds (polling)</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">Scoreboard</div><div class="cd-b">int runs, wickets<br>double overs<br>String matchType<br>String commentaryLog</div><div class="cd-m">+ addRuns(r)<br>+ wicketFalls()<br>+ addLine(s)<br>+ render()</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, three counters, one ever-growing string</div>`,
+callout:{type:'callout-ok',text:'Honestly? For the little score widget in a TV corner this works. It shows 287/4. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: <em>ball-by-ball</em> detail — who bowled it, who faced it, was it a wide, a boundary, a wicket (caught? LBW? run out by whom?); live commentary attached to every ball; tournament squads and playing elevens; ODI <em>and</em> Test <em>and</em> T20 rules; and global stats across all of history. Patch the class!',
+code:{h:'Scoreboard.java — the God object grows',b:`void recordBall(String bowler, String batsman,
+                int r, String kind, String howOut) {
+  runs += r;
+  <span class="hi-y">if (kind.equals("wide"))</span>        { runs += 1; <span class="cm">// re-bowl?</span> }
+  <span class="hi-y">else if (kind.equals("wicket"))</span> {
+    wickets++;
+    <span class="hi-r">// howOut: "caught"? "lbw"? caught by WHOM?
+    // where do I even PUT that?</span>
+  }
+  commentaryLog += bowler + " to " + batsman + "...\\n";
+}
+boolean isMatchOver() {
+  <span class="hi-y">if (matchType.equals("T20"))</span>       { <span class="cm">// 20 ov × 2 inn.</span> }
+  <span class="hi-y">else if (matchType.equals("ODI"))</span>  { <span class="cm">// 50 ov × 2 inn.</span> }
+  <span class="hi-y">else if (matchType.equals("Test"))</span> { <span class="cm">// 4 innings,
+                                        // 5 days, follow-on?! 😰</span> }
+}
+<span class="cm">// TODO: squads. TODO: playing 11. TODO: "highest
+// wicket taker of all time" — computed from WHAT?</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">Scoreboard <span class="st">the God object</span></div><div class="cd-b">runs, wickets, overs, types,<br>bowlers?, batsmen?, squads?,<br>commentary blob, stats?...</div><div class="cd-m">+ recordBall() <span style="color:var(--text-danger)">string soup</span><br>+ isMatchOver() <span style="color:var(--text-danger)">format if/else</span><br>+ addLine()<br>+ stats()? + squads()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another branch and another parallel string. Worse: the data you\'d need for stats is destroyed on arrival. runs += r forgets who, how, and when.'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The Scoreboard collapses',desc:'Then the interviewer asks four innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "Who bowled the 3rd ball of the 42nd
+//      over — and was it a leg-bye?"</span>
+<span class="hi-r">→ Gone. runs += r destroyed the fact the
+  moment it happened. Totals aren’t history.</span>
+
+<span class="cm">// Q2: "Test: up to 4 innings over 5 days.
+//      T20: 20 overs. ODI: 50."</span>
+<span class="hi-r">→ matchType strings branch in every method.
+  Adding a format = editing all of them.</span>
+
+<span class="cm">// Q3: "A million viewers are watching live."</span>
+<span class="hi-r">→ All of them poll GET /score every 5 seconds.
+  99.9% of requests return nothing new.</span>
+
+<span class="cm">// Q4: "Highest wicket taker of all time?"</span>
+<span class="hi-r">→ Wickets were counted, never attributed.
+  No query can recover data you never kept.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every format rule branches<br>through the same class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed kinds;<br>totals overwrite the facts</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">can’t test format rules or<br>stats without a live match</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — plus a new one: the design stores answers instead of facts. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for Cricinfo — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Keep track of all cricket-playing <b>teams</b> and their <b>matches</b> <span class="obj">Team, Match</span></li>
+<li data-n="R2">Show <b>live ball-by-ball commentary</b> of matches <span class="obj">Ball, Commentary</span></li>
+<li data-n="R3">All <b>international cricket rules</b> should be followed <span class="obj">Umpire, Referee</span></li>
+<li data-n="R4">A team in a tournament announces a <b>squad</b> of players <span class="obj">TournamentSquad</span></li>
+<li data-n="R5">Per match, both teams pick a <b>playing eleven</b> from the squad <span class="obj">Playing11</span></li>
+<li data-n="R6">Record <b>stats</b> about players, matches, and tournaments <span class="obj">Stat hierarchy</span></li>
+<li data-n="R7">Answer <b>global stat queries</b>: "highest wicket taker of all time?" <span class="obj">StatQuery</span></li>
+<li data-n="R8">Track all <b>ODI, Test and T20</b> matches <span class="obj">Match hierarchy</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Two minutes of requirements talk and R2 already whispers the big secret: the unit of this system is not the score — it\'s the ball. Attempt #1 never noticed.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Only two human actors touch this system — but listing their use cases reveals the system\'s single most important verb: <em>add ball</em>.',
+code:{h:'Top use cases',b:`<span class="cm">// Admin</span>
+add/modify teams &amp; players  <span class="cm">— keep profiles current</span>
+add tournaments &amp; matches
+<span class="hi-b">add ball</span>                    <span class="cm">— record every delivery</span>
+add stadium, umpire, referee
+add/update stats
+
+<span class="cm">// Commentator</span>
+add commentary              <span class="cm">— ball-by-ball, attached
+                              to each delivery</span>
+
+<span class="cm">// System (the silent actor)</span>
+generate stats from recorded balls
+push live updates to every open scorecard`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">adds teams, matches;<br>records every ball</span></div>
+  <div class="actor"><span class="who">🎙️ Commentator</span><span class="does">writes the line<br>for each ball</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">derives stats,<br>pushes live updates</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:440px">
+  <span class="uc">Add/modify player</span><span class="uc">Add/modify team</span><span class="uc">Add tournament</span><span class="uc">Add match</span><span class="uc">Add ball</span><span class="uc">Add commentary</span><span class="uc">Add stadium</span><span class="uc">Add umpire/referee</span><span class="uc">Add/update stats</span><span class="uc">Run stat query</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'The course names two actors: Admin and Commentator. But "the system will generate certain stats" and live coverage make System a third, silent actor — and its use cases become the Observer pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people (each HAS-A Person)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">Player</div></div>
+    <div class="cd-box"><div class="cd-h">Admin</div></div>
+    <div class="cd-box"><div class="cd-h">Umpire</div></div>
+    <div class="cd-box"><div class="cd-h">Referee</div></div>
+    <div class="cd-box"><div class="cd-h">Commentator</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The competition</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Team</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Tournament</div></div>
+    <div class="cd-box"><div class="cd-h">TournamentSquad</div></div>
+    <div class="cd-box"><div class="cd-h">Playing11</div></div>
+    <div class="cd-box"><div class="cd-h">Stadium</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The game itself — notice the chain</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Match</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Innings</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Over</div></div>
+    <div class="cd-box fly"><div class="cd-h">Ball</div></div>
+    <div class="cd-box"><div class="cd-h">Run</div></div>
+    <div class="cd-box"><div class="cd-h">Wicket</div></div>
+    <div class="cd-box"><div class="cd-h">Commentary</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The memory</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Stat</div></div>
+    <div class="cd-box"><div class="cd-h">StatQuery</div></div>
+    <div class="cd-box"><div class="cd-h">News</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>The atomic fact</div>
+</div>`,
+callout:{type:'callout-ok',text:'Twenty small classes instead of one Scoreboard. And look at the third row: the game itself is a chain — a match HAS innings, an innings HAS overs, an over HAS balls. Hold that thought.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: three formats, one Match',desc:'What kept breaking Attempt #1? <strong>The match format varies</strong> — innings counts, over limits, duration — while everything else about a match (teams, umpires, innings, stats) is stable. So <code>Match</code> becomes an abstract base with ODI, T20, and Test subclasses, and every fixed vocabulary becomes a type-safe enum.',
+code:{h:'Match.java — the varying thing gets a hierarchy',b:`public enum MatchFormat { ODI, T20, TEST }
+public enum MatchResult { LIVE, FINISHED, DRAWN, CANCELED }
+
+public abstract class Match {
+  private int number;
+  private Date startTime;
+  private MatchResult result;
+  private Playing11[] teams;       <span class="cm">// exactly two (R5)</span>
+  private List&lt;Inning&gt; innings;    <span class="cm">// count varies by format</span>
+  private List&lt;Umpire&gt; umpires;
+  private Referee referee;         <span class="cm">// R3: rules enforced</span>
+  private List&lt;Commentator&gt; commentators;
+  private List&lt;MatchStat&gt; matchStats;
+
+  public boolean assignStadium(Stadium stadium);
+  public boolean assignReferee(Referee referee);
+}
+
+public class ODI  extends Match { <span class="cm">// 2 innings, 50 ov each</span> }
+public class T20  extends Match { <span class="cm">// 2 innings, 20 ov each</span> }
+public class Test extends Match { <span class="cm">// up to 4 innings, 5 days</span> }
+
+<span class="cm">// no more matchType.equals("T20") — the object
+// IS its format; the rules live with it</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:190px"><div class="cd-h"><span class="st">abstract</span>Match</div><div class="cd-b">number, startTime, result<br>teams: Playing11[2]<br>innings, umpires, referee<br>commentators, matchStats</div><div class="cd-m">+ assignStadium(s)<br>+ assignReferee(r)</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">ODI <span class="st">50 ov × 2</span></div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">T20 <span class="st">20 ov × 2</span></div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Test <span class="st">4 inn · 5 days</span></div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">and the stringly-typed vocabulary → enums ↓</div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10px">MatchFormat</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10px">BallType</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10px">RunType</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10px">WicketType</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10px">UmpireType</div></div>
+</div>`,
+callout:{type:'callout-info',text:'A fourth format arrives (The Hundred: 100 balls, five-ball sets)? New subclass — Q2 that killed Attempt #1 no longer touches existing code. That\'s the Open/Closed principle in action.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. Match formats vary — so Match becomes an abstract base; the fixed vocabularies (ball, run, wicket, umpire types) become enums.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: people &amp; stats',desc:'Umpires, referees, and commentators get assigned to <em>matches</em> — never to "an ODI". Their classes depend on the abstract <code>Match</code>, so all three formats flow through unchanged. Same story for stats: consumers ask a <code>StatQuery</code>, they never rummage inside a scoreboard.',
+code:{h:'Admin.java &amp; friends — depend on the supertype',b:`public class Admin {
+  private Person person;
+  public boolean addMatch(<span class="hi-b">Match</span> match);  <span class="cm">// ODI? T20? don’t care</span>
+  public boolean addTeam(Team team);
+  public boolean addTournament(Tournament tournament);
+}
+
+public class Umpire {
+  private Person person;
+  public boolean assignMatch(<span class="hi-b">Match</span> match);
+}
+public class Commentator {
+  private Person person;
+  public boolean assignMatch(<span class="hi-b">Match</span> match);
+}
+
+<span class="cm">// stats: one abstraction, three levels (R6)</span>
+public abstract class <span class="hi-b">Stat</span> { <span class="cm">/* derived, never typed in */</span> }
+class PlayerStat     extends Stat { <span class="cm">// runs, wickets, 100s</span> }
+class MatchStat      extends Stat { <span class="cm">// lives on Match</span> }
+class TournamentStat extends Stat { <span class="cm">// lives on TournamentSquad</span> }
+
+public class StatQuery {
+  <span class="cm">// "Who is the highest wicket taker of all time?"
+  // answered against Stat — not any concrete board (R7)</span>
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Match</div><div class="cd-m">+ assignStadium()<br>+ assignReferee()</div></div></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>assigned via supertype</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Umpire</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Referee</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Commentator</div></div>
+  </div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Stat</div><div class="cd-m">derived from balls</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">PlayerStat</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">MatchStat</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">TournamentStat</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">StatQuery asks <b>Stat</b> · news pages ask <b>Match</b> — nobody touches a concrete format</div>`,
+callout:{type:'callout-info',text:'A new format, a new tournament, or a new stat never ripples into Umpire, Commentator, or the news pages — they only ever see the abstractions.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Umpires, referees, commentators, and stat queries all depend on the abstract Match and Stat — never on ODI, T20, or a concrete scoreboard.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: a match HAS innings HAS overs HAS balls',desc:'Here is this case\'s signature move. Every fact of a cricket match lives on <strong>one atomic object: the Ball</strong> — who bowled it, who faced it, its type, its runs, its wicket, its commentary line. Everything above the ball is just an aggregate. Attempt #1 stored the <em>answers</em>; this design stores the <em>facts</em> and derives the answers.',
+code:{h:'The chain — every fact lives on the Ball',b:`public class Inning {
+  private int number;
+  private Date startTime;
+  private List&lt;Over&gt; overs;
+  public boolean addOver(Over over);
+}
+public class Over {
+  private int number;
+  private List&lt;Ball&gt; balls;
+  public boolean addBall(Ball ball);
+}
+
+public class <span class="hi-g">Ball</span> {               <span class="cm">// THE atomic fact</span>
+  private Player balledBy;          <span class="cm">// who bowled it</span>
+  private Player playedBy;          <span class="cm">// who faced it</span>
+  private BallType type;            <span class="cm">// NORMAL, WIDE, WICKET...</span>
+  private Wicket wicket;            <span class="cm">// null if none</span>
+  private List&lt;Run&gt; runs;           <span class="cm">// FOUR, SIX, LEG_BYE...</span>
+  private Commentary commentary;    <span class="cm">// R2 — the live line</span>
+}
+
+public class Wicket {
+  private WicketType wicketType;    <span class="cm">// CAUGHT, LBW, RUN_OUT...</span>
+  private Player playerOut;
+  private Player caughtBy, runoutBy, stumpedBy;
+}
+
+<span class="cm">// score = SUM(runs) · wickets = COUNT(wicket != null)
+// Q1 ("3rd ball of the 42nd over?") is just
+// innings.overs[41].balls[2] — history is never lost</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box abstract" style="min-width:160px"><div class="cd-h"><span class="st">abstract</span>Match</div><div class="cd-m">teams, umpires, stats</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:150px"><div class="cd-h">Inning</div><div class="cd-m">number, startTime</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:150px"><div class="cd-h">Over</div><div class="cd-m">number</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 6 (+extras)</div>
+<div class="cd-row"><div class="cd-box fly" style="min-width:170px"><div class="cd-h">Ball <span class="st">the atomic fact</span></div><div class="cd-m">balledBy, playedBy, type</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 0..1 · 0..* · 0..1</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Wicket</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Run</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Commentary</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'One modeling decision — facts on the Ball, aggregates above — and Q1 and Q4 both dissolve: any scorecard, any historic match page, any "most wickets in Tests" query is a walk over balls. Store facts, derive answers.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition, and give each class a single responsibility. Match HAS Innings HAS Overs HAS Balls — the ball records, the over collects, the innings sequences, the match coordinates. Nothing owns everything.'}
+},
+// ============ STEP 11 — PATTERN: OBSERVER ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Observer',title:'A million scorecards — push, don\'t poll',desc:'Q3 is still open: a million viewers refreshing every five seconds. Flip it around. Every open scorecard, the commentary feed, the stats engine — they are all just <em>interested parties</em> in one event: <strong>a new Ball was recorded</strong>. That\'s the Observer pattern, beat for beat.',
+code:{h:'Recording a ball — one subject, many observers',b:`<span class="cm">// The course’s activity diagram — "Record a
+// Ball of an Over" — turned into code:</span>
+public abstract class Match {
+  <span class="hi-b">private List&lt;BallObserver&gt; observers;</span>  <span class="cm">// scorecards,
+                                         // stats, feed</span>
+  public void <span class="hi-b">registerObserver</span>(BallObserver o) { ... }
+
+  public boolean recordBall(Inning inning, Ball ball) {
+    Over over = inning.currentOver();
+    over.addBall(ball);            <span class="cm">// fact stored ONCE</span>
+    <span class="hi-g">for (BallObserver o : observers)
+      o.update(ball);</span>              <span class="cm">// pushed to everyone</span>
+  }
+}
+
+<span class="cm">// observers react, each in its own way:</span>
+class LiveScorecard implements BallObserver {
+  public void update(Ball b) { <span class="cm">/* re-render 287/5 */</span> }
+}
+class StatsEngine implements BallObserver {
+  public void update(Ball b) { <span class="cm">/* wicket? bowler +1 */</span> }
+}
+class CommentaryFeed implements BallObserver {
+  public void update(Ball b) { <span class="cm">/* append b.commentary */</span> }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Match <span class="st">subject</span></div><div class="cd-m">recordBall(inning, ball)<br>= the state change</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>notifies all observers</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly" style="min-width:110px"><div class="cd-h" style="font-size:10.5px">LiveScorecard ×1M</div><div class="cd-m">re-renders the score</div></div>
+  <div class="cd-box fly" style="min-width:100px"><div class="cd-h" style="font-size:10.5px">StatsEngine</div><div class="cd-m">updates PlayerStat,<br>MatchStat...</div></div>
+  <div class="cd-box fly" style="min-width:100px"><div class="cd-h" style="font-size:10.5px">CommentaryFeed</div><div class="cd-m">appends the line</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">one ball event fans out to everyone — nobody polls</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — the live match is the subject; every scorecard, feed, and stats engine is an observer. The course shows this as the "Record a ball" activity diagram; in the interview, name it out loud: subscribe once, push on every ball, and Q3\'s polling storm disappears.'}
+},
+// ============ STEP 12 — PATTERN: TEMPLATE METHOD ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Template Method',title:'Three formats, one game loop',desc:'Look at what ODI, T20, and Test share: innings are played, overs are bowled, balls are recorded, and an innings ends when the wickets run out <em>or the format says so</em>. The skeleton is identical; only the numbers vary. The course ships the subclasses empty — in the interview, say where the rules would live.',
+code:{h:'Match.java — fixed skeleton, per-format hooks',b:`public abstract class Match {
+  <span class="cm">// the game loop is IDENTICAL for every format:</span>
+  public boolean <span class="hi-b">isInningComplete</span>(Inning inning) {
+    return inning.wicketsDown() == 10
+        || inning.oversBowled() &gt;= <span class="hi-g">maxOversPerInning()</span>
+        || inning.isDeclared();
+  }
+  public boolean <span class="hi-b">isMatchComplete</span>() {
+    return innings.size() &gt;= <span class="hi-g">inningsPerMatch()</span>
+        &amp;&amp; isInningComplete(lastInning());
+  }
+
+  <span class="cm">// only the format-specific numbers are abstract:</span>
+  protected abstract int <span class="hi-g">inningsPerMatch()</span>;
+  protected abstract int <span class="hi-g">maxOversPerInning()</span>;
+}
+
+public class T20 extends Match {
+  protected int inningsPerMatch()   { return 2; }
+  protected int maxOversPerInning() { return 20; }
+}
+public class ODI extends Match {
+  protected int inningsPerMatch()   { return 2; }
+  protected int maxOversPerInning() { return 50; }
+}
+public class Test extends Match {
+  protected int inningsPerMatch()   { return 4; }
+  protected int maxOversPerInning() { return NO_LIMIT; }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box abstract" style="min-width:210px"><div class="cd-h"><span class="st">abstract</span>Match</div><div class="cd-b">isInningComplete() — fixed skeleton<br>isMatchComplete() — fixed skeleton</div><div class="cd-m">inningsPerMatch() <i>abstract</i><br>maxOversPerInning() <i>abstract</i></div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>subclasses fill in the blanks</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">ODI <span class="st">2 × 50</span></div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">T20 <span class="st">2 × 20</span></div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Test <span class="st">4 × ∞</span></div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">the algorithm never moves; only the numbers do</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Template Method (<a href="../ch8-template-method-pattern.html">Chapter 8</a>) — the skeleton lives in the base class; subclasses override the steps. The course leaves ODI/T20/Test as empty subclasses; this is exactly the upgrade to name when the interviewer asks "so where do the format rules go?" (R3: international rules followed).'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the vocabularies, one hierarchy for what varies, the ball-chain for the facts, people and stats around it. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum MatchFormat { ODI, T20, TEST }
+enum MatchResult { LIVE, FINISHED, DRAWN, CANCELED }
+enum BallType    { NORMAL, WIDE, WICKET, NO_BALL }
+enum RunType     { NORMAL, FOUR, SIX, LEG_BYE, BYE,
+                   NO_BALL, OVERTHROW }
+enum WicketType  { BOLD, CAUGHT, STUMPED, RUN_OUT, LBW,
+                   RETIRED_HURT, HIT_WICKET, OBSTRUCTING }
+
+<span class="cm">// WHAT VARIES — one hierarchy</span>
+abstract class Match   <span class="hi-b">// ODI | T20 | Test</span>
+
+<span class="cm">// THE FACTS — the composition chain</span>
+class Inning { overs, addOver() }
+class Over   { balls, addBall() }
+class Ball   { balledBy, playedBy, type, wicket,
+               runs, commentary }
+class Wicket, Run, Commentary
+
+<span class="cm">// THE PEOPLE — each HAS-A Person</span>
+class Player { contracts, addContract() }
+class Admin  { addMatch(), addTeam(), addTournament() }
+class Umpire, Referee, Commentator { assignMatch() }
+
+<span class="cm">// THE COMPETITION</span>
+class Team { players, news, coach,
+             addTournamentSquad() }
+class TournamentSquad { players, tournamentStats } <span class="cm">// R4</span>
+class Playing11 { players, twelfthMan }            <span class="cm">// R5</span>
+class Tournament { points table }   class Stadium
+
+<span class="cm">// THE MEMORY — derived, never typed in</span>
+abstract class Stat   <span class="cm">// Player | Match | Tournament</span>
+class StatQuery       <span class="cm">// "most 100s in Tests?" (R7)</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Tournament</div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> matches 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> squads 1..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Match ▸3</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">TournamentSquad</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Stadium</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> innings 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> playing11 ×2</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Inning ▸ Over ▸ Ball</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Playing11</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Umpire · Referee · Commentator</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> wicket · runs · commentary</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> players 11 + 12th</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Wicket · Run · Commentary</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Player</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Stat ▸3 · StatQuery</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but the score is now a query, the commentary is data on a ball, and the formats are subclasses. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One ball, end to end',desc:'A design is only convincing if you can run a scenario through it. Ball 42.3: Bumrah bowls, Smith edges, caught behind. Narrate this flow in the interview — it proves the classes actually collaborate.',
+code:{h:'Admin records the ball (sketch)',b:`<span class="cm">// Admin’s console, ball 42.3</span>
+Ball ball = new Ball();
+ball.setBalledBy(bumrah);
+ball.setPlayedBy(smith);
+ball.setType(<span class="hi-b">BallType.WICKET</span>);
+ball.setWicket(new Wicket(
+    <span class="hi-b">WicketType.CAUGHT</span>, <span class="cm">/*playerOut*/</span> smith,
+    <span class="cm">/*caughtBy*/</span> carey, null, null));
+
+match.recordBall(currentInning, ball);
+<span class="cm">// → over.addBall(ball)      fact stored once
+// → observers notified      scorecards, stats, feed</span>
+
+<span class="cm">// seconds later, the commentator:</span>
+ball.setCommentary(new Commentary(
+    "Edged and taken! Bumrah strikes again...",
+    commentator));
+
+<span class="cm">// and every stat is already true:</span>
+statQuery.run("highest wicket taker of all time");
+<span class="cm">// walks PlayerStat — Bumrah just moved up a spot</span>`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Admin</span><br>Bumrah bowls; the admin records delivery 42.3 (use case: <code>add ball</code>)</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Ball</span><br><code>new Ball(balledBy=Bumrah, playedBy=Smith, type=WICKET)</code> with a <code>Wicket(CAUGHT, playerOut=Smith, caughtBy=Carey)</code></div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Over</span><br>Over #43 appends it: <code>addBall(ball)</code> — the fact now exists exactly once</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Inning</span><br>Nothing to update! Wickets down = count of balls with a wicket — derived, not stored</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Match · subject</span><br><code>recordBall()</code> notifies every registered observer (Observer)</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">LiveScorecard ×1M</span><br>Push, not poll: 287/5 renders on a million screens at once</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Commentator</span><br>Writes the line; the <code>Commentary</code> attaches to the ball itself (R2)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">StatsEngine</span><br><code>PlayerStat</code> updates — "highest wicket taker of all time?" already reflects it (R7)</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and the ball object carries the whole story — score, wicket, commentary, stats. That\'s how you know the composition chain was the right spine.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 20 classes — one recipe, three principles, two patterns, and one modeling decision. Every other case study in this course is this same climb over different nouns.',
+code:{h:'Cricinfo in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → abstract Match; ODI | T20 | Test
+2. Program to an interface
+   → Umpire/Commentator ↔ Match; StatQuery ↔ Stat
+3. Composition + single responsibility
+   → Match ▸ Inning ▸ Over ▸ Ball
+     (+ Wicket, Run, Commentary) — facts, not totals
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Observer</span>         one ball event → a million
+                 scorecards, the feed, the stats
+<span class="hi-b">Template Method</span>  game loop fixed; formats fill in
+                 innings count + over limit
+
+<span class="cm">// THE ONE-LINER</span>
+Store the atomic fact (the Ball);
+derive everything else.
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Stock Brokerage (watchlist price ticks = Observer)
+Facebook (news feed fan-out = Observer)
+Blackjack (hands ▸ cards = facts, totals derived)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Observer</div><div class="cd-m">ball recorded →<br>everyone notified</div></div>
+  <div class="cd-box abstract" style="min-width:130px"><div class="cd-h">Template Method</div><div class="cd-m">one game loop,<br>three formats</div></div>
+  <div class="cd-box ctx" style="min-width:130px"><div class="cd-h">Composition chain</div><div class="cd-m">Match ▸ Inning ▸<br>Over ▸ Ball</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Varying rules</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>The facts</div>
+</div>`,
+callout:{type:'callout-purple',text:'The Scoreboard failed because it stored answers and threw the facts away. The recipe found the real atom — the Ball — and everything hard became easy: history is a lookup, stats are a fold over balls, live coverage is a notification. Whenever a design fights you, ask: what is the atomic fact I should be storing?'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

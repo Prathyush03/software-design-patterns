@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 13 — Design a Car Rental System | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 13 — Design a Car Rental System</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design a car rental system." Go.',desc:'Forty-five minutes and a whiteboard. An airport rental company: many branches, a fleet of cars, trucks, SUVs, vans and motorcycles, members reserving vehicles for future date ranges, GPS units and child seats as add-ons, insurance, late fees, barcode scans at pickup. Where do you even start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new vehicle category, new add-on,
+    new fee rule...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:230px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">An airport rental branch</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Stalls A1–A4&nbsp;&nbsp;🚗 🚙 🛻 🏍️ &nbsp;<span style="color:var(--text-secondary)">each barcoded</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Stalls B1–B4&nbsp;&nbsp;🚐 🚗 🚗 🚙 &nbsp;<span style="color:var(--text-secondary)">each barcoded</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">Add-ons shelf&nbsp;&nbsp;🧭 GPS · 👶 child seat · 🎿 ski rack</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">Front desk → reservations</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Returns → late fees</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the Head First way — start naive, feel the pain, let the principles drive you to the patterns. Spoiler: a car on a stall is easy; a <em>reservation for next weekend</em> with a GPS and a child seat attached is where naive designs go to die.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one big class',desc:'The instinct under time pressure: skip the boring requirements talk and write code. One <code>RentalShop</code> class, an array of car names, a boolean per car. <code>rent()</code> flips the boolean, <code>returnCar()</code> charges days times a flat rate. Done in five minutes.',
+code:{h:'RentalShop.java — the "just code it" design',b:`public class RentalShop {
+    String[] cars = {"Corolla", "Civic",
+                     "F-150", "Odyssey", ...};
+    boolean[] rented = new boolean[50];
+    long[] rentedOn = new long[50];
+
+    int rent(<span class="hi-y">String carName</span>) {
+        for (int i = 0; i &lt; cars.length; i++) {
+            if (cars[i].equals(carName)
+                  &amp;&amp; !rented[i]) {
+                rented[i] = true;
+                rentedOn[i] = today();
+                return i;   <span class="cm">// "you get car #7"</span>
+            }
+        }
+        return -1;  <span class="cm">// none left... I guess?</span>
+    }
+
+    double returnCar(int i) {
+        rented[i] = false;
+        long days = daysSince(rentedOn[i]);
+        return days * 40.0;  <span class="cm">// flat $40/day</span>
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">RentalShop</div><div class="cd-b">String[] cars<br>boolean[] rented<br>long[] rentedOn</div><div class="cd-m">+ rent(String carName)<br>+ returnCar(int i)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one array, one boolean, one price</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a mom-and-pop lot with ten cars this works. Cars go out, cars come back, money is collected. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: five vehicle categories with different rates (a luxury sedan isn\'t $40/day), <em>reservations for future date ranges</em>, rentable equipment (navigation, child seat, ski rack), services (roadside assistance, additional driver, wifi), rental insurance, late fees after the due date, barcodes and parking stall numbers, multiple branches with pick-up here / drop-off there, notifications, and a maintenance log per vehicle. Patch the class!',
+code:{h:'RentalShop.java — the God object grows',b:`double dailyRate(String vehicle) {
+  <span class="hi-y">if (vehicle.equals("economy"))     return 40;
+  else if (vehicle.equals("luxury")) return 200;
+  else if (vehicle.equals("suv"))    return 90;
+  else if (vehicle.equals("van"))    return 110;
+  else if (vehicle.equals("motorcycle")) return 35;</span>
+  else return -1;  <span class="cm">// hope nobody typos</span>
+}
+boolean reserve(String car, Date from, Date to) {
+  <span class="hi-r">// rented[i] is a boolean. A boolean cannot
+  // hold a calendar. Bolt on Date[][] bookings??</span>
+}
+double bill(int i) {
+  <span class="hi-r">// rate × days + GPS $10/day? + child seat
+  // $8? + insurance? + wifi? + 2 days late ×
+  // penalty? — every rule inline, again</span>
+}
+<span class="cm">// TODO: barcode scan. TODO: which stall is it
+// in? TODO: picked up in Austin, returned in
+// Dallas?? TODO: "remind me before pickup" 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">RentalShop <span class="st">the God object</span></div><div class="cd-b">cars, booleans, dates, rates,<br>add-ons, insurance, fines,<br>stalls, barcodes, branches,<br>notifications, logs...</div><div class="cd-m">+ rent() <span style="color:var(--text-danger)">string lookup</span><br>+ reserve() <span style="color:var(--text-danger)">boolean ≠ calendar</span><br>+ bill() <span style="color:var(--text-danger)">every fee inline</span><br>+ notify()? + logRepair()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another branch in the same class</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another if/else to methods that already do too much. And that boolean array is quietly hiding the worst bug of all...'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The God object collapses',desc:'Then the interviewer asks four innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Four questions that kill Attempt #1',b:`<span class="cm">// Q1: "Reserve an SUV for NEXT weekend."</span>
+<span class="hi-r">→ rented[i] is a boolean. It knows "out
+  right now" — it cannot hold a calendar
+  of future date ranges.</span>
+
+<span class="cm">// Q2: "Add a ski rack and a child seat
+//      to reservation #482."</span>
+<span class="hi-r">→ Attach them to... the car? The member?
+  There IS no reservation object to hang
+  them on.</span>
+
+<span class="cm">// Q3: "It came back two days late. Bill?"</span>
+<span class="hi-r">→ Every fee rule lives inline in bill():
+  late fines, add-on prices, insurance —
+  one method, infinite ifs, untestable.</span>
+
+<span class="cm">// Q4: "Pick up in Austin, return in Dallas."</span>
+<span class="hi-r">→ One shop, one array. Branches don't
+  exist in the data model at all.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every rate or fee change<br>edits the same giant class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed cars,<br>booleans posing as calendars</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">billing, availability,<br>notifications all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'The fatal flaw: Attempt #1 has no object for the rental itself. A boolean can say "out or in" — it can\'t say who, from when to when, picked up where, with which add-ons, at what price. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for the car rental system — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Rent different automobiles: <b>cars, trucks, SUVs, vans, motorcycles</b> <span class="obj">Vehicle hierarchy</span></li>
+<li data-n="R2">Each vehicle has a unique <b>barcode</b> + a <b>parking stall</b> number <span class="obj">Vehicle.barcode / stockNumber</span></li>
+<li data-n="R3">Retrieve <b>who took a vehicle</b> / what a member has rented <span class="obj">VehicleReservation</span></li>
+<li data-n="R4">Collect a <b>late fee</b> for vehicles returned after the due date <span class="obj">Bill: FINE item</span></li>
+<li data-n="R5">Members <b>search the inventory</b> and reserve any available vehicle <span class="obj">Search, VehicleInventory</span></li>
+<li data-n="R6"><b>Notifications</b>: pickup approaching, due date nearing, overdue <span class="obj">Notification</span></li>
+<li data-n="R7">The system <b>reads barcodes</b> from vehicles <span class="obj">Vehicle.barcode</span></li>
+<li data-n="R8">Members can <b>cancel</b> their reservations <span class="obj">ReservationStatus.CANCELLED</span></li>
+<li data-n="R9">Maintain a <b>vehicle log</b> of all events (fuel, damage, repair) <span class="obj">VehicleLog</span></li>
+<li data-n="R10">Members can add <b>rental insurance</b> to their reservation <span class="obj">RentalInsurance</span></li>
+<li data-n="R11">Rent extra <b>equipment</b>: navigation, child seat, ski rack <span class="obj">Equipment</span></li>
+<li data-n="R12">Add <b>services</b>: roadside assistance, additional driver, wifi <span class="obj">Service</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Read R10–R12 again: insurance, equipment, and services are all added <em>to the reservation</em>. The spec just told you where add-ons live — most candidates bolt them onto the car and lose the design right there.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Four actors touch this system. Listing their use cases tells us which operations our classes must expose — before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Member</span>
+search catalog       <span class="cm">— by type / by model</span>
+reserve vehicle      <span class="cm">— for a date range</span>
+check-out vehicle    <span class="cm">— pick it up (barcode scan)</span>
+return vehicle
+add equipment        <span class="cm">— GPS, child seat, ski rack</span>
+cancel reservation
+
+<span class="cm">// Receptionist</span>
+add/remove/edit vehicle
+register account / cancel membership
+reserve vehicle      <span class="cm">— on a member's behalf</span>
+
+<span class="cm">// Worker</span>
+take care of returned vehicle
+update <span class="hi-b">vehicle log</span>   <span class="cm">— refuel, clean, damage</span>
+
+<span class="cm">// System (yes, the system is an actor)</span>
+send notifications   <span class="cm">— pickup soon, due soon,
+                       overdue, cancellation</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👤 Member</span><span class="does">searches, reserves,<br>picks up &amp; returns</span></div>
+  <div class="actor"><span class="who">💁 Receptionist</span><span class="does">manages fleet,<br>members, workers</span></div>
+  <div class="actor"><span class="who">🧰 Worker</span><span class="does">handles returns,<br>updates vehicle log</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">pickup / due /<br>overdue alerts</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Search catalog</span><span class="uc">Reserve vehicle</span><span class="uc">Check-out vehicle</span><span class="uc">Return vehicle</span><span class="uc">Add equipment</span><span class="uc">Cancel reservation</span><span class="uc">Add/edit vehicle</span><span class="uc">Register account</span><span class="uc">Update car log</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice "System" is an actor again: sending pickup and overdue notifications is a use case — that hint becomes the Observer pattern in a few steps. And Worker + VehicleLog is the maintenance story nobody remembers to design.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The company</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">CarRentalSystem</div></div>
+    <div class="cd-box ctx"><div class="cd-h">CarRentalLocation</div></div>
+    <div class="cd-box ctx"><div class="cd-h">VehicleInventory</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The fleet &amp; the people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Vehicle</div></div>
+    <div class="cd-box"><div class="cd-h">VehicleLog</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Account</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The transaction — what Attempt #1 never had</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box" style="border-color:var(--border-success);background:var(--bg-success)"><div class="cd-h" style="color:var(--text-success)">VehicleReservation</div></div>
+    <div class="cd-box"><div class="cd-h">Bill</div></div>
+    <div class="cd-box"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">Add-ons — they attach to the reservation</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box fly"><div class="cd-h">RentalInsurance</div></div>
+    <div class="cd-box fly"><div class="cd-h">Equipment</div></div>
+    <div class="cd-box fly"><div class="cd-h">Service</div></div>
+    <div class="cd-box fly"><div class="cd-h">AdditionalDriver</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-success);border:0.5px solid var(--border-success)"></div>The transaction object</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Line items / add-ons</div>
+</div>`,
+callout:{type:'callout-ok',text:'Fifteen small classes instead of one God object. And look at tier three: the reservation — the object Attempt #1 never had — sits at the exact center of the design. Everything hard hangs off it.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: the fleet',desc:'What kept breaking Attempt #1? <strong>Vehicle categories vary</strong> — and each carries its own sub-vocabulary: a Car has a <code>CarType</code> (ECONOMY through LUXURY), a Van is PASSENGER or CARGO. The stable identity — barcode, license, stall, status, the log — lives once in the abstract base.',
+code:{h:'Vehicle.java — the fleet gets a hierarchy',b:`public enum VehicleStatus {
+  AVAILABLE, RESERVED, LOANED, LOST,
+  BEING_SERVICED, OTHER
+}
+public enum CarType {
+  ECONOMY, COMPACT, INTERMEDIATE, STANDARD,
+  FULL_SIZE, PREMIUM, LUXURY
+}
+
+public abstract class Vehicle {
+  private String licenseNumber;
+  private String stockNumber;   <span class="cm">// parking stall (R2)</span>
+  private String <span class="hi-b">barcode</span>;       <span class="cm">// unique, scannable (R7)</span>
+  private int passengerCapacity;
+  private VehicleStatus status;
+  private String model, make;
+  private int manufacturingYear, mileage;
+  private List&lt;VehicleLog&gt; log; <span class="cm">// R9: every event</span>
+
+  public boolean <span class="hi-g">reserveVehicle()</span>;
+  public boolean <span class="hi-g">returnVehicle()</span>;
+}
+
+public class Car extends Vehicle {
+  private CarType type;   <span class="cm">// ECONOMY ... LUXURY</span>
+}
+public class Van extends Vehicle {
+  private VanType type;   <span class="cm">// PASSENGER | CARGO</span>
+}
+public class Truck extends Vehicle { ... }
+<span class="cm">// SUV, Motorcycle — same shape</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Vehicle</div><div class="cd-b">barcode, licenseNumber<br>stockNumber (stall), mileage<br>status: VehicleStatus</div><div class="cd-m">+ reserveVehicle()<br>+ returnVehicle()</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Car</div><div class="cd-m" style="font-size:9.5px">CarType ▸7</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Van</div><div class="cd-m" style="font-size:9.5px">VanType ▸2</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Truck</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">SUV</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Motorcycle</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">each subclass carries its own type vocabulary</div>
+<div class="cd-row">
+  <div class="dia-wrap" style="min-width:220px">status: AVAILABLE → RESERVED → LOANED → AVAILABLE<br><span style="color:var(--text-tertiary)">(BEING_SERVICED / LOST detours)</span></div>
+</div>`,
+callout:{type:'callout-info',text:'Adding a limo category later = one subclass + one enum value — Q4\'s "lux ury" typo is now a compile error, not a runtime surprise. And note that status field: AVAILABLE → RESERVED → LOANED is a state machine we\'ll meet again in a few steps.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. Vehicle categories vary — each becomes a subclass with its own type enum; the stable identity (barcode, license, stall, log) lives once in the abstract base.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: Search &amp; accounts',desc:'R5 says members search the inventory. The course makes searching a <em>contract</em>: a <code>Search</code> interface that <code>VehicleInventory</code> implements with two hash maps. Callers hold a <code>Search</code> — never a HashMap. Same story for people: an <code>Account</code> base with <code>Member</code> and <code>Receptionist</code> underneath.',
+code:{h:'Search.java + Account.java — depend on the contract',b:`public interface <span class="hi-b">Search</span> {
+  public List&lt;Vehicle&gt; searchByType(String type);
+  public List&lt;Vehicle&gt; searchByModel(String model);
+}
+
+public class VehicleInventory <span class="hi-b">implements Search</span> {
+  private HashMap&lt;String, List&lt;Vehicle&gt;&gt; vehicleTypes;
+  private HashMap&lt;String, List&lt;Vehicle&gt;&gt; vehicleModels;
+
+  public List&lt;Vehicle&gt; searchByType(String query) {
+    return vehicleTypes.get(query);   <span class="cm">// O(1) lookup</span>
+  }
+  public List&lt;Vehicle&gt; searchByModel(String query) {
+    return vehicleModels.get(query);
+  }
+}
+
+public abstract class <span class="hi-b">Account</span> {
+  private String id, password;
+  private AccountStatus status;
+  private Person person;
+  public boolean resetPassword();
+}
+public class Member extends Account {
+  private int totalVehiclesReserved;
+  public List&lt;VehicleReservation&gt; <span class="hi-g">getReservations()</span>;  <span class="cm">// R3</span>
+}
+public class Receptionist extends Account {
+  private Date dateJoined;
+  public List&lt;Member&gt; searchMember(String name);
+}`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:130px"><div class="cd-h"><span class="st">interface</span>Search</div><div class="cd-m">+ searchByType()<br>+ searchByModel()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>implements</div></div>
+  <div class="cd-row"><div class="cd-box fly" style="min-width:120px"><div class="cd-h" style="font-size:10px">VehicleInventory</div><div class="cd-m" style="font-size:9.5px">two HashMaps<br>(type, model)</div></div></div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Account</div><div class="cd-m">+ resetPassword()</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Member</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Receptionist</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Worker</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">the app holds a <b>Search</b> — swap in a real search index tomorrow, no caller changes</div>`,
+callout:{type:'callout-info',text:'The member app, the receptionist\'s desk, and the kiosk all call the same two methods. Add searchByMake, or replace the HashMaps with a database index — zero callers change. That\'s the whole point of the seam.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The declared type (Search, Account, Vehicle) should be a supertype so the runtime object — HashMap inventory today, search index tomorrow — stays swappable.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'The vehicle is permanent; the reservation is the claim',desc:'Here is the breakthrough object — the one Attempt #1 never had. A <code>Vehicle</code> is a permanent asset on a stall. A <code>VehicleReservation</code> is a <strong>dated claim</strong> on it: who (<code>customerID</code>), which (<code>vehicle</code>), from when to when (<code>dueDate</code>, <code>returnDate</code>), from where to where (<code>pickupLocationName</code>, <code>returnLocationName</code>). Every question that killed Attempt #1 is a <em>field</em> here.',
+code:{h:'VehicleReservation.java — the dated claim',b:`public class VehicleReservation {
+  private String reservationNumber;
+  private Date creationDate;
+  private ReservationStatus status;
+  private Date <span class="hi-g">dueDate</span>;       <span class="cm">// Q1: the calendar lives HERE</span>
+  private Date returnDate;
+  private String <span class="hi-g">pickupLocationName</span>;  <span class="cm">// Q4: Austin...</span>
+  private String <span class="hi-g">returnLocationName</span>;  <span class="cm">// ...Dallas ✓</span>
+
+  private int <span class="hi-g">customerID</span>;    <span class="cm">// R3: "who has this car?"</span>
+  private Vehicle vehicle;
+  private Bill bill;
+  private List&lt;AdditionalDriver&gt; additionalDrivers;
+  private List&lt;Notification&gt; notifications;
+  private List&lt;RentalInsurance&gt; <span class="hi-b">insurances</span>;   <span class="cm">// R10</span>
+  private List&lt;Equipment&gt; <span class="hi-b">equipments</span>;  <span class="cm">// R11: GPS,</span>
+                                       <span class="cm">// child seat, ski rack</span>
+  private List&lt;Service&gt; <span class="hi-b">services</span>;      <span class="cm">// R12: wifi,</span>
+                                       <span class="cm">// roadside, driver</span>
+
+  public static VehicleReservation
+      fetchReservationDetails(String reservationNumber);
+  public List&lt;AdditionalDriver&gt; getAdditionalDrivers();
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:170px"><div class="cd-h">CarRentalSystem</div><div class="cd-m">name, locations</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1..*</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:170px"><div class="cd-h">CarRentalLocation</div><div class="cd-m">name, address</div></div></div>
+<div class="cd-arr" style="padding:2px 0">·</div>
+<div class="cd-row" style="gap:8px;align-items:center">
+  <div class="cd-box fly" style="min-width:90px"><div class="cd-h" style="font-size:10px">Member</div></div>
+  <div class="has-a-lbl" style="padding:0"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> 0..*</div>
+  <div class="cd-box" style="min-width:150px;border-color:var(--border-success);background:var(--bg-success)"><div class="cd-h" style="color:var(--text-success)">VehicleReservation</div><div class="cd-m" style="color:var(--text-success)">dates, locations, status</div></div>
+  <div class="has-a-lbl" style="padding:0"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> 1</div>
+  <div class="cd-box abstract" style="min-width:80px"><div class="cd-h" style="font-size:10px">Vehicle</div></div>
+</div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> bill 1 · add-ons 0..*</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Bill</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">RentalInsurance</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Equipment</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Service</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'This asset/transaction split is the exact Room / RoomBooking split from the <a href="09-hotel-management.html">Hotel case study</a>: the asset is permanent, the transaction is dated. Learn the split once and you can design anything that gets lent out.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. The reservation composes a vehicle, a bill, and its add-on lists — the vehicle knows nothing about who rented it; the reservation knows everything.'}
+},
+// ============ STEP 11 — PATTERN CONTRAST: DECORATOR ============
+{phase:'pill-pattern',phaseTxt:'Pattern contrast · Decorator',title:'The options explosion: line items, not wrappers',desc:'GPS + child seat + ski rack + insurance + wifi + extra driver... this is <em>exactly</em> the condiment problem from Head First\'s coffee shop. Chapter 3 solved it by wrapping: <code>new ChildSeat(new GPS(new SUV()))</code>. The course solves it by <strong>attaching line items to the reservation</strong> and letting the Bill sum them. Two solutions to the same "options explosion" — know when to reach for which.',
+code:{h:'BillItemType.java — options as line items',b:`<span class="cm">// The course's answer to the options explosion:</span>
+public enum BillItemType {
+  <span class="hi-b">BASE_CHARGE, ADDITIONAL_SERVICE, FINE, OTHER</span>
+}
+
+<span class="cm">// 1) the reservation carries the add-on lists...</span>
+private List&lt;RentalInsurance&gt; insurances;
+private List&lt;Equipment&gt; equipments;  <span class="cm">// navigation,</span>
+                                     <span class="cm">// child seat, ski rack</span>
+private List&lt;Service&gt; services;      <span class="cm">// roadside assist,</span>
+                                     <span class="cm">// extra driver, wifi</span>
+
+<span class="cm">// 2) ...and the Bill composes one line per charge</span>
+public class Bill {
+  private List&lt;BillItem&gt; items;
+  <span class="cm">// BASE_CHARGE         SUV × 3 days    $270</span>
+  <span class="cm">// ADDITIONAL_SERVICE  gps             $30</span>
+  <span class="cm">// ADDITIONAL_SERVICE  child seat      $24</span>
+  <span class="cm">// FINE                2 days late     $90</span>
+}
+
+<span class="cm">// The Head First alternative — Decorator:</span>
+<span class="hi-y">// Vehicle v = new ChildSeat(new GPS(new SUV()));
+// v.costPerDay();  — cost recurses through wraps</span>`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">Decorator: wrap the object</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div class="cd-box fly" style="min-width:110px"><div class="cd-h" style="font-size:10px">ChildSeat</div></div>
+    <div class="cd-arr">wraps ↓</div>
+    <div class="cd-box fly" style="min-width:100px"><div class="cd-h" style="font-size:10px">GPS</div></div>
+    <div class="cd-arr">wraps ↓</div>
+    <div class="cd-box" style="min-width:90px"><div class="cd-h" style="font-size:10px">SUV</div></div>
+    <div class="cd-arr" style="padding-top:4px">cost() recurses inward</div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">This course: attach line items</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div class="cd-box" style="min-width:150px;border-color:var(--border-success);background:var(--bg-success)"><div class="cd-h" style="color:var(--text-success)">VehicleReservation</div><div class="cd-m" style="color:var(--text-success)">equipments: [gps, seat]<br>services: [wifi]<br>insurances: [collision]</div></div>
+    <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> bill 1</div>
+    <div class="cd-box" style="min-width:140px"><div class="cd-h">Bill</div><div class="cd-m">BASE_CHARGE $270<br>ADDITIONAL_SERVICE $54<br>FINE $90</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:8px">either way, the SUV object itself is never touched</div>`,
+callout:{type:'callout-purple',text:'Contrast with Decorator (<a href="../ch3-decorator-pattern.html">Chapter 3</a>): wrap when options must change the object\'s <em>behavior</em> — a Mocha changes what cost() returns on the beverage itself. Attach line items when options are just <em>billable data</em>. A child seat doesn\'t change how an SUV drives — so the course rightly keeps it off the Vehicle and on the reservation\'s bill. Saying this out loud is a senior-level discriminator.'}
+},
+// ============ STEP 12 — PATTERNS: STATE & OBSERVER ============
+{phase:'pill-pattern',phaseTxt:'Patterns spotted · State &amp; Observer',title:'Lifecycles that tick, reminders that fire',desc:'Two enums are quietly state machines: <code>ReservationStatus</code> (PENDING → CONFIRMED → ACTIVE → COMPLETED, or CANCELLED per R8) and <code>VehicleStatus</code> (AVAILABLE → RESERVED → LOANED → back). And R6\'s notifications — pickup approaching, due date nearing, overdue — are the System actor <em>observing</em> those dates and firing alerts at the member.',
+code:{h:'ReservationStatus + Notification (sweep sketch)',b:`public enum ReservationStatus {
+  ACTIVE, PENDING, CONFIRMED, COMPLETED,
+  CANCELLED, NONE
+}
+
+<span class="cm">// each reservation carries its own alert trail</span>
+private List&lt;Notification&gt; notifications;
+
+<span class="cm">// the System actor, on a schedule (sketch):</span>
+void sweepReservations() {
+  for (VehicleReservation r : active) {
+    if (nearPickupDate(r))
+      <span class="hi-b">r.notifyMember("pickup tomorrow")</span>;   <span class="cm">// R6</span>
+    if (nearDueDate(r))
+      <span class="hi-b">r.notifyMember("due back tomorrow")</span>; <span class="cm">// R6</span>
+    if (overdue(r)) {
+      <span class="hi-b">r.notifyMember("OVERDUE")</span>;           <span class="cm">// R6</span>
+      <span class="hi-g">r.getBill().addItem(
+          BillItemType.FINE, dailyFine)</span>;   <span class="cm">// R4</span>
+    }
+  }
+}
+<span class="cm">// state guard, worth saying in the interview:
+// LOANED vehicles can't be CANCELLED — legal
+// transitions are the State pattern's job</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary)">ReservationStatus lifecycle</div>
+<div class="cd-row" style="gap:4px;align-items:center">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">PENDING</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">CONFIRMED</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">ACTIVE</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">COMPLETED</div></div>
+</div>
+<div style="font-size:10px;color:var(--text-tertiary)">↘ CANCELLED — member cancels before pickup (R8)</div>
+<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);margin-top:4px">VehicleStatus lifecycle</div>
+<div class="cd-row" style="gap:4px;align-items:center">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">AVAILABLE</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">RESERVED</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10px">LOANED</div></div><span style="color:var(--text-tertiary);font-size:10px">→</span>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">AVAILABLE</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>dates tick → the System observes</div></div>
+<div class="cd-row"><div class="cd-box fly" style="min-width:190px"><div class="cd-h">Notification <span class="st">observer side</span></div><div class="cd-m">pickup approaching · due soon<br>overdue → FINE lands on the Bill</div></div></div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: State (<a href="../ch10-state-pattern.html">Chapter 10</a>) — the course stores lifecycle as enums; in the interview, add that guarding transitions (no LOANED → CANCELLED) is exactly what the State pattern formalizes. Pattern #2: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — reservations are subjects, members are subscribers; pickup and overdue alerts are notifications pushed on date changes.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, hierarchies for what varies, one interface seam, and the reservation composing the transaction. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum VehicleStatus     { AVAILABLE, RESERVED, LOANED,
+                         LOST, BEING_SERVICED, OTHER }
+enum ReservationStatus { ACTIVE, PENDING, CONFIRMED,
+                         COMPLETED, CANCELLED, NONE }
+enum CarType           { ECONOMY ... LUXURY }  <span class="cm">// 7 tiers</span>
+enum BillItemType      { BASE_CHARGE,
+                         ADDITIONAL_SERVICE, FINE, OTHER }
+enum VehicleLogType    { ACCIDENT, FUELING,
+                         CLEANING_SERVICE, OIL_CHANGE, REPAIR }
+
+<span class="cm">// WHAT VARIES — hierarchies</span>
+abstract class Vehicle  <span class="cm">// Car | Van | Truck | SUV | Moto</span>
+abstract class Account  <span class="cm">// Member | Receptionist (+Worker)</span>
+
+<span class="cm">// THE SEAM — interface</span>
+interface Search { searchByType(); searchByModel(); }
+class VehicleInventory implements Search  <span class="cm">// 2 HashMaps</span>
+
+<span class="cm">// THE STRUCTURE — composition</span>
+class CarRentalSystem    { name, locations }
+class CarRentalLocation  { name, address }
+class <span class="hi-g">VehicleReservation</span> { dates, pickup/return locations,
+      status, vehicle, bill, insurances, equipments,
+      services, additionalDrivers, notifications }
+class Bill        { items: [type, amount] }  <span class="cm">// R4 fines</span>
+class VehicleLog  { type, description, creationDate }
+class Notification, RentalInsurance, Equipment,
+      Service, AdditionalDriver  <span class="cm">// the supporting cast</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:190px"><div class="cd-h">CarRentalSystem</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> locations 1..*</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">CarRentalLocation</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Search ▸ VehicleInventory</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> vehicles 1..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> reservations 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Vehicle ▸5</div></div>
+  <div class="cd-box" style="border-color:var(--border-success);background:var(--bg-success)"><div class="cd-h" style="font-size:10.5px;color:var(--text-success)">VehicleReservation</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Account ▸2</div></div>
+</div>
+<div style="display:flex;gap:20px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> log 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> bill 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> add-ons 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">VehicleLog</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Bill</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Insurance · Equipment · Service</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare with Attempt #1: same requirements, but the calendar lives on the reservation, prices live on the bill as line items, the fleet is type-safe, and maintenance has its own log. Every axis of change has its own home.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One SUV, one long weekend, two days late',desc:'A design is only convincing if you can run a scenario through it. Narrate this flow in the interview — it proves the classes actually collaborate, and it hits every requirement that killed Attempt #1.',
+code:{h:'Worker-side return (sketch over the course\'s classes)',b:`<span class="cm">// Worker processes a late return</span>
+public void processReturn(String barcode) {
+  Vehicle v = inventory.findByBarcode(barcode);  <span class="cm">// R7</span>
+  VehicleReservation r = VehicleReservation
+      .<span class="hi-b">fetchReservationDetails</span>(v.getReservationId());
+
+  r.setReturnDate(today());
+  <span class="cm">// R4: the late fee is just a date comparison</span>
+  if (r.getReturnDate().after(r.getDueDate())) {
+    long late = daysBetween(r.getDueDate(),
+                            r.getReturnDate());
+    <span class="hi-g">r.getBill().addItem(BillItemType.FINE,
+                        late * LATE_FEE_PER_DAY);</span>
+  }
+  <span class="cm">// R9: every event hits the vehicle log</span>
+  v.getLog().add(new VehicleLog(
+      VehicleLogType.CLEANING_SERVICE, "post-rental"));
+
+  v.setStatus(VehicleStatus.<span class="hi-g">AVAILABLE</span>);  <span class="cm">// back in catalog</span>
+  r.setStatus(ReservationStatus.COMPLETED);
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Member</span><br><code>inventory.searchByType("SUV")</code> — the Search interface returns available SUVs for the long weekend</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">VehicleReservation</span><br>Reservation created: PENDING → CONFIRMED, <code>dueDate</code> set, pickup Austin / return Austin</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Member</span><br>Adds GPS + child seat to <code>equipments</code>, collision cover to <code>insurances</code> — line items queue on the Bill, the SUV object is untouched</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">System</span><br>Day before pickup: <code>Notification</code> "pickup tomorrow" (Observer, R6)</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Receptionist</span><br>At the desk: barcode scanned — SUV leaves stall B2, <code>VehicleStatus</code> → LOANED, reservation → ACTIVE</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">System</span><br>Due date passes... "OVERDUE" notification fires; the fine meter starts (R4)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Worker</span><br>SUV returns 2 days late: barcode scan → <code>fetchReservationDetails()</code>; Bill gets a FINE line item; VehicleLog logs refuel + cleaning (R9)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Member</span><br>Pays the Bill: BASE_CHARGE $270 + gps $30 + seat $24 + FINE $90 = <b>$414</b> → PaymentStatus COMPLETED</div></div>
+  <div class="flow-step"><div class="flow-num">9</div><div class="flow-txt"><span class="flow-who">System</span><br>SUV back on its stall, AVAILABLE in the inventory; reservation COMPLETED</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed. The two-days-late case — the one that broke Attempt #1 — is now three lines: compare dates, add a FINE line item, done.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 20 classes — one recipe, three principles, one transferable split, and the patterns that emerged from the requirements. Every other case study in this course is this same climb over different nouns.',
+code:{h:'The car rental system in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → Vehicle ▸5, each with its own type enum
+2. Program to an interface
+   → Search / VehicleInventory; Account ▸ roles
+3. Composition + single responsibility
+   → Reservation composes vehicle + bill + add-ons
+
+<span class="cm">// THE BIG IDEA (transfers everywhere)</span>
+<span class="hi-g">Asset vs. transaction:</span>
+  Vehicle     = permanent (barcode, stall, log)
+  Reservation = dated claim (who, when, where,
+                add-ons, bill)
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Line items</span>  add-ons attach to the RESERVATION —
+            the anti-Decorator: data, not behavior
+<span class="hi-b">State</span>       ReservationStatus / VehicleStatus
+            lifecycles with legal transitions
+<span class="hi-b">Observer</span>    pickup / due / overdue notifications
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Hotel    (Room ≈ Vehicle, RoomBooking ≈ Reservation)
+Library  (lending + fines + barcodes, minus engines)
+Parking  (stalls ≈ stalls — but no future calendar!)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:130px"><div class="cd-h">Line items</div><div class="cd-m">add-ons + fines are<br>entries on the Bill,<br>never on the Vehicle</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">State</div><div class="cd-m">reservation + vehicle<br>lifecycles as enums<br>with guarded moves</div></div>
+  <div class="cd-box iface" style="min-width:130px"><div class="cd-h">Observer</div><div class="cd-m">dates tick → member<br>gets pickup / overdue<br>notifications</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Billing composition</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Lifecycle</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Notification</div>
+</div>`,
+callout:{type:'callout-purple',text:'The God object failed because it had no object for the rental itself. The recipe found it — VehicleReservation — and everything hard (calendars, add-ons, fines, cross-city returns, notifications) collapsed into fields and line items on that one class. That\'s this case study\'s real lesson: find the transaction object.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

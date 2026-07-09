@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 11 — Design Chess | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 11 — Design Chess</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design chess." Two players, all the rules.',desc:'A two-player online chess game: an 8&times;8 board, 32 pieces, sides assigned at random, white moves first, every move logged, and a game that can end in checkmate, stalemate, forfeit, or resignation. Everyone <em>knows</em> chess — which is exactly why this question exposes design skill so fast.',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: knowing chess trivia.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new piece rule, chess variants, game review...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:220px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">8&times;8, 32 pieces, six kinds of rules</div>
+    <div style="display:flex;flex-direction:column;gap:2px;font-family:var(--font-mono);font-size:14px;line-height:1.35">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:2px 8px;letter-spacing:4px">&#9820;&#9822;&#9821;&#9819;&#9818;&#9821;&#9822;&#9820;</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:2px 8px;letter-spacing:4px">&#9823;&#9823;&#9823;&#9823;&#9823;&#9823;&#9823;&#9823;</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:2px 8px;letter-spacing:4px;color:var(--text-tertiary);font-size:11px">&middot; &middot; &middot; &middot; &middot; &middot; &middot; &middot;</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:2px 8px;letter-spacing:4px">&#9817;&#9817;&#9817;&#9817;&#9817;&#9817;&#9817;&#9817;</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:2px 8px;letter-spacing:4px">&#9814;&#9816;&#9815;&#9813;&#9812;&#9815;&#9816;&#9814;</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">White moves first</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">Every move logged</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — a char grid and a big switch',desc:'The instinct under time pressure: the board is obviously a 2-D array, pieces are obviously characters — <code>\'K\'</code>, <code>\'Q\'</code>, <code>\'R\'</code>, <code>\'B\'</code>, <code>\'N\'</code>, <code>\'P\'</code> — and legality is obviously one function that switches on the letter. Five minutes, done.',
+code:{h:'ChessGame.java — the "just code it" design',b:`public class ChessGame {
+    <span class="hi-y">char[][] board = new char[8][8];</span> <span class="cm">// 'K','Q','R','B','N','P'</span>
+    boolean whitesTurn = true;       <span class="cm">// lowercase = black</span>
+
+    boolean isLegalMove(<span class="hi-y">char piece</span>, int sx, int sy,
+                        int ex, int ey) {
+        int dx = Math.abs(sx - ex), dy = Math.abs(sy - ey);
+        <span class="hi-y">switch (Character.toUpperCase(piece))</span> {
+            case 'N': return dx * dy == 2;  <span class="cm">// L-shape!</span>
+            case 'K': return dx + dy == 1;
+            case 'R': return sx == ex || sy == ey;
+            case 'B': return dx == dy;
+            case 'Q': return dx == dy
+                          || sx == ex || sy == ey;
+            case 'P': return dx == 1 &amp;&amp; dy == 0;  <span class="cm">// ...ish</span>
+        }
+        return false;
+    }
+
+    void move(int sx, int sy, int ex, int ey) {
+        board[ex][ey] = board[sx][sy]; <span class="cm">// capture = overwrite</span>
+        board[sx][sy] = ' ';
+        whitesTurn = !whitesTurn;
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:200px"><div class="cd-h">ChessGame</div><div class="cd-b">char[][] board<br>boolean whitesTurn</div><div class="cd-m">+ isLegalMove(char, ...)<br>&nbsp;&nbsp;<span style="color:var(--text-warning)">one switch, six cases</span><br>+ move(sx, sy, ex, ey)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, one grid, one switch</div>`,
+callout:{type:'callout-ok',text:'Honestly? It plays casual chess. Knights make L-shapes, rooks slide, captures overwrite. The interviewer nods... and then repeats requirement two: "ALL rules of international chess."'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'"All rules" — the four horsemen arrive',desc:'Castling. En passant. Pawn promotion. Check and checkmate. Plus: no rolling back moves, a full move log, stalemate, resignation, forfeit. Each one sounds like "just another case" — so you patch the switch. Watch what happens.',
+code:{h:'ChessGame.java — the switch metastasizes',b:`boolean isLegalMove(char piece, int sx, int sy, ...) {
+  switch (Character.toUpperCase(piece)) {
+    case 'K':
+      if (dx + dy == 1) return true;
+      <span class="hi-y">// castling: the king moves TWO squares and a
+      // rook teleports past him — two pieces, one
+      // move. Legal only if NEITHER has EVER moved.</span>
+      <span class="hi-r">// a char[][] has no memory. Bolt on flags:
+      boolean wKingMoved, wRookAMoved, wRookHMoved,
+              bKingMoved, bRookAMoved, bRookHMoved;</span>
+    case 'P':
+      // forward 1... or 2 from the start row...
+      // captures diagonally only...
+      <span class="hi-y">// en passant: legal ONLY if the LAST move was
+      // an enemy pawn jumping two squares past you</span>
+      <span class="hi-r">// ...we never recorded a single move. 😰</span>
+      // promotion: this 'P' must BECOME a 'Q'?!
+    case 'R': // rooks can't jump — scan the path...
+  }
+}
+<span class="cm">// still TODO: check, checkmate, stalemate,
+// resignation, forfeit, the move log (a hard
+// requirement), two online players, random sides...</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">ChessGame <span class="st">the God object</span></div><div class="cd-b">board chars, turn flag,<br>6 castling flags, lastMove?,<br>promotion hack, log arrays...</div><div class="cd-m">+ isLegalMove() <span style="color:var(--text-danger)">100+ lines of switch</span><br>+ move() <span style="color:var(--text-danger)">mutates + forgets</span><br>+ isCheck()? + undo()? + ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every rule of chess = another branch in the same switch</div>`,
+callout:{type:'callout-warn',text:'Notice the shape of the failures: the hard rules aren\'t about geometry — they\'re about IDENTITY (whose rule is this?) and HISTORY (what happened before?). A char grid has neither.'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'Four questions checkmate Attempt #1',desc:'The interviewer plays four perfectly ordinary chess moves. Each one is a routine part of the game — and each one breaks a different load-bearing wall of the char-grid design.',
+code:{h:'Four moves that kill the design',b:`<span class="cm">// Q1: "White castles kingside."</span>
+<span class="hi-r">→ TWO pieces move in one move, and legality
+  depends on HISTORY (has either ever moved? is
+  any crossed square attacked?). The array
+  remembers nothing.</span>
+
+<span class="cm">// Q2: "Black replies en passant."</span>
+<span class="hi-r">→ Legal only if the PREVIOUS move was a
+  two-square pawn push right beside you.
+  There is no previous move — we never
+  stored one.</span>
+
+<span class="cm">// Q3: "White\'s pawn reaches the last rank."</span>
+<span class="hi-r">→ Promotion: the piece must CHANGE TYPE
+  mid-game. Every branch that matched on 'P'
+  is now wrong for this square.</span>
+
+<span class="cm">// Q4: "Is black in check? Replay the game."</span>
+<span class="hi-r">→ Check = re-running the giant switch for all
+  16 enemy pieces, inline. Replay = impossible.
+  And none of it is testable without a full game.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every rule tweak edits<br>the same giant switch</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">history-dependent rules,<br>but no history exists</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">can\'t test the knight\'s rule<br>without the whole game</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — six behaviors that vary, welded into one switch that doesn\'t. The pieces need to own their own rules, and the moves need to be things.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for chess — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Support <b>two online players</b> playing one game <span class="obj">Player, Game</span></li>
+<li data-n="R2"><b>All rules</b> of international chess are followed <span class="obj">Piece.canMove()</span></li>
+<li data-n="R3">Each player <b>randomly assigned</b> black or white <span class="obj">Player.isWhiteSide()</span></li>
+<li data-n="R4">Moves alternate; <b>white plays first</b> <span class="obj">Game.currentTurn</span></li>
+<li data-n="R5">Players <b>can\'t cancel or roll back</b> their moves <span class="obj">immutable Move</span></li>
+<li data-n="R6">Maintain a <b>log of all moves</b> by both players <span class="obj">List&lt;Move&gt; movesPlayed</span></li>
+<li data-n="R7">Each side starts with <b>8 pawns, 2 rooks, 2 bishops, 2 knights, 1 queen, 1 king</b> <span class="obj">Board.resetBoard()</span></li>
+<li data-n="R8">Game ends in <b>checkmate, forfeit, stalemate, or resignation</b> <span class="obj">GameStatus</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Read R2 again: "all rules" is one line of the spec and ninety percent of the design. And R5 + R6 together whisper the second big idea — moves are recordable objects, logged forever, never mutated.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'The course names two human actors — and one silent one. Listing their use cases tells us which operations the classes must expose, before we design a single class.',
+code:{h:'Top use cases',b:`<span class="cm">// Player — a registered account in the system</span>
+move a piece        <span class="cm">— any valid chess move</span>
+resign / forfeit    <span class="cm">— concede the game</span>
+register account    <span class="cm">— join the system</span>
+cancel membership
+
+<span class="cm">// Admin</span>
+ban / modify players
+
+<span class="cm">// System (the silent actor)</span>
+<span class="hi-b">update the game log</span>  <span class="cm">— record every move (R6)</span>
+update the game view <span class="cm">— both players see the board</span>
+flip the turn        <span class="cm">— enforce alternation (R4)</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">♟️ Player</span><span class="does">plays moves,<br>resigns / forfeits</span></div>
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">bans / modifies<br>players</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">logs moves, flips turns,<br>updates the view</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Move a piece</span><span class="uc">Resign game</span><span class="uc">Forfeit game</span><span class="uc">Register account</span><span class="uc">Cancel membership</span><span class="uc">Update game log</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'"Update game log" is a use case of its own — the course is telling you a move isn\'t just a board mutation, it\'s a recordable event. Hold that thought: it becomes the Command pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Board, box, piece, move, player, game — group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The board world</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Board</div></div>
+    <div class="cd-box"><div class="cd-h">Box</div></div>
+    <div class="cd-box abstract"><div class="cd-h">Piece</div></div>
+    <div class="cd-box"><div class="cd-h">Move</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box abstract"><div class="cd-h">Account</div></div>
+    <div class="cd-box"><div class="cd-h">Player</div></div>
+    <div class="cd-box"><div class="cd-h">Admin</div></div>
+    <div class="cd-box"><div class="cd-h">Person</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">Orchestration &amp; UI</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Game</div></div>
+    <div class="cd-box fly"><div class="cd-h">GameController</div></div>
+    <div class="cd-box fly"><div class="cd-h">GameView</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--bg-info);border:0.5px solid var(--border-info)"></div>Abstract (varies → hierarchy)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Boundary objects</div>
+</div>`,
+callout:{type:'callout-ok',text:'Ten focused classes instead of one char grid — plus two enums, GameStatus and AccountStatus, for the fixed vocabularies. Now the key question: which of these VARY? Six pieces, six movement rules. That\'s where the hierarchy goes.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: each piece owns its rule',desc:'What varies in chess is exactly one thing: <strong>how each piece moves</strong>. So the course makes <code>Piece</code> abstract with one polymorphic hook — <code>canMove(board, start, end)</code> — and each of the six pieces overrides it with its own rule. The switch on <code>\'K\'</code>,<code>\'Q\'</code>,<code>\'R\'</code>... simply dissolves.',
+code:{h:'Piece.java + Knight.java — the movement rule lives IN the piece',b:`public abstract class Piece {
+  private boolean killed = false;
+  private boolean white = false;
+
+  public Piece(boolean white) { this.setWhite(white); }
+
+  public boolean isWhite()  { return this.white; }
+  public boolean isKilled() { return this.killed; }
+  public void setKilled(boolean killed) {
+    this.killed = killed;
+  }
+
+  <span class="cm">// THE design move of this entire case study:</span>
+  public abstract boolean <span class="hi-g">canMove(Board board,
+                          Box start, Box end)</span>;
+}
+
+public class Knight extends Piece {
+  public Knight(boolean white) { super(white); }
+
+  @Override
+  public boolean canMove(Board board, Box start, Box end) {
+    <span class="cm">// shared rule: can\'t capture your own color</span>
+    if (end.getPiece().isWhite() == this.isWhite())
+      return false;
+    int x = Math.abs(start.getX() - end.getX());
+    int y = Math.abs(start.getY() - end.getY());
+    <span class="hi-g">return x * y == 2;</span>   <span class="cm">// the entire L-shape rule</span>
+  }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Piece</div><div class="cd-b">white: boolean<br>killed: boolean</div><div class="cd-m">+ isWhite() / isKilled()<br>+ <b>abstract canMove(b, s, e)</b></div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>IS-A · each overrides canMove()</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">♔ King</div><div class="cd-m" style="font-size:9.5px">+castlingDone</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">♕ Queen</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">♖ Rook</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">♗ Bishop</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">♘ Knight</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">♙ Pawn</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">six subclasses, six encapsulated movement rules — no switch anywhere</div>`,
+callout:{type:'callout-info',text:'Each rule is now 3–10 lines and testable alone: assert that a Knight can jump. And Q3 — promotion — becomes trivial: replace the Pawn object in its Box with a Queen object. The piece changes class; not one branch of game code changes.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. Movement rules vary piece by piece — so each rule lives inside its piece, behind one abstract canMove() hook.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: the board asks the piece',desc:'The payoff: <code>Game</code> never asks <em>"what are you?"</em> — it asks <em>"can you do this?"</em>. Even castling, the gnarliest rule in chess, hides behind the same <code>canMove()</code> call, with its history flag tucked inside <code>King</code>. Same story for people: <code>Account</code> is abstract; <code>Player</code> and <code>Admin</code> extend it.',
+code:{h:'King.java — the hardest rule stays behind the same interface',b:`public class King extends Piece {
+  <span class="hi-b">private boolean castlingDone = false;</span> <span class="cm">// history lives here</span>
+
+  @Override
+  public boolean canMove(Board board, Box start, Box end) {
+    if (end.getPiece().isWhite() == this.isWhite())
+      return false;
+    int x = Math.abs(start.getX() - end.getX());
+    int y = Math.abs(start.getY() - end.getY());
+    if (x + y == 1) {
+      <span class="cm">// + check this doesn\'t leave the king attacked</span>
+      return true;
+    }
+    <span class="hi-b">return this.isValidCastling(board, start, end);</span>
+  }
+
+  private boolean isValidCastling(Board b, Box s, Box e) {
+    if (this.isCastlingDone()) return false;
+    <span class="cm">// rook in position? path clear? neither has
+    // moved before? no crossed square attacked?</span>
+    this.setCastlingDone(true);
+    return true;
+  }
+}
+
+<span class="cm">// and the ONLY call site, in Game.makeMove():</span>
+if (!<span class="hi-g">sourcePiece.canMove(board, start, end)</span>)
+  return false;
+<span class="cm">// no instanceof. no switch. Game asks; Piece answers.</span>`},
+dia:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Piece</div><div class="cd-m">+ canMove(b, s, e)</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">King</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">...5 more</div></div>
+  </div>
+</div>
+<div>
+  <div class="cd-row"><div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">abstract</span>Account</div><div class="cd-m">id, password, status</div></div></div>
+  <div class="cd-arr"><div class="tri"></div><div>extends</div></div>
+  <div class="cd-row" style="gap:4px">
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Player</div></div>
+    <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Admin</div></div>
+  </div>
+</div>
+</div>
+<div class="cd-arr" style="padding-top:10px">Game holds a <b>Piece</b> — never a Knight; the system holds an <b>Account</b> — never an Admin</div>`,
+callout:{type:'callout-info',text:'Player extends Account and carries person + whiteSide (R3); Admin extends Account and bans/modifies players. A new account type — moderator, tournament bot — is one subclass, zero edits to Game.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. The declared types in Game are Piece and Account — supertypes — so runtime objects (Knight, King, Player, Admin) aren\'t locked into the code.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: Game HAS Board HAS 64 Boxes',desc:'The God object owned everything in one body. The fix is a composition chain where each class knows <strong>one thing</strong>: a <code>Piece</code> knows movement geometry, a <code>Box</code> knows its location, the <code>Board</code> knows occupancy, and <code>Game</code> knows turns and history.',
+code:{h:'Box.java + Board.java — location vs. occupancy',b:`public class Box {
+  private Piece piece;   <span class="cm">// 0..1 — a box may be empty</span>
+  private int x, y;      <span class="cm">// Box knows LOCATION, nothing else</span>
+
+  public Box(int x, int y, Piece piece) { ... }
+  public Piece getPiece()       { return this.piece; }
+  public void  setPiece(Piece p){ this.piece = p; }
+}
+
+public class Board {
+  <span class="hi-g">Box[][] boxes;</span>         <span class="cm">// Board knows OCCUPANCY: 8×8 boxes</span>
+
+  public Box getBox(int x, int y) {
+    if (x &lt; 0 || x &gt; 7 || y &lt; 0 || y &gt; 7)
+      throw new Exception("Index out of bound");
+    return boxes[x][y];
+  }
+
+  public void resetBoard() {  <span class="cm">// R7: the starting army</span>
+    boxes[0][0] = new Box(0, 0, new Rook(true));
+    boxes[0][1] = new Box(0, 1, new Knight(true));
+    boxes[0][2] = new Box(0, 2, new Bishop(true)); <span class="cm">//...</span>
+    boxes[1][0] = new Box(1, 0, new Pawn(true));   <span class="cm">//...</span>
+    boxes[7][0] = new Box(7, 0, new Rook(false));  <span class="cm">// black</span>
+    boxes[6][0] = new Box(6, 0, new Pawn(false));  <span class="cm">//...</span>
+    for (int i = 2; i &lt; 6; i++)      <span class="cm">// empty middle</span>
+      for (int j = 0; j &lt; 8; j++)
+        boxes[i][j] = new Box(i, j, null);
+  }
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Game</div><div class="cd-m">turns + history + status</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 1</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Board</div><div class="cd-m">occupancy: who is where</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 64</div>
+<div class="cd-row"><div class="cd-box" style="min-width:180px"><div class="cd-h">Box</div><div class="cd-m">location: x, y</div></div></div>
+<div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> HAS-A 0..1</div>
+<div class="cd-row"><div class="cd-box abstract" style="min-width:180px"><div class="cd-h"><span class="st">abstract</span>Piece</div><div class="cd-m">movement geometry</div></div></div>
+<div class="cd-arr" style="padding-top:8px">check detection COMPOSES all four — it belongs to no single class</div>
+</div>`,
+callout:{type:'callout-ok',text:'"Is the king in check?" now has a clean shape: for every enemy piece still on the board, ask piece.canMove(board, itsBox, kingsBox). Nobody\'s internals get opened — the objects are simply asked.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition, and give each class a single responsibility. Piece = geometry, Box = location, Board = occupancy, Game = turns and history. Hard questions are answered by composing them, not by one class knowing everything.'}
+},
+// ============ STEP 11 — PATTERN: STRATEGY ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Strategy',title:'Six interchangeable movement algorithms',desc:'Step back and look at what <code>canMove()</code> really is: <strong>one interface, six interchangeable algorithms</strong>. Each piece\'s movement rule is an encapsulated algorithm the game engine invokes without knowing which one it got. That is Strategy in spirit — with each piece acting as its own context.',
+code:{h:'One hook, six algorithms',b:`<span class="cm">// ONE abstract hook...</span>
+public abstract boolean canMove(Board board,
+                                Box start, Box end);
+
+<span class="cm">// ...SIX interchangeable movement algorithms:</span>
+Knight → <span class="hi-b">x * y == 2</span>                <span class="cm">// the L-shape</span>
+King   → <span class="hi-b">x + y == 1</span>, or <span class="hi-b">isValidCastling(b, s, e)</span>
+Bishop → <span class="cm">|dx| == |dy|, path clear</span>
+Rook   → <span class="cm">dx == 0 or dy == 0, path clear</span>
+Queen  → <span class="cm">bishop-rule OR rook-rule</span>
+Pawn   → <span class="cm">forward 1 (2 from start), captures
+         diagonally, en passant, promotion</span>
+
+<span class="cm">// The engine never asks WHAT the piece is.
+// It asks whether the move is possible — and
+// the right algorithm answers:</span>
+sourcePiece.<span class="hi-g">canMove(board, start, end)</span>
+
+<span class="cm">// Want a chess variant with a fairy piece?
+// One new subclass. Game and Board: untouched.</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box iface" style="min-width:190px"><div class="cd-h"><span class="st">the strategy hook</span>Piece.canMove()</div><div class="cd-m">movement rule as an<br>encapsulated algorithm</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>each subclass = one algorithm</div></div>
+<div class="cd-row" style="gap:4px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">King</div><div class="cd-m" style="font-size:9.5px">x+y==1<br>∪ castling</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Queen</div><div class="cd-m" style="font-size:9.5px">rook ∪<br>bishop</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Rook</div><div class="cd-m" style="font-size:9.5px">straight<br>lines</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Bishop</div><div class="cd-m" style="font-size:9.5px">diagonals</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Knight</div><div class="cd-m" style="font-size:9.5px">x·y==2</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Pawn</div><div class="cd-m" style="font-size:9.5px">forward +<br>specials</div></div>
+</div>
+<div class="cd-arr" style="padding-top:4px">the caller (Game) is closed for modification, open for new pieces</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: polymorphic canMove() — each movement rule is an encapsulated, swappable algorithm behind one interface, exactly the Strategy idea from <a href="../ch1-strategy-pattern.html">Chapter 1</a>. This is program-to-an-interface at its purest: the entire engine depends on one abstract method.'}
+},
+// ============ STEP 12 — PATTERN: COMMAND ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Command',title:'A move is an object — the MoveLog is the game',desc:'R5 and R6 said it plainly: moves can\'t be rolled back by players, and every move must be logged. The course\'s answer: reify each move as a <code>Move</code> object — who, from where, to where, what was captured, was it castling — and append it to <code>movesPlayed</code>. That object is a <strong>Command</strong>.',
+code:{h:'Move.java — everything needed to record, replay... or reverse',b:`public class Move {
+  private Player player;       <span class="cm">// who</span>
+  private Box start;           <span class="cm">// from where</span>
+  private Box end;             <span class="cm">// to where</span>
+  private Piece pieceMoved;    <span class="cm">// what moved</span>
+  <span class="hi-g">private Piece pieceKilled;</span>   <span class="cm">// what it captured —
+                               // exactly what UNDO needs</span>
+  private boolean castlingMove = false;
+
+  public Move(Player player, Box start, Box end) {
+    this.player = player;
+    this.start = start;
+    this.end = end;
+    this.pieceMoved = start.getPiece();
+  }
+  public boolean isCastlingMove() {
+    return this.castlingMove;
+  }
+  public void setCastlingMove(boolean castlingMove) {
+    this.castlingMove = castlingMove;
+  }
+}
+
+<span class="cm">// Game keeps the history (R6):</span>
+private List&lt;Move&gt; movesPlayed;
+...
+<span class="hi-g">movesPlayed.add(move);</span>  <span class="cm">// every move, both players, forever</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box fly" style="min-width:190px"><div class="cd-h">Move <span class="st">command object</span></div><div class="cd-b">player, start, end<br>pieceMoved, pieceKilled<br>castlingMove</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>appended to</div></div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:190px"><div class="cd-h">List&lt;Move&gt; movesPlayed <span class="st">the log</span></div></div></div>
+<div class="cd-arr" style="padding-top:6px">one log, four superpowers ↓</div>
+<div style="text-align:center;max-width:420px">
+  <span class="uc">Game log (R6)</span><span class="uc">En passant = read the LAST Move</span><span class="uc">Replay for analysis</span><span class="uc">Persistence = serialize the log</span>
+</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Command (<a href="../ch6-command-pattern.html">Chapter 6</a>) — a request reified as an object. R5 bans players from rolling back, but the SYSTEM still gets undo for free: pieceKilled lets the board walk the log backwards, en-passant legality reads the previous Move, and saving a game is just serializing the list.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, the piece hierarchy for what varies, composition for the structure, a command object for history. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not chars</span>
+enum GameStatus    { ACTIVE, BLACK_WIN, WHITE_WIN,
+                     FORFEIT, STALEMATE, RESIGNATION }
+enum AccountStatus { ACTIVE, CLOSED, CANCELED,
+                     BLACKLISTED, NONE }
+
+<span class="cm">// WHAT VARIES — the piece hierarchy (Strategy)</span>
+abstract class Piece { white, killed;
+    <span class="hi-b">abstract boolean canMove(board, start, end);</span> }
+class King extends Piece   { castlingDone }
+class Queen, Rook, Bishop, Knight, Pawn ...
+
+<span class="cm">// THE PEOPLE</span>
+abstract class Account { id, password, status }
+class Player extends Account { person, whiteSide }
+class Admin  extends Account { blockUser() }
+
+<span class="cm">// THE STRUCTURE — composition</span>
+class Box   { x, y, piece }        <span class="cm">// location</span>
+class Board { Box[8][8]; getBox();
+              resetBoard(); }      <span class="cm">// occupancy</span>
+class Move  { player, start, end, pieceMoved,
+              pieceKilled, castlingMove } <span class="hi-b">// COMMAND</span>
+class Game  { players[2], board, currentTurn,
+              status, List&lt;Move&gt; movesPlayed;
+              playerMove(); makeMove(); }
+
+<span class="cm">// TOUCHPOINTS</span>
+class GameController { player moves come in here }
+class GameView       { Game pushes board updates out }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:200px"><div class="cd-h">Game <span class="st">orchestrator</span></div></div></div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> board 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> players 2</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> moves 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Board</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Player</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Move</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> boxes 64</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> IS-A Account</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> pieceKilled 0..1</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Box</div></div>
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Account ▸2</div></div>
+  <div class="cd-box abstract"><div class="cd-h" style="font-size:10.5px">Piece ▸6</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">GameController</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">GameView</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">GameStatus</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but identity lives in the Piece hierarchy and history lives in the Move log — the two things a char grid could never hold. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One game, end to end',desc:'A design is only convincing if you can run a scenario through it. This is the course\'s actual <code>makeMove()</code> — every guard, the log append, the box rewiring, the turn flip. Narrate it in the interview.',
+code:{h:'Game.java — makeMove(), the orchestration heart',b:`private boolean makeMove(Move move, Player player) {
+  Piece sourcePiece = move.getStart().getPiece();
+  if (sourcePiece == null) return false;
+
+  <span class="cm">// guard: your turn? your piece? (R4)</span>
+  if (<span class="hi-y">player != currentTurn</span>) return false;
+  if (sourcePiece.isWhite() != player.isWhiteSide())
+    return false;
+
+  <span class="cm">// guard: the PIECE decides legality — Strategy</span>
+  if (!<span class="hi-g">sourcePiece.canMove(board, move.getStart(),
+                            move.getEnd())</span>) return false;
+
+  Piece destPiece = move.getEnd().getPiece();
+  if (destPiece != null) {
+    destPiece.setKilled(true);
+    <span class="hi-g">move.setPieceKilled(destPiece);</span> <span class="cm">// Command remembers</span>
+  }
+  if (sourcePiece instanceof King &amp;&amp;
+      ((King) sourcePiece).isCastlingMove(start, end))
+    move.setCastlingMove(true);
+
+  <span class="hi-g">movesPlayed.add(move);</span>            <span class="cm">// R6: the log</span>
+  move.getEnd().setPiece(move.getStart().getPiece());
+  move.getStart().setPiece(null);   <span class="cm">// rewire the boxes</span>
+
+  if (destPiece instanceof King)    <span class="cm">// R8: game over</span>
+    this.setStatus(player.isWhiteSide()
+        ? GameStatus.WHITE_WIN : GameStatus.BLACK_WIN);
+
+  <span class="hi-y">currentTurn = (currentTurn == players[0])
+      ? players[1] : players[0];</span>    <span class="cm">// R4: flip</span>
+  return true;
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Player (white)</span><br>Drags the e-pawn two squares in <code>GameView</code>; <code>GameController</code> receives the move</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Game</span><br><code>playerMove(white, 1,4, 3,4)</code> looks up both boxes and wraps them: <code>new Move(player, start, end)</code></div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Game.makeMove</span><br>Guards pass: it\'s white\'s turn (R4), and the pawn is white</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Piece</span><br><code>pawn.canMove(board, start, end)</code> — the pawn\'s own algorithm approves (Strategy)</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">Game</span><br><code>movesPlayed.add(move)</code> (Command logged) → boxes rewired → <code>currentTurn</code> flips to black → <code>GameView</code> updates for both players</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">Later: white castles</span><br><code>King.isValidCastling()</code> consults its history flag; the Move is stamped <code>castlingMove = true</code> — one command, two pieces rewired</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">Endgame</span><br>Black\'s king has no legal reply → <code>status = WHITE_WIN</code>; <code>isEnd()</code> returns true and <code>GameView</code> announces checkmate (R8)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Post-game</span><br>Analysis replays <code>movesPlayed</code> — forward for review; backward using <code>pieceKilled</code> to resurrect captures and reconstruct any position</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed — and the exact follow-ups that murdered Attempt #1 (castling, en passant\'s last-move lookup, replay) are just steps 6 and 8 reading the Move log.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 12 classes — one recipe, three principles, two patterns. Chess is the purest "encapsulate what varies" case study in the whole course: six things vary, six subclasses, one hook.',
+code:{h:'Chess in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → Piece ▸6: each piece OWNS its movement rule
+2. Program to an interface
+   → Game asks canMove() — never instanceof/switch
+   → Account ▸ Player | Admin
+3. Composition + single responsibility
+   → Game ▸ Board ▸ 64 Box ▸ 0..1 Piece
+   → geometry | location | occupancy | history, split
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">Strategy</span>  canMove(): six interchangeable movement
+          algorithms behind one abstract hook
+<span class="hi-b">Command</span>   Move + movesPlayed: every move is an
+          object → log, replay, en passant, undo
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Blackjack (turn loop ≈ Game, hand ≈ Move log)
+ATM (GameStatus ≈ a state machine of screens)
+Head First ch6 remote control (Command: log + undo)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box iface" style="min-width:130px"><div class="cd-h">Strategy</div><div class="cd-m">Piece.canMove() —<br>six swappable rules</div></div>
+  <div class="cd-box fly" style="min-width:130px"><div class="cd-h">Command</div><div class="cd-m">Move objects +<br>movesPlayed log</div></div>
+  <div class="cd-box ctx" style="min-width:130px"><div class="cd-h">Composition</div><div class="cd-m">Game ▸ Board ▸<br>Box ▸ Piece</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interchangeable behavior</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Reified request</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Structure</div>
+</div>`,
+callout:{type:'callout-purple',text:'The char grid failed on identity and history. The design answers both: identity became polymorphism — the board asks the piece (<a href="../ch1-strategy-pattern.html">Strategy</a>) — and history became objects — the game logs the move (<a href="../ch6-command-pattern.html">Command</a>). Every hard rule in chess falls out of those two decisions.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>

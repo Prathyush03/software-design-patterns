@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study 4 — Design Stack Overflow | Grokking OOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #eceae4;
+    --bg-info: #e6f1fb;
+    --bg-danger: #fcebeb;
+    --bg-success: #eaf3de;
+    --bg-warning: #faeeda;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6a65;
+    --text-tertiary: #9c9a92;
+    --text-info: #0c447c;
+    --text-danger: #791f1f;
+    --text-success: #27500a;
+    --text-warning: #633806;
+    --border-primary: rgba(0,0,0,0.4);
+    --border-secondary: rgba(0,0,0,0.2);
+    --border-tertiary: rgba(0,0,0,0.1);
+    --border-info: #85b7eb;
+    --border-danger: #f09595;
+    --border-success: #97c459;
+    --border-warning: #eF9F27;
+    --purple-50: #EEEDFE; --purple-100: #CECBF6; --purple-600: #534AB7; --purple-800: #3C3489; --purple-900: #26215C;
+    --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+    --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+    --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #1c1c1a;
+    --bg-secondary: #2a2a27;
+    --bg-tertiary: #353532;
+    --bg-info: #0c2d4a;
+    --bg-danger: #3d1515;
+    --bg-success: #1a3008;
+    --bg-warning: #3d2804;
+    --text-primary: #e8e6df;
+    --text-secondary: #a5a39b;
+    --text-tertiary: #7a786f;
+    --text-info: #85b7eb;
+    --text-danger: #f09595;
+    --text-success: #97c459;
+    --text-warning: #fac775;
+    --border-primary: rgba(255,255,255,0.35);
+    --border-secondary: rgba(255,255,255,0.18);
+    --border-tertiary: rgba(255,255,255,0.08);
+    --border-info: #378add;
+    --border-danger: #e24b4a;
+    --border-success: #639922;
+    --border-warning: #ba7517;
+    --purple-50: #2a2554; --purple-100: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6; --purple-900: #EEEDFE;
+    --teal-50: #0a3528; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --coral-50: #3a1a0e; --coral-600: #F0997B; --coral-800: #F5C4B3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; padding: 24px 20px 40px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.3px; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left p a { color: var(--text-info); text-decoration: none; }
+  .header-left p a:hover { text-decoration: underline; }
+  .theme-toggle { background: var(--bg-secondary); border: 0.5px solid var(--border-tertiary); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font-body); transition: background 0.2s; }
+  .theme-toggle:hover { background: var(--bg-tertiary); }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .step-label { font-size: 13px; color: var(--text-secondary); min-width: 85px; font-weight: 500; }
+  .prog-track { flex: 1; height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--text-info); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Main card */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 16px; transition: background 0.3s, border-color 0.3s; }
+
+  /* Phase pill */
+  .pill { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 500; margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .pill-try { background: var(--bg-secondary); color: var(--text-secondary); }
+  .pill-ohno { background: var(--bg-danger); color: var(--text-danger); }
+  .pill-fix { background: var(--bg-warning); color: var(--text-warning); }
+  .pill-principle { background: var(--bg-info); color: var(--text-info); }
+  .pill-solution { background: var(--bg-success); color: var(--text-success); }
+  .pill-pattern { background: var(--purple-50); color: var(--purple-800); }
+
+  .s-title { font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.3px; }
+  .s-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+  .s-desc code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-secondary); padding: 1px 5px; border-radius: 4px; }
+
+  /* Principle box */
+  .principle-box { border: 0.5px solid var(--border-info); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 18px; background: var(--bg-info); }
+  .principle-box .p-lbl { font-size: 11px; font-weight: 500; color: var(--text-info); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .principle-box .p-txt { font-size: 13px; color: var(--text-info); line-height: 1.55; }
+
+  /* Two-panel layout */
+  .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 680px) { .two-panel { grid-template-columns: 1fr; } }
+
+  .panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; }
+  .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+  .full-panel { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; }
+  .full-panel .panel-h { padding: 7px 14px; font-size: 11px; font-weight: 500; background: var(--bg-secondary); color: var(--text-secondary); border-bottom: 0.5px solid var(--border-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .full-panel .panel-b { padding: 14px 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; color: var(--text-primary); }
+
+  /* Prose panel (requirements lists, use cases) */
+  .prose-b { padding: 12px 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); }
+  .req-list { list-style: none; }
+  .req-list li { padding: 4px 0 4px 26px; position: relative; border-bottom: 0.5px dashed var(--border-tertiary); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: attr(data-n); position: absolute; left: 0; top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); background: var(--bg-secondary); border-radius: 4px; padding: 0 5px; }
+  .req-list .obj { font-family: var(--font-mono); font-size: 11px; color: var(--text-info); background: var(--bg-info); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+
+  /* Syntax highlights */
+  .cm { color: var(--text-tertiary); }
+  .hi-r { background: var(--bg-danger); padding: 1px 4px; border-radius: 3px; }
+  .hi-y { background: var(--bg-warning); padding: 1px 4px; border-radius: 3px; }
+  .hi-g { background: var(--bg-success); padding: 1px 4px; border-radius: 3px; }
+  .hi-b { background: var(--bg-info); padding: 1px 4px; border-radius: 3px; }
+
+  /* Class diagram boxes */
+  .cd-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .cd-box { border: 0.5px solid var(--border-tertiary); border-radius: var(--radius-sm); display: inline-block; min-width: 78px; font-family: var(--font-mono); font-size: 11px; vertical-align: top; background: var(--bg-primary); }
+  .cd-box.abstract { background: var(--bg-info); border-color: var(--border-info); }
+  .cd-box.abstract .cd-h { color: var(--text-info); }
+  .cd-box.bad { background: var(--bg-danger); border-color: var(--border-danger); }
+  .cd-box.bad .cd-h { color: var(--text-danger); }
+  .cd-box.dup { background: var(--bg-warning); border-color: var(--border-warning); }
+  .cd-box.dup .cd-h { color: var(--text-warning); }
+  .cd-box.iface { border-style: dashed; background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.iface .cd-h { color: var(--purple-800); }
+  .cd-box.ctx { background: var(--teal-50); border-color: var(--teal-600); }
+  .cd-box.ctx .cd-h { color: var(--teal-800); }
+  .cd-box.ctx .cd-m { color: var(--teal-800); }
+  .cd-box.ctx .cd-b { color: var(--teal-800); }
+  .cd-box.fly { background: var(--purple-50); border-color: var(--purple-600); }
+  .cd-box.fly .cd-h { color: var(--purple-800); }
+  .cd-box.fly .cd-m { color: var(--purple-600); }
+  .cd-h { padding: 5px 10px; font-weight: 500; font-size: 11.5px; text-align: center; border-bottom: 0.5px solid var(--border-tertiary); font-family: var(--font-body); }
+  .cd-h .st { font-size: 10px; font-weight: 400; display: block; font-style: italic; color: var(--text-secondary); }
+  .cd-m { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; }
+  .cd-b { padding: 5px 10px; color: var(--text-secondary); line-height: 1.6; font-size: 10.5px; border-bottom: 0.5px solid var(--border-tertiary); }
+  .cd-arr { text-align: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .cd-arr .tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--border-secondary); margin: 0 auto; }
+  .cd-arr .ln { width: 0.5px; height: 14px; background: var(--border-secondary); margin: 0 auto; }
+  .has-a-lbl { display: flex; align-items: center; gap: 5px; justify-content: center; padding: 4px 0; font-size: 10px; color: var(--text-tertiary); }
+  .dia-wrap { border: 0.5px dashed var(--border-tertiary); border-radius: var(--radius-sm); padding: 6px; font-size: 10px; text-align: center; }
+
+  /* Actor box (use-case diagrams) */
+  .actor { border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; text-align: center; background: var(--bg-secondary); min-width: 86px; }
+  .actor .who { font-weight: 500; display: block; font-size: 11.5px; color: var(--text-primary); }
+  .actor .does { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .uc { display: inline-block; border: 0.5px solid var(--border-info); background: var(--bg-info); color: var(--text-info); border-radius: 20px; padding: 2px 10px; font-size: 10.5px; margin: 2px; }
+
+  /* Flow steps (sequence walkthroughs) */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+  .flow-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+  .flow-txt { font-size: 12.5px; color: var(--text-primary); line-height: 1.5; }
+  .flow-txt code { font-family: var(--font-mono); font-size: 11px; background: var(--bg-secondary); padding: 0 4px; border-radius: 3px; }
+  .flow-who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-tertiary); }
+
+  /* Callout */
+  .callout { border-radius: 0; padding: 10px 14px; font-size: 13px; line-height: 1.6; border-left: 3px solid; background: var(--bg-secondary); }
+  .callout-bad { border-left-color: var(--border-danger); color: var(--text-danger); }
+  .callout-warn { border-left-color: var(--border-warning); color: var(--text-warning); }
+  .callout-ok { border-left-color: var(--border-success); color: var(--text-success); }
+  .callout-info { border-left-color: var(--border-info); color: var(--text-info); }
+  .callout-purple { border-left-color: var(--purple-600); color: var(--purple-800); }
+  .callout a { color: inherit; font-weight: 500; }
+
+  /* Legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font-size: 10px; color: var(--text-secondary); margin-top: 10px; }
+  .legend-i { display: flex; align-items: center; gap: 4px; }
+  .legend-sw { width: 14px; height: 9px; border-radius: 3px; }
+
+  /* Bottom nav */
+  .bot-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-tertiary); border-radius: var(--radius); padding: 14px 20px; }
+  .bot-nav button { background: transparent; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-sm); padding: 9px 22px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: var(--font-body); font-weight: 500; transition: background 0.15s, transform 0.1s; }
+  .bot-nav button:hover { background: var(--bg-secondary); }
+  .bot-nav button:active { transform: scale(0.97); }
+  .bot-nav button:disabled { opacity: 0.2; cursor: default; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-tertiary); cursor: pointer; transition: all 0.25s; }
+  .dot.active { background: var(--text-info); width: 22px; border-radius: 4px; }
+  .dot.visited { background: var(--border-secondary); }
+
+  /* Animation */
+  .s-content { animation: fadeSlide 0.35s ease; }
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Keyboard hint */
+  .kbd-hint { text-align: center; font-size: 11px; color: var(--text-tertiary); margin-top: 12px; }
+  .kbd-hint kbd { font-family: var(--font-mono); background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; border: 0.5px solid var(--border-tertiary); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>Case Study 4 — Design Stack Overflow</h1>
+      <p><a href="index.html">&larr; All case studies</a> &middot; Grokking the Object Oriented Design Interview — Interactive Walkthrough</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle dark mode</button>
+  </div>
+
+  <div class="top-bar">
+    <span class="step-label" id="step-label"></span>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+
+  <div class="card" id="sc"></div>
+
+  <div class="bot-nav">
+    <button id="pb" onclick="go(cur-1)">&larr; Back</button>
+    <div class="dots" id="dots"></div>
+    <button id="nb" onclick="go(cur+1)">Next &rarr;</button>
+  </div>
+
+  <div class="kbd-hint">Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> arrow keys to navigate</div>
+</div>
+
+<script>
+const S=[
+// ============ STEP 0 — THE BRIEF ============
+{phase:'pill-try',phaseTxt:'The interview',title:'"Design Stack Overflow." Go.',desc:'Forty-five minutes, a whiteboard, and a system every developer uses daily. Questions, answers, comments, up-votes, reputation points, badges, bounties, tags, moderators, notifications. You know the product by heart — which makes it worse: where does the <em>design</em> start?',
+code:{h:'What the interviewer is actually grading',b:`<span class="cm">// NOT graded: memorizing a "perfect" answer.</span>
+<span class="cm">// Graded:</span>
+1. Do you <span class="hi-b">clarify requirements</span> before coding?
+2. Can you turn requirements into <span class="hi-b">objects</span>?
+3. Do your classes have <span class="hi-b">one job each</span>?
+4. Is the design <span class="hi-b">open to change</span>?
+   (new role, new notification channel,
+    a new thing to vote on...)
+5. Do you recognize where <span class="hi-b">design patterns</span>
+   naturally apply — without forcing them?`},
+dia:()=>`<div class="cd-row">
+  <div class="dia-wrap" style="padding:12px;min-width:230px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:6px">A question page</div>
+    <div style="display:flex;flex-direction:column;gap:3px;font-family:var(--font-mono);font-size:10px;text-align:left">
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">▲128 <b>Undo the last git commit?</b> <span style="color:var(--text-secondary)">+50 bounty</span></div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">&nbsp;&nbsp;tags: [git] [version-control] · 💬 3 comments</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">▲342 ✓ answer — @mia · 💬 5 comments</div>
+      <div style="background:var(--bg-secondary);border-radius:4px;padding:3px 8px">▲87&nbsp;&nbsp;&nbsp; answer — @sam · 💬 1 comment</div>
+      <div style="display:flex;gap:4px;justify-content:space-between;margin-top:2px">
+        <span style="background:var(--bg-success);color:var(--text-success);border-radius:4px;padding:2px 8px">▲ on answer = +10 rep</span>
+        <span style="background:var(--bg-warning);color:var(--text-warning);border-radius:4px;padding:2px 8px">mods close / reopen</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+callout:{type:'callout-info',text:'Your mission: design this the way the Head First chapters taught — start naive, feel the pain, then let design principles drive you to the patterns.'}
+},
+// ============ STEP 1 — ATTEMPT #1 ============
+{phase:'pill-try',phaseTxt:'Attempt #1',title:'Start coding immediately — one big class',desc:'The instinct under time pressure: skip the boring requirements talk and write code. One <code>Forum</code> class, parallel arrays for questions and answers, an int per question for votes. Done in five minutes.',
+code:{h:'Forum.java — the "just code it" design',b:`public class Forum {
+    String[] questions  = new String[1000];
+    String[] askedBy    = new String[1000];
+    <span class="hi-y">String[][] answers  = new String[1000][50];</span>
+    int[] votes         = new int[1000];
+    int qCount = 0;
+
+    int postQuestion(String text, String user) {
+        questions[qCount] = text;
+        askedBy[qCount] = user;
+        return qCount++;  <span class="cm">// question id = array index</span>
+    }
+
+    void postAnswer(int qId, String text) {
+        <span class="cm">// first empty slot in answers[qId]</span>
+    }
+
+    void upvote(int qId) { votes[qId]++; }
+
+    List&lt;String&gt; search(String keyword) {
+        <span class="cm">// loop questions, substring match</span>
+    }
+}`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box" style="min-width:190px"><div class="cd-h">Forum</div><div class="cd-b">String[] questions<br>String[] askedBy<br>String[][] answers<br>int[] votes</div><div class="cd-m">+ postQuestion(text, user)<br>+ postAnswer(qId, text)<br>+ upvote(qId)<br>+ search(keyword)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">one class, four arrays, everything is a String</div>`,
+callout:{type:'callout-ok',text:'Honestly? For a toy Q&amp;A board this works. Questions get asked, answers get posted, votes go up. The interviewer nods... and then reads you the real requirements.'}
+},
+// ============ STEP 2 — REQUIREMENTS ARRIVE ============
+{phase:'pill-try',phaseTxt:'New requirements',title:'The real spec lands',desc:'The interviewer keeps going: comments on questions <em>and</em> answers; flags; bounties with expiry dates; badges; reputation rules (+10 for an answer up-vote, +5 for a question up-vote); guests vs. members vs. moderators vs. admins; vote-to-close with an official closing remark; vote-to-delete and undelete; tags with frequency tracking. Patch the class!',
+code:{h:'Forum.java — the God object grows',b:`void upvote(int qId, String user) {
+  <span class="hi-y">if (isMember(user))</span> {         <span class="cm">// guests can't vote</span>
+    votes[qId]++;
+    String owner = askedBy[qId];
+    <span class="hi-y">rep.put(owner, rep.get(owner) + 5);</span>
+    <span class="cm">// +5? answers pay +10... is this upvoteQuestion?</span>
+  }
+}
+void comment(int qId, int aId, String text) {
+  if (aId == -1) { <span class="cm">/* on the question */</span> }
+  <span class="hi-r">else { /* on answers[qId][aId]... stored WHERE? */ }</span>
+}
+void close(int qId, String user, String remark) {
+  <span class="hi-y">if (userType(user).equals("moderator")
+      || closeVotes[qId] &gt;= 5)</span> {
+    closed[qId] = true;
+    remarks[qId] = remark;  <span class="cm">// "duplicate"? "dupe"?</span>
+  }
+}
+<span class="cm">// TODO: bounties. TODO: badges. TODO: flags. TODO:
+// notify followers when a new answer lands. 😰</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad" style="min-width:210px"><div class="cd-h">Forum <span class="st">the God object</span></div><div class="cd-b">questions, answers, comments,<br>votes, flags, rep, badges,<br>bounties, tags, closeVotes,<br>remarks, followers...</div><div class="cd-m">+ upvote() <span style="color:var(--text-danger)">rep rules inline</span><br>+ comment() <span style="color:var(--text-danger)">3-D arrays?!</span><br>+ close() <span style="color:var(--text-danger)">stringly roles</span><br>+ addBounty()? + notify()?<br>+ ...</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">every requirement = another parallel array + another branch</div>`,
+callout:{type:'callout-warn',text:'Each new requirement doesn\'t add a class — it adds another parallel array and another if/else to methods that already do too much. Smell it yet?'}
+},
+// ============ STEP 3 — OH NO ============
+{phase:'pill-ohno',phaseTxt:'Oh no!',title:'The parallel arrays collapse',desc:'Then the interviewer asks three innocent follow-ups, and the design falls apart on the whiteboard.',
+code:{h:'Three questions that kill Attempt #1',b:`<span class="cm">// Q1: "Add a comment to the 2nd answer
+//      of question 7."</span>
+<span class="hi-r">→ answers[7][1] is a String. Comments on
+  answers need a THIRD parallel dimension —
+  and votes and flags on comments a fourth.</span>
+
+<span class="cm">// Q2: "Who may close a question? Delete one?"</span>
+<span class="hi-r">→ userType(user).equals("moder ator") compiles
+  fine and fails at runtime. Privilege checks
+  are strings scattered across every method.</span>
+
+<span class="cm">// Q3: "An up-vote on an answer awards +10 rep,
+//      may unlock a badge, and must notify
+//      everyone following the question."</span>
+<span class="hi-r">→ One click now edits votes, reputation,
+  badges, and notifications — all inline
+  in upvote(). Blast radius: everything.</span>
+
+<span class="cm">// And testing? You can't test badge rules
+// without standing up the entire forum.</span>`},
+dia:()=>`<div class="cd-row">
+  <div class="cd-box bad"><div class="cd-h">Rigid</div><div class="cd-m">every change touches<br>the same giant class</div></div>
+  <div class="cd-box bad"><div class="cd-h">Fragile</div><div class="cd-m">stringly-typed roles,<br>index arithmetic everywhere</div></div>
+  <div class="cd-box bad"><div class="cd-h">Untestable</div><div class="cd-m">votes, reputation, badges,<br>notifications all entangled</div></div>
+</div>`,
+callout:{type:'callout-bad',text:'This is the same disease as Duck.fly() in Chapter 1 — behavior that varies is welded to code that doesn\'t. We need a method, not more patches.'}
+},
+// ============ STEP 4 — STEP BACK: THE RECIPE ============
+{phase:'pill-fix',phaseTxt:'Step back',title:'The OOD interview recipe',desc:'Every case study in this course follows the same five-step climb. It\'s slower for the first two minutes and faster for the remaining forty.',
+code:{h:'The 5-step method',b:`1. <span class="hi-b">Clarify requirements</span>   — scope the system
+2. <span class="hi-b">Actors &amp; use cases</span>    — who does what?
+3. <span class="hi-b">Nouns → classes</span>       — candidate objects
+4. <span class="hi-b">Relationships</span>         — IS-A? HAS-A?
+                          <span class="cm">what varies → encapsulate it</span>
+5. <span class="hi-b">Skeleton code</span>         — attributes + method
+                          signatures, patterns
+                          where they fit`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-warning);border-color:var(--border-warning)"><b style="color:var(--text-warning)">1. Requirements</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>2. Actors &amp; use cases</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>3. Nouns → classes</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px"><b>4. Relationships &amp; principles</b></div>
+  <div class="cd-arr"><div class="ln"></div><div class="tri"></div></div>
+  <div class="dia-wrap" style="min-width:200px;background:var(--bg-success);border-color:var(--border-success)"><b style="color:var(--text-success)">5. Skeleton code + patterns</b></div>
+</div>`,
+callout:{type:'callout-info',text:'Interviews grade the process, not the trivia. The next steps walk this recipe for Stack Overflow — and the same recipe repeats in all 16 case studies.'}
+},
+// ============ STEP 5 — REQUIREMENTS ============
+{phase:'pill-fix',phaseTxt:'Step 1 · Requirements',title:'Pin down what we\'re building',desc:'Restate the requirements out loud and notice: <strong>every requirement is secretly pointing at an object or a behavior.</strong>',
+dia:()=>`<div class="panel" style="margin-bottom:0"><div class="panel-h">System requirements → object hints</div><div class="prose-b"><ul class="req-list">
+<li data-n="R1">Any <b>guest</b> can search and view questions; to post or vote they must join <span class="obj">Account, Search</span></li>
+<li data-n="R2">Members can post <b>new questions</b> <span class="obj">Question, Member</span></li>
+<li data-n="R3">Members can answer an <b>open</b> question <span class="obj">Answer, QuestionStatus</span></li>
+<li data-n="R4">Comments on <b>any question or answer</b> <span class="obj">Comment</span></li>
+<li data-n="R5"><b>Up-vote</b> a question, answer, or comment <span class="obj">voteCount</span></li>
+<li data-n="R6"><b>Flag</b> a question, answer, or comment <span class="obj">flagCount</span></li>
+<li data-n="R7">Add a <b>bounty</b> to your question to draw attention <span class="obj">Bounty</span></li>
+<li data-n="R8">Members earn <b>badges</b> for being helpful <span class="obj">Badge</span></li>
+<li data-n="R9">Members <b>vote to close</b>; moderators close or reopen any question <span class="obj">QuestionStatus, Moderator</span></li>
+<li data-n="R10">Members add <b>tags</b> to their questions <span class="obj">Tag</span></li>
+<li data-n="R11">Members <b>vote to delete</b> very low-quality questions <span class="obj">QuestionStatus.DELETED</span></li>
+<li data-n="R12">Moderators can <b>undelete</b> a deleted question <span class="obj">Moderator.undeleteQuestion()</span></li>
+<li data-n="R13">Identify the <b>most frequently used tags</b> <span class="obj">Tag.dailyAskedFrequency</span></li>
+</ul></div></div>`,
+callout:{type:'callout-ok',text:'Two minutes of requirements talk just produced our entire vocabulary. Attempt #1 skipped this — and had to invent it mid-code as parallel arrays.'}
+},
+// ============ STEP 6 — ACTORS & USE CASES ============
+{phase:'pill-fix',phaseTxt:'Step 2 · Use cases',title:'Who does what?',desc:'Five actors touch this system — and the roles nest: everything a guest can do, a member can do; everything a member can do, a moderator can do. That nesting is a design hint we\'ll cash in soon.',
+code:{h:'Top use cases',b:`<span class="cm">// Guest</span>
+search questions      <span class="cm">— no account needed</span>
+view questions
+
+<span class="cm">// Member — everything a guest can, plus</span>
+create question       <span class="cm">— with bounty and tags</span>
+add / modify answers
+add comments          <span class="cm">— on questions or answers</span>
+up-vote / flag        <span class="cm">— questions, answers, comments</span>
+vote to close · vote to delete
+
+<span class="cm">// Moderator — everything a member can, plus</span>
+close / delete / undelete <span class="hi-b">any</span> question
+
+<span class="cm">// Admin</span>
+block / unblock members
+
+<span class="cm">// System (yes, the system is an actor)</span>
+send notifications    <span class="cm">— e.g. new answer posted</span>
+assign badges         <span class="cm">— based on reputation</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="actor"><span class="who">👀 Guest</span><span class="does">searches &amp;<br>views</span></div>
+  <div class="actor"><span class="who">👤 Member</span><span class="does">asks, answers,<br>votes, flags</span></div>
+  <div class="actor"><span class="who">🛡️ Moderator</span><span class="does">closes, reopens,<br>undeletes</span></div>
+  <div class="actor"><span class="who">🛠️ Admin</span><span class="does">blocks / unblocks<br>members</span></div>
+  <div class="actor"><span class="who">⚙️ System</span><span class="does">notifications,<br>badges</span></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>use cases</div></div>
+<div style="text-align:center;max-width:440px">
+  <span class="uc">Search questions</span><span class="uc">Create question + tags + bounty</span><span class="uc">Add/modify answer</span><span class="uc">Comment on Q or A</span><span class="uc">Up-vote / flag</span><span class="uc">Vote to close / delete</span><span class="uc">Close / undelete any question</span><span class="uc">Block member</span><span class="uc">Send notification</span><span class="uc">Assign badge</span>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'Notice "System" is an actor: sending notifications and assigning badges are use cases with no human behind them — that hint becomes the Observer pattern in a few steps.'}
+},
+// ============ STEP 7 — NOUNS TO CLASSES ============
+{phase:'pill-fix',phaseTxt:'Step 3 · Classes',title:'Underline the nouns → candidate classes',desc:'Classic OOA trick: the nouns in the requirements are your candidate classes; the verbs are their methods. Group them into layers and the architecture appears.',
+dia:()=>`<div style="display:flex;flex-direction:column;gap:10px">
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The people (a ladder of privileges)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">Account</div></div>
+    <div class="cd-box ctx"><div class="cd-h">Member</div></div>
+    <div class="cd-box"><div class="cd-h">Moderator</div></div>
+    <div class="cd-box"><div class="cd-h">Admin</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The content (what gets posted)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box ctx"><div class="cd-h">Question</div></div>
+    <div class="cd-box"><div class="cd-h">Answer</div></div>
+    <div class="cd-box"><div class="cd-h">Comment</div></div>
+    <div class="cd-box"><div class="cd-h">Photo</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The incentives (why people participate)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box"><div class="cd-h">Tag</div></div>
+    <div class="cd-box"><div class="cd-h">Badge</div></div>
+    <div class="cd-box"><div class="cd-h">Bounty</div></div>
+  </div>
+</div>
+<div>
+  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-tertiary);text-align:center;margin-bottom:4px">The plumbing (capabilities &amp; services)</div>
+  <div class="cd-row" style="gap:5px">
+    <div class="cd-box iface"><div class="cd-h">Search</div></div>
+    <div class="cd-box fly"><div class="cd-h">Notification</div></div>
+  </div>
+</div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Aggregates (own things)</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Interface</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Service</div>
+</div>`,
+callout:{type:'callout-ok',text:'Thirteen small classes instead of one God object. Next: which of these vary? That decides where the hierarchies (and patterns) go.'}
+},
+// ============ STEP 8 — PRINCIPLE 1 ============
+{phase:'pill-principle',phaseTxt:'Principle #1',title:'Encapsulate what varies: what can be voted on?',desc:'What kept breaking Attempt #1? <strong>The set of things you can vote on, flag, and comment on varies</strong> — questions, answers, and comments all qualify (R4–R6), each with its own counters. Here is the course\'s version:',
+code:{h:'Question / Answer / Comment — the course\'s version',b:`public class Question implements Search {
+  private String title;
+  private String description;
+  private int viewCount;
+  private <span class="hi-y">int voteCount;</span>
+  private List&lt;Comment&gt; <span class="hi-y">comments</span>;
+  <span class="cm">// + status, bounty, photos, answers... (soon)</span>
+  public boolean <span class="hi-y">addComment(Comment comment);</span>
+}
+
+public class Answer {
+  private String answerText;
+  private boolean accepted;  <span class="cm">// owner accepted it?</span>
+  private <span class="hi-y">int voteCount;</span>
+  private <span class="hi-y">int flagCount;</span>
+  private Member creatingMember;
+  public boolean <span class="hi-y">incrementVoteCount();</span>
+}
+
+public class Comment {
+  private String text;
+  private <span class="hi-y">int voteCount;</span>
+  private <span class="hi-y">int flagCount;</span>
+  private Member askingMember;
+  public boolean <span class="hi-y">incrementVoteCount();</span>
+}
+
+<span class="cm">// Same capability, hand-copied three times.
+// In the interview, name the DRY move:</span>
+interface Votable     { boolean incrementVoteCount(); }
+interface Commentable { boolean addComment(Comment c); }`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box dup"><div class="cd-h">Question</div><div class="cd-m">voteCount<br>comments[]</div></div>
+  <div class="cd-box dup"><div class="cd-h">Answer</div><div class="cd-m">voteCount, flagCount<br>(comments? R4!)</div></div>
+  <div class="cd-box dup"><div class="cd-h">Comment</div><div class="cd-m">voteCount, flagCount</div></div>
+</div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>one capability, three copies — lift it into</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">interface</span>Votable</div><div class="cd-m">+ incrementVoteCount()</div></div>
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h"><span class="st">interface</span>Commentable</div><div class="cd-m">+ addComment(c)</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">capabilities as interfaces — not a forced Post superclass</div>
+</div>`,
+callout:{type:'callout-warn',text:'Honest flag: the course repeats these fields verbatim across all three classes. Chapter 1\'s lesson applies — a capability that cuts across a family belongs in an interface (Votable, Commentable), not in copy-pasted fields or a forced superclass. Say that trade-off out loud; it\'s exactly the interface-vs-inheritance tension the Ducks had.'},
+principle:{lbl:'Design principle #1',txt:'Identify the aspects of your application that vary and separate them from what stays the same. What can be voted on, flagged, and commented on varies by content type — make it a declared capability, not duplicated code.'}
+},
+// ============ STEP 9 — PRINCIPLE 2 ============
+{phase:'pill-principle',phaseTxt:'Principle #2',title:'Program to an interface: search & role escalation',desc:'Two abstraction seams. R1 says <em>anyone</em> can search — so searching is an <code>interface</code>, not a Member method. And the people form a ladder where each level <strong>adds privileges</strong>: guests browse, members post, moderators close, admins block.',
+code:{h:'Search.java + the account ladder',b:`public interface <span class="hi-b">Search</span> {
+  public static List&lt;Question&gt; search(String query);
+}
+public class Question <span class="hi-b">implements Search</span> {
+  public static List&lt;Question&gt; search(String query) {
+    <span class="cm">// all questions whose title or description
+    // contain the query string</span>
+  }
+}
+
+<span class="cm">// The role ladder — each level ADDS privileges</span>
+public class Account {
+  private String id, password, name, email, phone;
+  private AccountStatus status;
+  private <span class="hi-g">int reputation;</span>  <span class="cm">// unlocks privileges</span>
+  public boolean resetPassword();
+}
+public class Member {
+  private <span class="hi-g">Account account;</span>  <span class="cm">// HAS-A, not IS-A</span>
+  private List&lt;Badge&gt; badges;
+  public boolean createQuestion(Question question);
+  public boolean createTag(Tag tag);
+}
+public class Moderator <span class="hi-b">extends Member</span> {
+  public boolean closeQuestion(Question question);
+  public boolean undeleteQuestion(Question question);
+}
+public class Admin <span class="hi-b">extends Member</span> {
+  public boolean blockMember(Member member);
+  public boolean unblockMember(Member member);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row" style="gap:10px">
+  <div class="cd-box" style="min-width:105px"><div class="cd-h">Guest</div><div class="cd-m">no Account —<br>Search only</div></div>
+  <div class="cd-box iface" style="min-width:105px"><div class="cd-h"><span class="st">interface</span>Search</div><div class="cd-m">+ search(query)</div></div>
+</div>
+<div class="cd-arr">joins ↓</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:160px"><div class="cd-h">Member</div><div class="cd-b">account: Account<br>badges: List&lt;Badge&gt;</div><div class="cd-m">+ createQuestion(q)<br>+ createTag(t)</div></div></div>
+<div class="cd-arr"><div class="tri"></div><div>extends — each level adds privileges</div></div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly" style="min-width:125px"><div class="cd-h">Moderator</div><div class="cd-m">+ closeQuestion(q)<br>+ undeleteQuestion(q)</div></div>
+  <div class="cd-box fly" style="min-width:125px"><div class="cd-h">Admin</div><div class="cd-m">+ blockMember(m)<br>+ unblockMember(m)</div></div>
+</div>
+</div>`,
+callout:{type:'callout-info',text:'A permission check is now a compile-time fact: moderator.closeQuestion() exists, member.closeQuestion() doesn\'t — Q2\'s stringly-typed role checks just evaporated. And guests never get a class: a guest is simply "no Account yet" browsing through the public Search interface.'},
+principle:{lbl:'Design principle #2',txt:'Program to an interface, not an implementation. Anyone holding a Search can query questions; code that needs a privileged action asks for a Moderator or an Admin — it never inspects a type string.'}
+},
+// ============ STEP 10 — PRINCIPLE 3 ============
+{phase:'pill-principle',phaseTxt:'Principle #3',title:'Composition: a question HAS everything on the page',desc:'That question page from the brief is literally the object graph. A <code>Question</code> owns its answers, comments, photos, and bounty; an <code>Answer</code> owns its comments and photos; a <code>Member</code> owns an account and badges. Each class has <strong>one job</strong>.',
+code:{h:'Question.java — the aggregate root of content',b:`public class Question implements Search {
+  private String title;
+  private String description;
+  private int viewCount;
+  private int voteCount;
+  private Date creationTime;
+  private Date updateTime;
+  private QuestionStatus status;     <span class="cm">// lifecycle — next step</span>
+  private QuestionClosingRemark closingRemark;
+
+  <span class="hi-g">private Member askingMember;</span>
+  <span class="hi-g">private Bounty bounty;</span>         <span class="cm">// 0..1, expires (R7)</span>
+  <span class="hi-g">private List&lt;Photo&gt; photos;</span>
+  <span class="hi-g">private List&lt;Comment&gt; comments;</span>
+  <span class="hi-g">private List&lt;Answer&gt; answers;</span>
+  <span class="cm">// R10 also implies List&lt;Tag&gt; tags — the code
+  // sample omits it; the class diagram has it. Say so.</span>
+
+  public boolean close();
+  public boolean undelete();
+  public boolean addComment(Comment comment);
+  public boolean addBounty(Bounty bounty);
+}
+
+public class Bounty {
+  private int reputation;            <span class="cm">// rep on offer</span>
+  private Date expiry;
+  public boolean modifyReputation(int reputation);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:180px"><div class="cd-h">Question</div><div class="cd-m">title, status, voteCount</div></div></div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> answers 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> comments 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> photos 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> bounty 0..1</div>
+</div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Answer</div><div class="cd-m">accepted +<br>own comments, photos</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Comment</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Photo</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Bounty</div></div>
+</div>
+<div class="cd-arr" style="padding-top:8px">and on the people side ↓</div>
+<div class="cd-row"><div class="cd-box ctx" style="min-width:140px"><div class="cd-h">Member</div></div></div>
+<div style="display:flex;gap:22px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> account 1</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> badges 0..*</div>
+</div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Account</div><div class="cd-m">reputation, status</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10px">Badge</div><div class="cd-m">name, description</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Sharp catch for the interview: R4 says answers take comments, but the course\'s Answer code sample has no comments list (its class diagram does). Naming that gap earns points — and thanks to composition the fix is one field, not a rewrite.'},
+principle:{lbl:'Design principle #3',txt:'Favor composition over inheritance, and give each class a single responsibility. The question aggregates its content; reputation lives in Account; tag frequencies live in Tag — nothing owns everything.'}
+},
+// ============ STEP 11 — PATTERN: STATE ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · State',title:'A question is a state machine',desc:'R3, R9, R11, and R12 are all about one thing: <strong>what you may do to a question depends on what state it\'s in</strong>. Answers only attach to OPEN questions; closed questions carry an official remark; only deleted questions can be undeleted — and only by a moderator.',
+code:{h:'QuestionStatus — the lifecycle, typed',b:`public enum <span class="hi-b">QuestionStatus</span> {
+  OPEN, CLOSED, ON_HOLD, DELETED
+}
+
+public enum <span class="hi-b">QuestionClosingRemark</span> {
+  DUPLICATE, OFF_TOPIC, TOO_BROAD, NOT_CONSTRUCTIVE,
+  NOT_A_REAL_QUESTION, PRIMARILY_OPINION_BASED
+}
+
+public class Question implements Search {
+  private QuestionStatus status;          <span class="cm">// current state</span>
+  private QuestionClosingRemark closingRemark;
+
+  public boolean <span class="hi-g">close()</span>;    <span class="cm">// OPEN → CLOSED + remark (R9)</span>
+  public boolean <span class="hi-g">undelete()</span>; <span class="cm">// DELETED → OPEN (R12)</span>
+
+  public boolean addAnswer(Answer a) {  <span class="cm">// sketch</span>
+    <span class="hi-y">if (status != QuestionStatus.OPEN) return false;</span>
+    <span class="cm">// R3: answers attach to OPEN questions only</span>
+  }
+}
+
+public class Moderator extends Member {
+  public boolean closeQuestion(Question question);
+  public boolean undeleteQuestion(Question question);
+}`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:150px"><div class="cd-h">OPEN</div><div class="cd-m">answers welcome (R3)</div></div></div>
+<div class="cd-arr">members vote to close · mods close (R9) ↓</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box dup" style="min-width:115px"><div class="cd-h">CLOSED</div><div class="cd-m">+ closingRemark<br>mods can reopen ↑</div></div>
+  <div class="cd-box dup" style="min-width:105px"><div class="cd-h">ON_HOLD</div><div class="cd-m">pending fixes</div></div>
+</div>
+<div class="cd-arr">members vote to delete (R11) ↓</div>
+<div class="cd-row"><div class="cd-box bad" style="min-width:175px"><div class="cd-h">DELETED</div><div class="cd-m">moderator.undeleteQuestion()<br>→ back to OPEN (R12)</div></div></div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #1: State (<a href="../ch10-state-pattern.html">Chapter 10</a>) — a question\'s legal operations change with its status, exactly like the Gumball Machine. The course keeps it as an enum plus guard clauses; with four states and a handful of transitions, that\'s fine. If close/reopen/delete rules keep multiplying, promote each state to a class — and say that trade-off out loud.'}
+},
+// ============ STEP 12 — PATTERN: OBSERVER ============
+{phase:'pill-pattern',phaseTxt:'Pattern spotted · Observer',title:'Followers get notified — without polling',desc:'The System actor "sends notifications to members" and assigns badges. Concretely: members follow a question they care about, and when a new answer lands, every follower hears about it — nobody refreshes the page in a loop. Subject, observers, notify: you\'ve seen this before.',
+code:{h:'Notification.java + the wiring the design implies',b:`public class <span class="hi-b">Notification</span> {
+  private int notificationId;
+  private Date createdOn;
+  private String content;
+
+  public boolean <span class="hi-g">sendNotification()</span>;
+  <span class="cm">// the channel (email / SMS / push) hides
+  // behind this call — swap it freely</span>
+}
+
+<span class="cm">// Sketch — how a new answer reaches followers:</span>
+public class Question implements Search {
+  <span class="hi-y">private List&lt;Member&gt; followers;</span>  <span class="cm">// watch list</span>
+
+  public boolean addAnswer(Answer answer) {
+    answers.add(answer);
+    <span class="cm">// subject changed → push to every observer</span>
+    for (Member m : <span class="hi-y">followers</span>) {
+      new Notification("New answer: " + title)
+          .<span class="hi-g">sendNotification()</span>;  <span class="cm">// → m.getEmail()</span>
+    }
+  }
+}
+
+<span class="cm">// Same shape awards badges: the System watches
+// reputation changes and assigns Badge objects (R8).</span>`},
+dia:()=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+<div class="cd-row"><div class="cd-box ctx" style="min-width:185px"><div class="cd-h">Question <span class="st">subject</span></div><div class="cd-m">addAnswer() = state change<br>followers: List&lt;Member&gt;</div></div></div>
+<div class="cd-arr"><div class="ln"></div><div class="tri"></div><div>notifies via Notification</div></div>
+<div class="cd-row" style="gap:5px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Follower 1</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Follower 2</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10px">Follower 3</div></div>
+</div>
+<div class="cd-arr" style="padding-top:6px">observers subscribe by following — the subject never polls</div>
+</div>`,
+callout:{type:'callout-purple',text:'Pattern #2: Observer (<a href="../ch2-observer-pattern.html">Chapter 2</a>) — following a question is subscribing, a new answer is the state change, Notification carries the update. The course hand-rolls it (no Subject/Observer interfaces); mention that a subscribe/notify seam would let badge-awarding and email delivery register themselves without ever touching Question.'}
+},
+// ============ STEP 13 — SOLUTION: SKELETON ============
+{phase:'pill-solution',phaseTxt:'Step 5 · Skeleton code',title:'The full skeleton, assembled',desc:'Everything so far compressed into the interview deliverable: enums for the fixed vocabularies, a role ladder for the people, one aggregate for the content, small classes for the incentives. (Getters/setters omitted — say that out loud in the interview.)',
+code:{h:'The complete cast (condensed)',b:`<span class="cm">// FIXED VOCABULARIES — enums, not strings</span>
+enum QuestionStatus { OPEN, CLOSED, ON_HOLD, DELETED }
+enum QuestionClosingRemark { DUPLICATE, OFF_TOPIC,
+     TOO_BROAD, NOT_CONSTRUCTIVE, NOT_A_REAL_QUESTION,
+     PRIMARILY_OPINION_BASED }
+enum AccountStatus { ACTIVE, CLOSED, CANCELED,
+                     BLACKLISTED, BLOCKED }
+
+<span class="cm">// THE PEOPLE — role escalation ladder</span>
+class Account   { id, status, <span class="hi-b">reputation</span> }
+class Member    { account, badges[], createQuestion() }
+class Moderator extends Member { closeQuestion(),
+                                 undeleteQuestion() }
+class Admin     extends Member { blockMember() }
+
+<span class="cm">// THE CONTENT — votable / flaggable / commentable</span>
+class Question implements <span class="hi-b">Search</span> { title, description,
+      voteCount, <span class="hi-b">status, closingRemark</span>, bounty,
+      photos[], comments[], answers[],
+      close(), undelete(), addComment(), addBounty() }
+class Answer  { answerText, <span class="hi-b">accepted</span>, voteCount,
+                flagCount, photos[], incrementVoteCount() }
+class Comment { text, voteCount, flagCount,
+                incrementVoteCount() }
+
+<span class="cm">// THE INCENTIVES</span>
+class Tag    { name, dailyAskedFrequency,
+               weeklyAskedFrequency }   <span class="cm">// R13</span>
+class Badge  { name, description }
+class Bounty { reputation, expiry }     <span class="cm">// R7</span>
+
+<span class="cm">// THE PLUMBING</span>
+interface Search { search(query) }
+class Notification { content, sendNotification() }
+class Photo { photoPath, delete() }`},
+dia:()=>`<div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Moderator / Admin</div></div>
+  <div class="cd-box ctx"><div class="cd-h" style="font-size:10.5px">Member</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Account</div></div>
+</div>
+<div style="display:flex;gap:26px">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> asks 0..*</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> badges 0..*</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box ctx" style="min-width:140px"><div class="cd-h" style="font-size:10.5px">Question <span class="st">Search · lifecycle</span></div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Badge</div></div>
+</div>
+<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> answers</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> comments</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> tags</div>
+  <div class="has-a-lbl"><div style="width:7px;height:7px;background:var(--border-secondary);transform:rotate(45deg)"></div> bounty 0..1</div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Answer</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Comment</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Tag</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Bounty</div></div>
+  <div class="cd-box"><div class="cd-h" style="font-size:10.5px">Photo</div></div>
+</div>
+<div class="cd-row" style="gap:6px">
+  <div class="cd-box iface"><div class="cd-h" style="font-size:10.5px">Search</div></div>
+  <div class="cd-box fly"><div class="cd-h" style="font-size:10.5px">Notification</div></div>
+</div>
+</div>`,
+callout:{type:'callout-ok',text:'Compare this to Attempt #1: same requirements, but every axis of change now has its own home. This diagram is what you leave on the whiteboard.'}
+},
+// ============ STEP 14 — RUNTIME FLOW ============
+{phase:'pill-solution',phaseTxt:'Runtime',title:'One question, end to end',desc:'A design is only convincing if you can run a scenario through it. Narrate this flow in the interview — it proves the classes actually collaborate.',
+code:{h:'The reputation economy (sketch)',b:`<span class="cm">// From the intro: +10 rep when your answer
+// is up-voted, +5 when your question is.</span>
+public class Answer {
+  private int voteCount;
+  private Member creatingMember;
+
+  public boolean incrementVoteCount() {
+    voteCount++;
+    <span class="hi-g">creatingMember.getAccount()
+                  .addReputation(10);</span>  <span class="cm">// sketch</span>
+    <span class="cm">// System observes reputation →
+    // assigns badges at thresholds (R8)</span>
+  }
+}
+
+public class Moderator extends Member {
+  public boolean closeQuestion(Question q) {
+    <span class="hi-b">q.close();</span>  <span class="cm">// status = CLOSED,
+                // closingRemark = DUPLICATE... (R9)</span>
+  }
+}`},
+dia:()=>`<div class="flow">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-txt"><span class="flow-who">Member</span><br>@asha posts a question — <code>member.createQuestion(q)</code> (R2)</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-txt"><span class="flow-who">Tag</span><br>Tags [git] [rebase] attached; daily/weekly frequencies tick up (R10, R13)</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-txt"><span class="flow-who">Bounty</span><br>@asha adds a +50 rep bounty with a 7-day expiry to draw attention (R7)</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-txt"><span class="flow-who">Member</span><br>@mia posts an Answer — allowed because <code>status == OPEN</code> (R3, State)</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-txt"><span class="flow-who">System</span><br>Every follower of the question gets <code>Notification.sendNotification()</code> (Observer)</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-txt"><span class="flow-who">Community</span><br>Up-votes roll in: <code>answer.incrementVoteCount()</code> → @mia\'s account +10 rep each (R5)</div></div>
+  <div class="flow-step"><div class="flow-num">7</div><div class="flow-txt"><span class="flow-who">System</span><br>Reputation crosses a threshold → a Badge is assigned to @mia (R8)</div></div>
+  <div class="flow-step"><div class="flow-num">8</div><div class="flow-txt"><span class="flow-who">Member</span><br>@asha accepts the answer (<code>accepted = true</code>) and the bounty pays out</div></div>
+  <div class="flow-step"><div class="flow-num">9</div><div class="flow-txt"><span class="flow-who">Moderator</span><br>Duplicate spotted: <code>moderator.closeQuestion(q)</code> → CLOSED + DUPLICATE remark (R9, State)</div></div>
+</div>`,
+callout:{type:'callout-ok',text:'Every arrow lands on a class we designed, and no step needs code that doesn\'t exist. That\'s how you know the design is complete enough.'}
+},
+// ============ STEP 15 — COMPLETE PICTURE ============
+{phase:'pill-pattern',phaseTxt:'The complete picture',title:'What you actually memorize',desc:'Not 13 classes — one recipe, three principles, two patterns. Every other case study in this course is this same climb over different nouns.',
+code:{h:'Stack Overflow in one breath',b:`<span class="cm">// THE RECIPE</span>
+requirements → actors → nouns → relationships → code
+
+<span class="cm">// THE PRINCIPLES</span>
+1. Encapsulate what varies
+   → what is votable / flaggable / commentable;
+     DRY it with capability interfaces
+2. Program to an interface
+   → Search for anyone; Notification hides the
+     channel; roles escalate Guest → Member →
+     Moderator → Admin
+3. Composition + single responsibility
+   → Question HAS answers, comments, tags, photos,
+     bounty; Member HAS account, badges
+
+<span class="cm">// THE PATTERNS (they emerged — never forced)</span>
+<span class="hi-b">State</span>     QuestionStatus: OPEN → ON_HOLD / CLOSED
+          → DELETED, + QuestionClosingRemark
+<span class="hi-b">Observer</span>  follow a question → notified of new
+          answers via Notification
+
+<span class="cm">// TRANSFER — same skeleton, different nouns:</span>
+Facebook / LinkedIn (posts≈questions, comments,
+   notifications to followers)
+Amazon (guest/member/admin roles, reviews are
+   votable content, Search interface)`},
+dia:()=>`<div class="cd-row" style="gap:8px">
+  <div class="cd-box ctx" style="min-width:120px"><div class="cd-h">State</div><div class="cd-m">question lifecycle —<br>status + closing remark</div></div>
+  <div class="cd-box fly" style="min-width:120px"><div class="cd-h">Observer</div><div class="cd-m">followers notified<br>of new answers</div></div>
+  <div class="cd-box iface" style="min-width:120px"><div class="cd-h">Role escalation</div><div class="cd-m">Guest → Member →<br>Moderator → Admin</div></div>
+</div>
+<div class="legend">
+  <div class="legend-i"><div class="legend-sw" style="background:var(--teal-50);border:0.5px solid var(--teal-600)"></div>Lifecycle</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px solid var(--purple-600)"></div>Notification</div>
+  <div class="legend-i"><div class="legend-sw" style="background:var(--purple-50);border:0.5px dashed var(--purple-600)"></div>Privilege ladder</div>
+</div>`,
+callout:{type:'callout-purple',text:'The parallel arrays failed because content, privileges, lifecycle, and notifications were welded together. The recipe separated the axes of change — and the patterns appeared exactly where the requirements demanded flexibility: a question lifecycle (State), followers who must hear about new answers (Observer), and a ladder of roles that only ever adds privileges.'}
+}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function renderDots(){
+  const d=document.getElementById('dots');
+  d.innerHTML='';
+  S.forEach((_,i)=>{
+    const e=document.createElement('div');
+    e.className='dot'+(i===cur?' active':(visited.has(i)?' visited':''));
+    e.onclick=()=>go(i);
+    d.appendChild(e);
+  });
+}
+
+function go(n){
+  if(n<0||n>=S.length)return;
+  cur=n; visited.add(n);
+  const s=S[n];
+  document.getElementById('step-label').textContent='Step '+(n+1)+' of '+S.length;
+  document.getElementById('prog').style.width=((n+1)/S.length*100)+'%';
+  document.getElementById('pb').disabled=n===0;
+  const nb=document.getElementById('nb');
+  nb.disabled=n===S.length-1;
+  nb.textContent=n===S.length-1?'Done':'Next →';
+
+  let h='<div class="s-content"><span class="pill '+s.phase+'">'+s.phaseTxt+'</span><div class="s-title">'+s.title+'</div><div class="s-desc">'+s.desc+'</div>';
+  if(s.principle) h+='<div class="principle-box"><div class="p-lbl">'+s.principle.lbl+'</div><div class="p-txt">'+s.principle.txt+'</div></div>';
+  if(s.code&&s.dia){
+    h+='<div class="two-panel"><div class="panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div><div class="panel"><div class="panel-h">Class diagram</div><div style="padding:12px 10px">'+s.dia()+'</div></div></div>';
+  } else if(s.code){
+    h+='<div class="full-panel"><div class="panel-h">'+s.code.h+'</div><div class="panel-b">'+s.code.b+'</div></div>';
+  } else if(s.dia){
+    h+='<div style="margin-bottom:14px">'+s.dia()+'</div>';
+  }
+  if(s.callout) h+='<div class="callout '+s.callout.type+'">'+s.callout.text+'</div>';
+  h+='</div>';
+  document.getElementById('sc').innerHTML=h;
+  renderDots();
+}
+
+function toggleTheme(){
+  const html=document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme')==='dark'?'':'dark');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight') go(cur+1);
+  if(e.key==='ArrowLeft') go(cur-1);
+});
+
+go(0);
+</script>
+</body>
+</html>
